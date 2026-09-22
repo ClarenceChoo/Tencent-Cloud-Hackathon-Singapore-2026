@@ -1,8 +1,8 @@
 # CareLoop: connecting the physical wearable to the software
 
-Version 0.3 · 22 September 2026 · Proposed engineering contract
+Version 0.4 · 23 September 2026 · Engineering contract and implementation boundary
 
-This is a build plan and interface specification, not an implemented or hardware-tested connection. It accompanies the [PRD](CareLoop-PRD.md). All hostnames ending in `.example` and identifiers below are illustrative.
+This specification accompanies the [PRD](CareLoop-PRD.md). The repository now contains firmware, backend and dashboard implementations; the assembled hardware connection and live cloud operation remain unverified. See [verification status](VERIFICATION.md) and the [implemented API contract](../../backend/API.md). All hostnames ending in `.example` and identifiers below are illustrative.
 
 ## 1. Recommended connection
 
@@ -105,7 +105,7 @@ The ESP-IDF HTTPS client and managed WebSocket client provide implementation sta
 | Raw payload rate | 16,000 × 2 × 1 = 32,000 bytes/second |
 | Maximum basic WAV | 640,000 PCM bytes + 44-byte basic header = 640,044 bytes |
 | HTTP upload size cap | 768 KiB, with separate parsed duration/format checks |
-| Reply audio | Same format, each spoken response ≤20 seconds; server splits longer content |
+| Reply audio | Same format; each clip ≤20 seconds; ordered `audio_paths` supports up to 20 clips and 120 seconds total, with `audio_path` retained as a single-clip fallback |
 | Pending capacity | One unacknowledged clip in RAM; do not overwrite silently |
 
 The INMP441's hardware sample width/slot layout differs from the wire format. Firmware must correctly sign-extend/scale the selected I²S channel into 16-bit samples. Verify using a known voice recording; declaring a WAV header does not convert sample data.
@@ -154,6 +154,10 @@ These are proposed application endpoints, not Tencent product endpoints. Device 
 | `GET /v1/device/pending-commands` | Reconcile after reconnect | Return only authorised, unexpired commands with current plan version |
 
 Example upload metadata: `Authorization: Bearer <device credential>`, `Content-Type: audio/wav`, `Idempotency-Key: <unique turn UUID>`, `X-Context-Id: <optional server-issued conversation context>`. The body is the WAV bytes. No credential is placed in a URL or ordinary log.
+
+Device JSON envelopes are bounded to 16 KiB. Firmware must reassemble transport fragments before parsing, reject oversized messages, reject redirects, and validate the asset path and expiry before playback. Reply clips play in order while microphone capture remains stopped; a push-to-talk interruption cancels the remaining clips.
+
+The implemented optional daily greeting uses `checkin.play`, with `command_id`, `context_id`, `audio_paths`, expiry and the same delivery acknowledgements. It is distinct from a medication reminder and never constitutes a health observation. `/v1/device/pending-commands` reconciles both `commands` and `checkins`. The owner configures the local check-in time and can disable it.
 
 The upload response means the server durably accepted the audio; it does not mean a clinical note was confirmed:
 

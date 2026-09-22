@@ -49,3 +49,11 @@ uv run pytest
 ```
 
 These tests cover software state, authorization and protocol integrity. They do not establish hardware audio quality, battery life, GPIO correctness, physical wearability, clinical benefit, or availability of external provider accounts.
+
+To opt into the same suite on a locally installed PostgreSQL server binary without using or resetting an existing database, run from the repository root:
+
+```bash
+backend/.venv/bin/python tools/postgres_test.py
+```
+
+The runner initializes a disposable cluster below the ignored `runtime/` directory, binds it only to `127.0.0.1` on an unused high port, creates a random database, and stops and removes that cluster after the suite. Within the run, every database-backed test creates and later drops its own randomly named schema. `CARELOOP_TEST_DATABASE_URL` can also point the tests at an explicitly provisioned PostgreSQL database with schema-create permission; the fixtures never reset that database or use its existing schemas.

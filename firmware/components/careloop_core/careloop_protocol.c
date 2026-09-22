@@ -25,6 +25,18 @@ size_t careloop_reply_path_select(const char *const *paths, size_t count, const 
 bool careloop_command_is_playable(int64_t now, int64_t expiry, bool time_ok, uint32_t current, uint32_t command) {
     return time_ok && expiry > now && current != 0 && current == command;
 }
+bool careloop_turn_status_is_processing(const char *status) {
+    return status && (!strcmp(status, "accepted") || !strcmp(status, "transcribing") ||
+                      !strcmp(status, "transcribed") || !strcmp(status, "processing"));
+}
+bool careloop_turn_status_is_terminal(const char *status) {
+    return status && (!strcmp(status, "committed") || !strcmp(status, "awaiting_confirmation") ||
+                      !strcmp(status, "completed") || !strcmp(status, "clarification_required") ||
+                      !strcmp(status, "failed"));
+}
+bool careloop_context_is_active(int64_t now, bool time_valid, int64_t expires_at, bool has_context) {
+    return has_context && (!time_valid || expires_at > now);
+}
 careloop_ledger_entry_t *careloop_ledger_find(careloop_ledger_t *l, const char *id) {
     if (!l || !id) return NULL;
     for (size_t i = 0; i < CARELOOP_LEDGER_SLOTS; ++i)

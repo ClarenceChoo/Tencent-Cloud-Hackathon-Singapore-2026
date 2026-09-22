@@ -1,6 +1,7 @@
 #include "careloop_app.h"
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "esp_log.h"
 #include "esp_system.h"
 #include "esp_random.h"
@@ -20,6 +21,9 @@ static void interaction_task(void *unused) {
     if (!debounced_press()) { vTaskDelay(pdMS_TO_TICKS(20)); continue; }
     if (!careloop_wifi_connected() || !app.settings.device_token[0]) { if(xSemaphoreTake(app.audio_lock,pdMS_TO_TICKS(50))==pdTRUE){careloop_play_local_prompt(&app.board,CARELOOP_PROMPT_NOT_CONNECTED);xSemaphoreGive(app.audio_lock);} pulse(120,80,2); while(careloop_ptt_pressed(&app.board))vTaskDelay(pdMS_TO_TICKS(10)); continue; }
     if (xSemaphoreTake(app.audio_lock,pdMS_TO_TICKS(50)) != pdTRUE) { /* Playback sees this held press and stops; retry it as a capture. */ vTaskDelay(pdMS_TO_TICKS(100)); continue; }
+    char capture_context[CARELOOP_ID_MAX]={0}; bool awaiting=false;
+    xSemaphoreTake(app.state_lock,portMAX_DELAY); if(!careloop_context_is_active(time(NULL),time(NULL)>1700000000,app.context_expires_at,app.context_id[0])){app.context_id[0]=0;app.context_expires_at=0;} awaiting=app.awaiting_turn_id[0]!=0; snprintf(capture_context,sizeof(capture_context),"%s",app.context_id); xSemaphoreGive(app.state_lock);
+    if(awaiting){/* Three short pulses mean the accepted turn is still processing. */pulse(45,45,3);wait_for_release();xSemaphoreGive(app.audio_lock);continue;}
     pulse(100,0,1); vTaskDelay(pdMS_TO_TICKS(30));
     if (!careloop_ptt_pressed(&app.board)) { xSemaphoreGive(app.audio_lock); continue; } /* Release during cue cancels. */
     uint8_t *wav=NULL; size_t len=0; esp_err_t e=careloop_capture_wav(&app.board,&wav,&len);
@@ -28,16 +32,16 @@ static void interaction_task(void *unused) {
     char turn[CARELOOP_ID_MAX]={0}, key[37]; bool accepted=false, attempted=false, any_attempt=false; /* UUID is allocated once for this captured clip and reused on every retry. */
     uint32_t r[4]; esp_fill_random(r,sizeof(r)); snprintf(key,sizeof(key),"%08lx-%04lx-%04lx-%04lx-%08lx%04lx",(unsigned long)r[0],(unsigned long)(r[1]>>16),(unsigned long)((r[1]&0xfff)|0x4000),(unsigned long)((r[2]>>16&0x3fff)|0x8000),(unsigned long)(r[2]&0xffff),(unsigned long)r[3]);
     int64_t retain_until=esp_timer_get_time()+60000000LL;
-    for(unsigned attempt=0;attempt<4 && !accepted && esp_timer_get_time()+10000000LL<retain_until;attempt++) { e=careloop_upload_turn(&app,wav,len,app.context_id,key,&attempted,turn);any_attempt|=attempted;accepted=(e==ESP_OK);if(!accepted&&attempt<3){uint32_t wait=careloop_retry_delay_ms(attempt,(uint32_t)esp_timer_get_time());if(esp_timer_get_time()+(int64_t)wait*1000LL<retain_until)vTaskDelay(pdMS_TO_TICKS(wait));} }
+    for(unsigned attempt=0;attempt<4 && !accepted && esp_timer_get_time()+10000000LL<retain_until;attempt++) { e=careloop_upload_turn(&app,wav,len,capture_context,key,&attempted,turn);any_attempt|=attempted;accepted=(e==ESP_OK);if(!accepted&&attempt<3){uint32_t wait=careloop_retry_delay_ms(attempt,(uint32_t)esp_timer_get_time());if(esp_timer_get_time()+(int64_t)wait*1000LL<retain_until)vTaskDelay(pdMS_TO_TICKS(wait));} }
     free(wav); /* One pending clip is retained only during the bounded retry interval, never on flash. */
-    if(!accepted) { careloop_play_local_prompt(&app.board,any_attempt?CARELOOP_PROMPT_RECEIPT_UNCONFIRMED:CARELOOP_PROMPT_NOT_SENT); pulse(180,100,3); } else { snprintf(app.awaiting_turn_id,sizeof(app.awaiting_turn_id),"%s",turn); pulse(50,50,2); }
+    if(!accepted) { careloop_play_local_prompt(&app.board,any_attempt?CARELOOP_PROMPT_RECEIPT_UNCONFIRMED:CARELOOP_PROMPT_NOT_SENT); pulse(180,100,3); } else { xSemaphoreTake(app.state_lock,portMAX_DELAY); snprintf(app.awaiting_turn_id,sizeof(app.awaiting_turn_id),"%s",turn); xSemaphoreGive(app.state_lock); pulse(50,50,2); }
     /* A 20-second hold ends one turn; require a physical release before another. */
     wait_for_release(); xSemaphoreGive(app.audio_lock);
   }
 }
 void app_main(void) {
   memset(&app,0,sizeof(app)); ESP_ERROR_CHECK(careloop_settings_load(&app.settings,&app.ledger)); ESP_ERROR_CHECK(careloop_board_init(&app.board));
-  app.audio_lock=xSemaphoreCreateMutex(); if(!app.audio_lock){ESP_LOGE(TAG,"No memory for audio lock");return;}
+  app.audio_lock=xSemaphoreCreateMutex(); app.state_lock=xSemaphoreCreateMutex(); app.ledger_lock=xSemaphoreCreateMutex(); if(!app.audio_lock||!app.state_lock||!app.ledger_lock){ESP_LOGE(TAG,"No memory for device locks");return;}
   if(!careloop_board_audio_ready(&app.board)) ESP_LOGW(TAG,"Audio remains disabled: supplier GPIO map has not been configured");
   ESP_ERROR_CHECK(careloop_wifi_start(&app)); careloop_network_start(&app); xTaskCreate(interaction_task,"careloop_interaction",6144,NULL,5,NULL);
 }

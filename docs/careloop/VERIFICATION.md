@@ -4,11 +4,12 @@ This document separates executable software evidence from target-device acceptan
 
 ## Recorded results — 23 September 2026, Singapore time
 
-- Backend: **42 tests passed**, using SQLite and mocked provider calls.
+- Backend: **44 tests passed on SQLite and 44 passed on PostgreSQL 15.14**, using mocked provider calls. PostgreSQL ran in a disposable, password-protected loopback cluster with a separate random schema per database-backed test. This does not validate the deployment container's PostgreSQL 17 image.
 - Dashboard: production build passed; **5 tests passed**, covering errors, date handling, confirmation and separation of scheduled doses from actual medication reports.
-- Main browser scenario: **10 checks passed** against the running React/FastAPI application. One externally committed note appeared after **787 ms** in that local run. This is one observation, not the PRD's 30-event p95 latency result.
+- Main browser scenario: **10 checks passed** against the running React/FastAPI application. A separate **30-event** local baseline measured **806 ms p50, 1,317 ms p95 and 1,321 ms maximum**, from confirmation-request start to visibility in an already-open dashboard. This includes request/commit time and uses headless desktop Chrome, loopback networking and fictional SQLite records. Target-phone/network acceptance remains unverified.
 - Focused browser scenario: **4 checks passed** for profile preferences, a separately created pending proposal, checked medication-plan revision, and device claim/revocation. The last check used a fictional credential against the API, not a physical cardholder.
-- Firmware: ESP-IDF **v5.4.2** successfully built the ESP32-S3 application, **1,496,032 bytes**; native core tests passed. Image SHA-256: `27ac66f5a39bdf6912c975e47a80575a28063f67105357395591a4196e3e1c04`.
+- Developer WAV harness: **8 loopback HTTP tests passed**, including a dropped upload acknowledgement, retry identity, resumed polling, expired/unavailable reply audio, redirect rejection and response limits. No live speech recognition was involved.
+- Firmware: ESP-IDF **v5.4.2** successfully built the ESP32-S3 application; native core tests passed. The current image size, SHA-256 and measured factory-partition headroom are recorded in the [firmware README](../../firmware/README.md). The current partition has approximately **1% free**, so further additions require checking image fit against the supplier-confirmed flash layout.
 - Desktop and mobile screenshots were inspected. Provider credentials, device credentials, local databases, screenshots and build products remain outside Git.
 
 ## Reproducible checks
@@ -16,9 +17,12 @@ This document separates executable software evidence from target-device acceptan
 | Check | Evidence / command | Scope |
 |---|---|---|
 | Backend behavior | `cd backend && uv sync --frozen --extra test && uv run pytest` | Auth/CSRF, access grants, private records, proposals, corrections, plan versions, summary provenance/revocation, device transport, scheduler and provider adapters |
+| PostgreSQL behavior | `backend/.venv/bin/python tools/postgres_test.py` | Same backend suite in a disposable local cluster; installed PostgreSQL 15.14 tested |
 | Dashboard build and UI tests | `cd frontend && npm ci && npm run build && npm test` | TypeScript/build and explicit confirmation UI safeguards |
 | Real browser integration | `node tools/browser_smoke.cjs` after fictional seed and local servers | Actual React → HTTP → FastAPI → SQLite workflows; results under ignored `runtime/browser-evidence.json` |
 | Settings and device access | `node tools/browser_settings.cjs` after the main browser scenario; see [tool instructions](../../tools/README.md) | Profile, pending proposal, checked plan edit and optional fictional credential claim/revoke; results under `runtime/browser-settings-evidence.json` |
+| Local dashboard latency | `node tools/browser_latency.cjs` after fictional seed and local servers | Thirty actual confirmations; samples and environment recorded in `runtime/dashboard-latency.json`; not target-network evidence |
+| Developer transport | `python3 -m unittest discover -s tools -p 'test_device_harness.py' -v` | Disposable loopback HTTP server; lost-acknowledgement and expired-audio recovery |
 | Firmware host tests | `make -C firmware/components/careloop_core/test test` | WAV format, sample conversion, protocol bounds, retry/ledger and reply-path helpers |
 | Target compilation | ESP-IDF v5.4.2, ESP32-S3, pinned WebSocket component | Builds a binary; does not establish pin compatibility, microphone behavior or physical operation |
 | Deployment configuration | YAML parsed; only the web service exposes host ports | Docker build/run and real public HTTPS/WSS remain unexecuted |

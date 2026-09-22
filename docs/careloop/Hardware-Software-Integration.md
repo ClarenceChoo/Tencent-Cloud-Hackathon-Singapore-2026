@@ -95,6 +95,9 @@ The ESP-IDF HTTPS client and managed WebSocket client provide implementation sta
 - Button press during playback stops playback; report `interrupted` and start a new deliberate capture after the start cue. It is never automatically a confirmation.
 - Avoid motor movement during active recording. Store local fixed audio for “not connected,” “not sent,” “I cannot confirm whether that was received,” and low-battery feedback.
 - After a response asks a question, retain its server-issued context ID for the next deliberate turn. The microphone still remains off until the button is pressed.
+- Freeze the context together with the recording and idempotency key; retries cannot pick up a newly queued reminder's context. Wait for the preceding accepted turn to reach a known terminal state before accepting a new recording.
+- Apply a spoken reply/reminder context only after its playback completes. While a live context or accepted turn awaits an answer/result, defer unsolicited reminders and check-ins. Clear expired context locally; the backend still validates its actual lifetime and ownership.
+- A recovered terminal outcome is separate from its expiring audio. Known committed/failed outcomes can queue the corresponding fixed local feedback even if the original reply asset is unavailable. Unknown processing states cannot be treated as successful saves.
 
 ## 5. Audio format and memory budget
 

@@ -1,19 +1,53 @@
 import asyncio
+import base64
+import json
 from datetime import datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 from uuid import uuid4
 
+import httpx
 from sqlalchemy import select
 
 from app import models as m
+from app.providers import TencentConfig, TencentProvider
 from app.security import utcnow
 from app.services import materialize_plan_doses, sha_bytes
-from app.worker import process_turn, scheduler_tick
+from app.worker import _synthesise_sequence, process_turn, scheduler_tick
 from conftest import ORIGIN, login, wav_bytes
 
 
 def auth(ids):
     return {"Authorization": "Bearer %s" % ids["credential"]}
+
+
+def test_worker_splits_when_real_tencent_adapter_rejects_valid_oversize_pcm():
+    requested = []
+    original = "This deliberately produces an oversized provider clip and must be split safely."
+
+    def handle(request):
+        body = json.loads(request.content)
+        text = body["Text"]
+        requested.append(text)
+        frames = 320001 if text == original else 8000
+        pcm = b"\x01\x00" * frames
+        return httpx.Response(200, json={"Response": {"Audio": base64.b64encode(pcm).decode()}})
+
+    provider = TencentProvider(
+        TencentConfig(
+            secret_id="test-id",
+            secret_key="test-key",
+            llm_api_key="test-llm-key",
+            llm_base_url="https://llm.example/v1",
+            llm_model="test-model",
+            voice_type=1,
+        ),
+        httpx.MockTransport(handle),
+    )
+    clips = asyncio.run(_synthesise_sequence(provider, original))
+    assert requested[0] == original
+    assert " ".join(requested[1:]) == original
+    assert len(clips) == 2
+    assert [duration for _, duration in clips] == [500, 500]
 
 
 def test_wav_validation_device_scope_and_idempotency(env, monkeypatch):

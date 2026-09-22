@@ -2,6 +2,7 @@
 """Developer WAV transport harness. This does not replace ESP32 acceptance tests."""
 import argparse
 import hashlib
+import http.client
 import io
 import json
 import os
@@ -15,8 +16,10 @@ import urllib.parse
 import urllib.request
 import uuid
 import wave
+from datetime import datetime, timezone
 
 MAX_BYTES = 768 * 1024
+MAX_JSON_BYTES = 16 * 1024
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -33,6 +36,7 @@ def validate_wav(data):
         frames = clip.getnframes()
         if not 4800 <= frames <= 320000 or len(clip.readframes(frames)) != frames * 2:
             raise ValueError("Use a complete recording lasting 0.3 to 20 seconds")
+        return frames
 
 
 def base_url(value, allow_loopback):
@@ -48,29 +52,77 @@ def base_url(value, allow_loopback):
 def save_state(path, state):
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(path.name + ".tmp")
-    with temporary.open("w", opener=lambda name, flags: os.open(name, flags, 0o600)) as out:
+    with open(temporary, "w", opener=lambda name, flags: os.open(name, flags, 0o600)) as out:
+        os.fchmod(out.fileno(), 0o600)
         json.dump(state, out, indent=2)
         out.write("\n")
+        out.flush()
+        os.fsync(out.fileno())
     os.replace(temporary, path)
 
 
-def request(opener, url, token, data=None, headers=None):
+def request(opener, url, token, data=None, headers=None, max_bytes=MAX_JSON_BYTES):
     metadata = {"Authorization": "Bearer " + token, **(headers or {})}
     for attempt in range(4):
         try:
             req = urllib.request.Request(url, data=data, headers=metadata)
             with opener.open(req, timeout=30) as response:
-                body = response.read(MAX_BYTES + 1)
-                if len(body) > MAX_BYTES:
+                body = response.read(max_bytes + 1)
+                if len(body) > max_bytes:
                     raise ValueError("Backend response exceeds the device limit")
                 return body
         except urllib.error.HTTPError as exc:
             if exc.code not in {429, 502, 503, 504} or attempt == 3:
                 raise RuntimeError("Backend rejected the request (HTTP %s)" % exc.code) from None
-        except (urllib.error.URLError, TimeoutError):
+        except (urllib.error.URLError, TimeoutError, ConnectionError, http.client.IncompleteRead):
             if attempt == 3:
                 raise RuntimeError("Receipt is unconfirmed. Rerun with the same --state file to reconcile.") from None
         time.sleep(2 ** attempt)
+
+
+def reply_files(opener, root, token, event, output_dir):
+    """Audio availability must never erase a recovered durable record outcome."""
+    payload = event.get("payload") or {}
+    paths = payload.get("audio_paths")
+    if paths is None:
+        paths = [payload["audio_path"]] if payload.get("audio_path") else []
+    if not isinstance(paths, list) or len(paths) > 20:
+        raise ValueError("Backend returned an invalid reply sequence")
+    if not paths:
+        return [], "unavailable"
+    for path in paths:
+        if not isinstance(path, str) or not re.fullmatch(r"/v1/device/audio/[A-Za-z0-9_-]+", path):
+            raise ValueError("Backend returned a disallowed audio path")
+    try:
+        expires = datetime.fromisoformat(event["expires_at"].replace("Z", "+00:00"))
+        if expires.tzinfo is None:
+            raise ValueError()
+    except (KeyError, TypeError, AttributeError, ValueError):
+        raise ValueError("Backend returned no valid reply expiry") from None
+    clips = []
+    total_frames = 0
+    for path in paths:
+        if datetime.now(timezone.utc) >= expires:
+            return [], "expired"
+        try:
+            audio = request(opener, root + path, token, max_bytes=MAX_BYTES)
+        except RuntimeError:
+            return [], "unavailable"
+        total_frames += validate_wav(audio)
+        if total_frames > 16000 * 120:
+            raise ValueError("Backend reply exceeds 120 seconds")
+        clips.append((path.rsplit("/", 1)[-1] + ".wav", audio))
+    if datetime.now(timezone.utc) >= expires:
+        return [], "expired"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    files = []
+    for name, audio in clips:
+        output = output_dir / name
+        with open(output, "wb", opener=lambda name, flags: os.open(name, flags, 0o600)) as out:
+            os.fchmod(out.fileno(), 0o600)
+            out.write(audio)
+        files.append(str(output))
+    return files, "downloaded"
 
 
 def main():
@@ -116,22 +168,14 @@ def main():
         if time.monotonic() >= deadline:
             raise RuntimeError("Processing is still pending. Rerun with the same --state file; do not create a second turn.")
         time.sleep(0.5)
-    payload = (result.get("event") or {}).get("payload") or {}
+    event = result.get("event") or {}
+    payload = event.get("payload") or {}
     if result["status"] == "failed":
         raise RuntimeError("Turn processing failed. No successful care-record save is confirmed by this response.")
-    paths = payload.get("audio_paths") or ([payload["audio_path"]] if payload.get("audio_path") else [])
-    args.output_dir.mkdir(parents=True, exist_ok=True)
-    files = []
-    for path in paths:
-        if not isinstance(path, str) or not re.fullmatch(r"/v1/device/audio/[A-Za-z0-9_-]+", path):
-            raise ValueError("Backend returned a disallowed audio path")
-        audio = request(opener, root + path, token)
-        validate_wav(audio)
-        output = args.output_dir / (path.rsplit("/", 1)[-1] + ".wav")
-        with output.open("wb", opener=lambda name, flags: os.open(name, flags, 0o600)) as out:
-            out.write(audio)
-        files.append(str(output))
-    print(json.dumps({"turn_id": state["turn_id"], "status": result["status"], "context_id": payload.get("context_id"), "spoken_text": payload.get("spoken_text"), "record_type": payload.get("record_type"), "record_id": payload.get("record_id"), "reply_files": files}, indent=2))
+    if result.get("turn_id") != state["turn_id"] or payload.get("turn_id") != state["turn_id"]:
+        raise ValueError("Backend returned a different turn outcome")
+    files, reply_status = reply_files(opener, root, token, event, args.output_dir)
+    print(json.dumps({"turn_id": state["turn_id"], "status": result["status"], "context_id": payload.get("context_id") if reply_status == "downloaded" else None, "spoken_text": payload.get("spoken_text"), "record_type": payload.get("record_type"), "record_id": payload.get("record_id"), "reply_status": reply_status, "reply_files": files}, indent=2))
 
 
 if __name__ == "__main__":

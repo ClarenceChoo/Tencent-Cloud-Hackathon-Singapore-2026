@@ -9,6 +9,7 @@ from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 
 from . import models as m
+from .providers import SpeechTooLong
 from .security import aware, iso, utcnow
 from .services import (
     build_readback,
@@ -64,7 +65,13 @@ async def _synthesise_sequence(provider, text: str) -> list[tuple[bytes, int]]:
         if len(completed) + len(pending) > 20:
             raise ValueError("Spoken response exceeds the 20-asset playback limit")
         piece = pending.pop(0)
-        wav = await provider.synthesise_speech(piece)
+        try:
+            wav = await provider.synthesise_speech(piece)
+        except SpeechTooLong:
+            if len(piece) <= 1:
+                raise
+            pending = _split_in_half(piece) + pending
+            continue
         try:
             duration_ms = validate_wav(wav)
         except ValueError as exc:

@@ -18,6 +18,16 @@ int main(void) {
   assert(careloop_reply_path_select(NULL, 0, "/v1/device/audio/legacy", selected) == 1 && !strcmp(selected[0], "/v1/device/audio/legacy"));
   assert(careloop_reply_path_select(invalid, 2, "/v1/device/audio/legacy", selected) == 0);
   assert(careloop_command_is_playable(100, 101, true, 2, 2) && !careloop_command_is_playable(100, 99, true, 2, 2));
+  assert(careloop_turn_status_is_processing("accepted") && careloop_turn_status_is_processing("transcribing"));
+  assert(careloop_turn_status_is_processing("transcribed") && careloop_turn_status_is_processing("processing"));
+  assert(!careloop_turn_status_is_processing("committed") && !careloop_turn_status_is_processing("unknown"));
+  assert(careloop_turn_status_is_terminal("committed") && careloop_turn_status_is_terminal("awaiting_confirmation"));
+  assert(careloop_turn_status_is_terminal("completed") && careloop_turn_status_is_terminal("clarification_required") && careloop_turn_status_is_terminal("failed"));
+  assert(!careloop_turn_status_is_terminal("accepted") && !careloop_turn_status_is_terminal("unknown"));
+  assert(careloop_context_is_active(100, true, 101, true));
+  assert(!careloop_context_is_active(100, true, 100, true));
+  assert(!careloop_context_is_active(100, true, 101, false));
+  assert(careloop_context_is_active(100, false, 100, true));
   assert(careloop_retry_delay_ms(2, 10) == 4010 && careloop_retry_is_transient(503) && !careloop_retry_is_transient(401));
   careloop_machine_t m; careloop_state_init(&m, 0); assert(careloop_state_apply(&m, CARELOOP_EV_WIFI_UP, 1));
   assert(m.state == CARELOOP_IDLE && careloop_state_apply(&m, CARELOOP_EV_PRESS, 2));

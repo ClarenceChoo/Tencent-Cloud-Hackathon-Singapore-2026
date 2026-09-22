@@ -8,7 +8,7 @@ import wave
 import httpx
 import pytest
 
-from app.providers import (FixtureProvider, ProviderResponseError, ProviderUnavailable,
+from app.providers import (FixtureProvider, ProviderResponseError, ProviderUnavailable, SpeechTooLong,
                            TencentConfig, TencentProvider, get_provider, parse_interpretation,
                            pcm_wav, tc3_headers, validate_speech_wav)
 
@@ -18,6 +18,15 @@ def config(**changes):
                   llm_base_url="https://llm.example/v1", llm_model="configured-test-model", voice_type=1)
     values.update(changes)
     return TencentConfig(**values)
+
+
+def test_only_valid_oversize_pcm_requests_text_splitting():
+    with pytest.raises(SpeechTooLong):
+        pcm_wav(b"\x00\x00" * 320001)
+    for invalid in (b"", b"\x00", b"\x00" * 640001):
+        with pytest.raises(ProviderResponseError) as error:
+            pcm_wav(invalid)
+        assert not isinstance(error.value, SpeechTooLong)
 
 
 def run(coroutine):

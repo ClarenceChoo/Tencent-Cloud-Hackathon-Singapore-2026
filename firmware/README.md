@@ -27,6 +27,8 @@ The defaults set every supplier-dependent GPIO to `-1`. In that state the button
 
 The microphone is 16 kHz signed PCM input read in 32-bit I²S slots. INMP441's signed 24-bit left-aligned sample is arithmetic-shifted to signed 16-bit PCM before the WAV is formed. Capture writes a standard 44-byte RIFF/WAV header and permits 0.3–20 seconds. A full 20-second capture is allocated only from external PSRAM; if PSRAM is absent or not enabled for the delivered board, capture fails loudly rather than exhausting normal application heap. The amplifier is forced off during capture; it is enabled only for playback. A physical press during playback stops it.
 
+While an accepted turn is still processing, a new press produces three short haptic pulses and waits for release. This prevents overwriting the outstanding turn without incorrectly saying that its recording was not received.
+
 ## Setup and secrets
 
 On a device with no saved Wi-Fi/backend configuration, the firmware starts a WPA2 SoftAP named `CareLoop-XXXX` for ten minutes and exposes a small local form at `http://192.168.4.1/`. Its per-device setup password is generated once in NVS. Put this password on the physical device label during manufacturing or provision it over the trusted USB/recovery workflow; it is intentionally never written to the serial log.
@@ -52,6 +54,6 @@ The device sends WSS heartbeats every five seconds and uses the configured base 
 
 For normal recovery, enter the supplier-documented ESP32-S3 bootloader (often by holding BOOT while resetting), then run the matching `idf.py -p PORT flash monitor` command above. Preserve the USB data port and the supplier's documented boot/reset procedure in the enclosure design. `idf.py -p PORT erase-flash` removes Wi-Fi, device credentials, and the replay ledger; it is a deliberate factory-reset/recovery action and must be followed by reprovisioning.
 
-ESP-IDF v5.4.2 compiled this project for `esp32s3` on 23 September 2026. The resulting factory image is 0x16d3e0 bytes, with 0x32c20 bytes free in the 0x1a0000-byte factory partition. Its SHA-256 is `27ac66f5a39bdf6912c975e47a80575a28063f67105357395591a4196e3e1c04`. Host tests also pass for WAV validation/conversion, reply-array and single-path fallback selection, retry/ledger protocol, and interaction-state logic.
+ESP-IDF v5.4.2 compiled this project for `esp32s3` on 23 September 2026. The resulting factory image is 0x19a350 bytes, with 0x5cb0 bytes free (1%) in the 0x1a0000-byte factory partition. Its SHA-256 is `d99b441abead910c686a44d7475a29ffe4144e06094b6ca962d2ba69a3e61c5b`. Host tests also pass for WAV validation/conversion, reply-array and single-path fallback selection, terminal-turn recovery status, context-expiry gating, retry/ledger protocol, and interaction-state logic.
 
 Compilation and host tests establish source-level behavior only. This firmware has not been flashed or tested on a cardholder in this workspace. Acoustic intelligibility, motor noise, pin electrical safety, Wi-Fi/card interference, charging, brownouts, and end-to-end physical acceptance require the delivered board and the bench sequence in the integration document.

@@ -7,6 +7,8 @@ These are English speech assets for local failure feedback, generated with macOS
 | `not_connected.wav` | Not connected. Please ask your caregiver to check Wi-Fi. |
 | `not_sent.wav` | Your recording was not sent. Please try again when connected. |
 | `receipt_unconfirmed.wav` | I cannot confirm whether that was received. Please check your care dashboard. |
+| `processing_failed.wav` | Your message was received, but I could not process it. Please try again. |
+| `saved.wav` | Your information was saved. |
 | `low_battery.wav` | The battery is low. Please charge your cardholder. |
 
 Only use `not_sent` when the firmware knows the upload did not reach the server. Use `receipt_unconfirmed` after a possible upload/commit with a missing acknowledgement. Never synthesize a saved acknowledgement locally before the server confirms commitment.

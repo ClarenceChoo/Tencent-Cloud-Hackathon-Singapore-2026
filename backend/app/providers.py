@@ -32,9 +32,15 @@ class ProviderResponseError(ProviderUnavailable):
     pass
 
 
+class SpeechTooLong(ProviderResponseError):
+    """Valid PCM exceeds one device clip; the caller may split its source text."""
+
+
 def pcm_wav(pcm: bytes) -> bytes:
-    if not pcm or len(pcm) % 2 or len(pcm) > 640000:
-        raise ProviderResponseError("Speech output must fit a 20-second reply.")
+    if not pcm or len(pcm) % 2:
+        raise ProviderResponseError("Speech provider returned invalid PCM.")
+    if len(pcm) > 640000:
+        raise SpeechTooLong("Speech output must fit a 20-second reply.")
     output = io.BytesIO()
     with wave.open(output, "wb") as wav:
         wav.setnchannels(1)

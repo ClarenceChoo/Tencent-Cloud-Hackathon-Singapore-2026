@@ -18,6 +18,9 @@ size_t careloop_reply_path_select(const char *const *paths, size_t count, const 
                                   const char *out[CARELOOP_REPLY_CLIPS_MAX]);
 bool careloop_command_is_playable(int64_t now_epoch, int64_t expires_at, bool time_valid,
                                   uint32_t current_plan_version, uint32_t command_plan_version);
+bool careloop_turn_status_is_processing(const char *status);
+bool careloop_turn_status_is_terminal(const char *status);
+bool careloop_context_is_active(int64_t now_epoch, bool time_valid, int64_t expires_at, bool has_context);
 careloop_ledger_entry_t *careloop_ledger_find(careloop_ledger_t *ledger, const char *command_id);
 bool careloop_ledger_should_suppress(const careloop_ledger_entry_t *entry);
 bool careloop_retry_is_transient(int http_status);

@@ -41,4 +41,4 @@ This configuration is a single-instance prototype. Additional backend replicas r
 
 `requirements.lock` is exported from `backend/uv.lock` and installed with hashes. Regenerate it after a dependency change using `uv export --frozen --no-dev --no-emit-project --format requirements-txt --output-file ../deploy/requirements.lock` from `backend/`. Frontend dependencies use `npm ci` and the checked-in lockfile.
 
-Container build/start and the public TLS deployment have not been executed in the current workspace because Docker and the deployment account/domain are unavailable. Local app and firmware checks are recorded separately in the verification document.
+Container build/start and the public TLS deployment have not been executed in the current workspace because Docker and the deployment account/domain are unavailable. The backend suite passes against an isolated local PostgreSQL 15.14 cluster; the PostgreSQL 17 deployment image itself remains untested. Local app and firmware checks are recorded separately in the verification document.

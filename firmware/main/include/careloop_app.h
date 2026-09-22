@@ -10,22 +10,24 @@
 #define CARELOOP_TEXT_MAX 256
 #define CARELOOP_URL_MAX 192
 #define CARELOOP_WIFI_MAX 64
+typedef enum { CARELOOP_PROMPT_NOT_CONNECTED, CARELOOP_PROMPT_NOT_SENT,
+               CARELOOP_PROMPT_RECEIPT_UNCONFIRMED, CARELOOP_PROMPT_LOW_BATTERY,
+               CARELOOP_PROMPT_PROCESSING_FAILED, CARELOOP_PROMPT_SAVED } careloop_prompt_t;
 typedef struct {
   char wifi_ssid[33]; char wifi_password[65]; char backend_url[CARELOOP_URL_MAX];
   char device_token[257]; char setup_password[17]; bool configured;
 } careloop_settings_t;
 typedef struct { int mic_bclk, mic_ws, mic_data, spk_bclk, spk_ws, spk_data, amp_enable, ptt, haptic; } careloop_board_t;
-typedef struct { char command_id[CARELOOP_ID_MAX]; char audio_path[CARELOOP_URL_MAX]; uint32_t plan_version; int64_t expires_at; int64_t received_us; bool valid; } careloop_pending_command_t;
+typedef struct { char command_id[CARELOOP_ID_MAX]; char context_id[CARELOOP_ID_MAX]; char audio_path[CARELOOP_URL_MAX]; uint32_t plan_version; int64_t expires_at; int64_t received_us; bool valid; } careloop_pending_command_t;
 typedef struct { char command_id[CARELOOP_ID_MAX]; char context_id[CARELOOP_ID_MAX]; int64_t expires_at;
   char paths[CARELOOP_REPLY_CLIPS_MAX][CARELOOP_URL_MAX]; size_t count; bool valid; } careloop_pending_checkin_t;
 typedef struct {
   careloop_settings_t settings; careloop_ledger_t ledger; careloop_board_t board;
-  SemaphoreHandle_t audio_lock; careloop_pending_command_t pending; careloop_pending_checkin_t checkin; uint32_t active_plan_version;
-  char context_id[CARELOOP_ID_MAX]; char awaiting_turn_id[CARELOOP_ID_MAX];
-  char pending_reply_paths[CARELOOP_REPLY_CLIPS_MAX][CARELOOP_URL_MAX]; size_t pending_reply_count; int64_t pending_reply_expires_at; bool time_valid;
+  SemaphoreHandle_t audio_lock; SemaphoreHandle_t state_lock; SemaphoreHandle_t ledger_lock; careloop_pending_command_t pending; careloop_pending_checkin_t checkin; uint32_t active_plan_version;
+  char context_id[CARELOOP_ID_MAX]; int64_t context_expires_at; char awaiting_turn_id[CARELOOP_ID_MAX];
+  char pending_reply_paths[CARELOOP_REPLY_CLIPS_MAX][CARELOOP_URL_MAX]; size_t pending_reply_count; int64_t pending_reply_expires_at;
+  char pending_reply_context_id[CARELOOP_ID_MAX]; bool pending_reply_context_present; careloop_prompt_t pending_prompt; bool pending_prompt_valid; bool time_valid;
 } careloop_app_t;
-typedef enum { CARELOOP_PROMPT_NOT_CONNECTED, CARELOOP_PROMPT_NOT_SENT,
-               CARELOOP_PROMPT_RECEIPT_UNCONFIRMED, CARELOOP_PROMPT_LOW_BATTERY } careloop_prompt_t;
 
 esp_err_t careloop_settings_load(careloop_settings_t *settings, careloop_ledger_t *ledger);
 esp_err_t careloop_settings_save(const careloop_settings_t *settings);

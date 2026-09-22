@@ -12,6 +12,8 @@ CareLoop is a proposed voice companion for older adults: an ESP32-S3 pendant wit
 
 The pendant runs device firmware and exchanges audio and commands with a Tencent-hosted backend over Wi-Fi. The phone and caregiver dashboards access the same backend. Speech recognition, AI, and speech synthesis run through backend services.
 
+The prototype uses the ESP32-S3 pendant from the start. There is no phone-based voice prototype. The phone remains a dashboard and optional Wi-Fi hotspot; it does not replace the pendant. Backend work can proceed with developer test fixtures while hardware is assembled.
+
 The hardware supplier assembles and tests the pendant. The project team develops the firmware, backend, and dashboards.
 
 ## Current status

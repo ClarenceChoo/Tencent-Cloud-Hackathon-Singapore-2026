@@ -1,12 +1,14 @@
 # CareLoop: connecting the physical wearable to the software
 
-Version 0.1 · 22 September 2026 · Proposed engineering contract
+Version 0.3 · 22 September 2026 · Proposed engineering contract
 
 This is a build plan and interface specification, not an implemented or hardware-tested connection. It accompanies the [PRD](CareLoop-PRD.md). All hostnames ending in `.example` and identifiers below are illustrative.
 
 ## 1. Recommended connection
 
 Use **HTTPS for complete audio clips and acknowledgements**, plus a **secure WebSocket (WSS) for commands and status**. The ESP32 makes outbound connections to the backend. The phone opens a web dashboard against that backend; it does not need a Bluetooth audio connection.
+
+The ESP32-S3 pendant is the voice prototype from the start. A phone voice prototype is outside scope. Developer test fixtures can exercise the backend before hardware arrives, but the product voice flow and its acceptance tests run on the actual pendant.
 
 ```mermaid
 flowchart LR
@@ -183,7 +185,11 @@ Server processing creates a proposal and sends a result event. The reference clo
 }
 ```
 
-The user holds the button and answers. The new upload carries `X-Context-Id: context_demo_001`. The backend checks ownership, expiry and the exact pending proposal before committing. A context lasts 120 seconds in the initial demo; ambiguous or late replies trigger clarification. The pending note can also be reviewed explicitly in the authorised app. The LLM cannot commit directly to the database.
+The user holds the button and answers. The new upload carries `X-Context-Id: context_demo_001`. The backend checks ownership, expiry and the exact pending proposal before committing. A context lasts 120 seconds in the initial demo; ambiguous or late replies trigger clarification. The proposal can also be reviewed and explicitly confirmed in the authorised dashboard. The LLM cannot commit directly to the database.
+
+The same proposal/read-back/confirmation path applies to health notes, medication reports, measurements, preventive-task changes and support requests (PRD R19). Read back the material fields before requesting confirmation. A correction creates a new immutable proposal and invalidates the previous context. For medication reports, recheck the referenced plan version before commitment; a changed plan requires reconciliation and clarification. A delivery acknowledgement, a dismissed reminder or an unrelated yes is never a confirmation.
+
+Only after the transaction commits may a `turn.result` expose `status: committed` with the committed record type and ID and play a saved response. Before that, audio `accepted` and proposal `awaiting_confirmation` remain distinct. Persist the outcome with the proposal so retry/status lookup returns the same record. System delivery states and date-derived due status can update automatically; they cannot establish patient completion.
 
 ### Retry and acknowledgement rules
 
@@ -246,12 +252,20 @@ Persist a small command ledger before playback starts so redelivery does not rep
 | VoiceTurn | Device, idempotency key, capture metadata, received_at, transcript, processing state, context ID |
 | ConfirmationProposal | Immutable proposed content, context ID, expiry, originating turn, confirmation turn/result |
 | HealthNote | Confirmed user wording, structured fields, occurrence description, provenance, sharing grants, correction history |
+| Measurement | Patient, type, named values (systolic/diastolic for the first demo), units, occurrence time/approximation, timezone, source description, reporting actor, source turn, confirmation proposal, correction history |
+| PreventiveTask | Patient, type, description, care-plan source, due date/timezone, appointment and completion dates when known, state, confirmed transition history |
+| FollowUp | Related care item or support request, agreed check time, permission scope, reported outcome and resolution state |
+| VisitSummary | Patient, date range, source record IDs/versions, draft, owner edits, generation time and sharing state |
 | SupportRequest | Confirmed request, permitted recipient, created/acknowledged/resolved timestamps, outcome |
 | AccessGrant / AuditEvent | Actor, scope, object, permission period and changes |
 
 AI output is an untrusted draft validated against a schema and allowlisted intents. Confirmations, permissions, scheduling and database writes are application logic. Medication explanations retrieve the active source text; uploaded documents and speech cannot override system permissions. Care summaries label observations as reported and link each assertion to entries. Backend services never put a patient's entire record into a prompt merely because it is available.
 
 The phone obtains initial data over authenticated HTTPS, receives event notifications, and refetches affected records. A closed/background browser is not a guaranteed caregiver notification channel in P0. Acknowledgement in the open dashboard is a human action, not a network delivery receipt.
+
+Measurements use confirmed external readings reported by the patient; the pendant is not a measurement sensor. Plot dated values with units and sample count, preserve missing data, and avoid mixing incompatible types or units. One reading is a single observation, not a trend. A correction supersedes the original value and invalidates affected summary drafts.
+
+Preventive tasks originate from the recorded care plan. Supported states are planned, due, arranged, completed, declined and needs-discussion. Due status may follow the recorded date; arranged and completed require explicit human reports and confirmation. Appointment dates are distinct from due dates. The backend does not calculate screening eligibility or book appointments. Summary generation includes current task states, measurements and unresolved follow-ups under the existing access grants.
 
 ## 11. Power and mechanical feasibility
 
@@ -272,14 +286,15 @@ Measure idle-connected current, recording/upload current, playback current at th
 | 5 | Confirmed note | A correction and confirmation update exactly one note in the app |
 | 6 | Reminder command | Scheduled command plays once, has delivery acknowledgement, and remains medication-unconfirmed until a user report |
 | 7 | Fault injection | Disconnect during upload/playback, retry, reboot, invalid credentials, expired reminder and changed plan produce accurate states |
-| 8 | Wearable rehearsal | Thirty turns and a one-hour run pass; record power, audio, latency and network conditions |
+| 8 | Complete care coverage | Correct a reported reading, confirm it, inspect dated history, confirm preventive-task progress and review the resulting visit summary; all six PRD areas pass |
+| 9 | Wearable rehearsal | Thirty turns and a one-hour run pass; record power, audio, latency and network conditions |
 
-Before hardware arrives, implement a simulated device client that uploads test WAV files through this same API and receives commands. Give it separate test-only credentials. Passing a simulated flow proves backend logic, not acoustics, battery life, electrical stability or actual device performance.
+Before hardware arrives, use a developer API test harness to upload WAV fixtures and receive commands, with separate test-only credentials. This is a backend verification tool, not a phone voice prototype or a product demo. Passing these tests proves backend logic; the pendant must separately pass acoustics, battery, electrical stability and end-to-end voice tests.
 
 ## 13. Immediate engineering decisions
 
 1. Ask the supplier to freeze the exact BOM, GPIO map, USB access and power diagram before assembly.
-2. Create the backend echo endpoint and simulated device client first.
+2. Create the backend echo endpoint and a developer API test harness while preparing firmware for the selected ESP32 board.
 3. Confirm Tencent account access, a clip-capable transcription provider, TTS output format and an application domain.
 4. Bring up microphone and playback independently, then connect the echo round trip.
 5. Implement the first confirmed health-note journey before adding the medication scheduler.

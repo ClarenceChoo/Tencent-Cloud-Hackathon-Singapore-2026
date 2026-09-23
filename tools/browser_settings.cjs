@@ -29,7 +29,7 @@ async function main() {
     await page.getByLabel('Email address').fill('owner@careloop.invalid');
     await page.getByLabel('Password', { exact: true }).fill('fictional-demo-only');
     await page.getByRole('button', { name: 'Continue' }).click();
-    await page.getByRole('button', { name: 'Add a care note', exact: true }).waitFor();
+    await page.getByRole('button', { name: 'Add entry', exact: true }).waitFor();
     session = await api('/auth/session');
     const patientId = session.patients[0].id;
     const dashboard = () => api(`/app/patients/${patientId}/dashboard`);

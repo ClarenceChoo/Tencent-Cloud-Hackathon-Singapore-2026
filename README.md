@@ -1,8 +1,10 @@
-# CareLoop — Tencent Cloud Hackathon Singapore 2026
+# Parse — Tencent Cloud Hackathon Singapore 2026
 
-CareLoop is a voice companion for older adults, built into the back of a 3D-printed transit/ID cardholder. The ESP32-S3 handles push-to-talk and playback; a FastAPI backend handles confirmed care records and speech-provider adapters; a responsive React dashboard supports the owner and permitted caregivers.
+Parse is a voice companion for older adults, built into the back of a 3D-printed transit/ID cardholder. The ESP32-S3 handles push-to-talk and playback; a FastAPI backend handles confirmed care records and speech-provider adapters; a responsive React dashboard supports the owner and permitted caregivers.
 
 The current delivery milestone is **software first**: a working dashboard, backend and device API using fictional development data. You can create checked medication plans, confirm care notes and reported readings, manage preventive tasks and support follow-ups, and review/share visit summaries before hardware arrives. Live speech requires provider credentials; assembled-cardholder validation belongs to the later integration stage. See [verification status](docs/careloop/VERIFICATION.md) for the evidence and remaining checks.
+
+The dashboard opens on a dated care timeline, with medication, note and reading filters, expandable records, and a side panel for upcoming doses, arranged visits and permitted care members. Its ivory and terracotta interface adapts to desktop and mobile. Scheduled doses remain separate from reported medication history; adding or correcting a care record still requires review and confirmation.
 
 ## Start the software demo
 

@@ -1,4 +1,4 @@
-# CareLoop verification and remaining acceptance work
+# Parse verification and remaining acceptance work
 
 The current user-requested milestone is **software first**: the local dashboard, backend and device API can be delivered and used with fictional data independently of cardholder availability. `python3 tools/run_demo.py` starts that local software demo. Live speech remains dependent on configured provider access.
 
@@ -8,7 +8,8 @@ This document separates executable software evidence from target-device acceptan
 
 - Software demo launcher: started both services with a fresh isolated SQLite database; the **10 browser workflow checks passed again** on this setup. A second launch refused occupied ports, Ctrl+C stopped both service listeners, and restarting preserved all table row counts. The demo is usable without hardware or cloud credentials; live voice remains explicitly unavailable until configured separately.
 - Backend: **44 tests passed on SQLite and 44 passed on PostgreSQL 15.14**, using mocked provider calls. PostgreSQL ran in a disposable, password-protected loopback cluster with a separate random schema per database-backed test. This does not validate the deployment container's PostgreSQL 17 image.
-- Dashboard: production build passed; **5 tests passed**, covering errors, date handling, confirmation and separation of scheduled doses from actual medication reports.
+- Dashboard: production build passed; **7 tests passed**, covering errors, date handling, confirmation, timeline filtering, patient-timezone grouping, read-only controls and separation of scheduled doses from actual medication reports.
+- Parse interface refresh: the terracotta timeline redesign passed the 10 main browser checks and the 3 software-only settings checks. All seven dashboard views were checked at 320, 390, 768, 1024 and 1440 px widths; narrow visit-summary date fields were fixed and rechecked. Desktop/mobile screenshots were inspected. These checks do not add hardware or live-provider validation.
 - Main browser scenario: **10 checks passed** against the running React/FastAPI application. A separate **30-event** local baseline measured **806 ms p50, 1,317 ms p95 and 1,321 ms maximum**, from confirmation-request start to visibility in an already-open dashboard. This includes request/commit time and uses headless desktop Chrome, loopback networking and fictional SQLite records. Target-phone/network acceptance remains unverified.
 - Focused browser scenario: **4 checks passed** for profile preferences, a separately created pending proposal, checked medication-plan revision, and device claim/revocation. The last check used a fictional credential against the API, not a physical cardholder.
 - Developer WAV harness: **8 loopback HTTP tests passed**, including a dropped upload acknowledgement, retry identity, resumed polling, expired/unavailable reply audio, redirect rejection and response limits. No live speech recognition was involved.

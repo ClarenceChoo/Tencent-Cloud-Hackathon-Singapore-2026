@@ -35,7 +35,7 @@ async function main() {
     await page.getByRole('dialog').waitFor({ state: 'hidden' });
   }
   async function composer(kind) {
-    await page.getByRole('button', { name: 'Add a care note', exact: true }).click();
+    await page.getByRole('button', { name: 'Add entry', exact: true }).click();
     await page.getByLabel('Type', { exact: true }).selectOption(kind);
   }
   async function proposal() {
@@ -48,7 +48,7 @@ async function main() {
       await page.getByLabel('Email address').fill('owner@careloop.invalid');
       await page.getByLabel('Password', { exact: true }).fill('fictional-demo-only');
       await page.getByRole('button', { name: 'Continue' }).click();
-      await page.getByRole('button', { name: 'Add a care note', exact: true }).waitFor();
+      await page.getByRole('button', { name: 'Add entry', exact: true }).waitFor();
       session = await api('/auth/session');
     });
     let note;
@@ -137,6 +137,7 @@ async function main() {
       assert(!(await caregiverNotes()).some(n => n.id === note.id));
       await nav('Timeline');
       const row = page.locator('.timeline-item').filter({ hasText: `${tag}: knee discomfort` });
+      if (!(await row.getByRole('button', { name: /Manage sharing/ }).isVisible())) await row.getByRole('button', { name: 'View', exact: true }).click();
       await row.getByRole('button', { name: /Manage sharing/ }).click();
       await page.getByRole('dialog').getByRole('checkbox', { name: /Fictional Jamie/ }).check();
       const shared = page.waitForResponse(r => r.url().endsWith(`/notes/${note.id}/sharing`) && r.request().method() === 'PUT');
@@ -144,6 +145,7 @@ async function main() {
       assert((await shared).ok());
       assert((await caregiverNotes()).some(n => n.id === note.id));
       await page.getByRole('dialog').waitFor({ state: 'hidden' });
+      if (!(await row.getByRole('button', { name: /Manage sharing/ }).isVisible())) await row.getByRole('button', { name: 'View', exact: true }).click();
       await row.getByRole('button', { name: /Manage sharing/ }).click();
       await page.getByRole('dialog').getByRole('checkbox', { name: /Fictional Jamie/ }).uncheck();
       const revoked = page.waitForResponse(r => r.url().endsWith(`/notes/${note.id}/sharing`) && r.request().method() === 'PUT');
@@ -214,7 +216,7 @@ async function main() {
       await publicPage.getByRole('heading', { name: 'This summary is unavailable' }).waitFor();
       await publicContext.close();
     });
-    await nav('Overview');
+    await nav('Timeline');
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({ path: path.join(output, 'dashboard-desktop.png'), fullPage: true });
     await step('Mobile viewport has no page overflow and exposes navigation', async () => {
@@ -222,7 +224,7 @@ async function main() {
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
       await page.getByRole('button', { name: 'Open menu' }).click();
       await nav('Timeline');
-      await page.waitForFunction(() => document.querySelector('aside.sidebar').getBoundingClientRect().right <= 0);
+      await page.getByRole('button', { name: 'Open menu' }).waitFor();
       await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({ path: path.join(output, 'timeline-mobile.png'), fullPage: false });
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));

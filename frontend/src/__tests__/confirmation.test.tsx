@@ -34,8 +34,8 @@ describe('care record confirmation', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await screen.findByRole('heading', { name: /care, together\./i });
-    await user.click(await screen.findByRole('button', { name: /add a care note/i }));
+    await screen.findByRole('heading', { name: /care timeline/i });
+    await user.click(await screen.findByRole('button', { name: /add entry/i }));
     await user.type(screen.getByLabelText('What would you like recorded?'), 'My knee aches after a walk.');
     await user.click(screen.getByRole('button', { name: /review proposal/i }));
     await screen.findByRole('dialog');

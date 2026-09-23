@@ -15,7 +15,7 @@ async function main() {
     await page.getByLabel('Email address').fill('owner@careloop.invalid');
     await page.getByLabel('Password', { exact: true }).fill('fictional-demo-only');
     await page.getByRole('button', { name: 'Continue' }).click();
-    await page.getByRole('button', { name: 'Add a care note', exact: true }).waitFor();
+    await page.getByRole('button', { name: 'Add entry', exact: true }).waitFor();
     await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Timeline', exact: true }).click();
     const session = await (await context.request.get('/v1/auth/session')).json();
     const headers = { Origin: origin, 'X-CSRF-Token': session.csrf_token };

@@ -1,10 +1,19 @@
 # Parse verification and remaining acceptance work
 
-The current user-requested milestone is **software first**: the local dashboard, backend and device API can be delivered and used with fictional data independently of cardholder availability. `python3 tools/run_demo.py` starts that local software demo. Live speech remains dependent on configured provider access.
+The software now includes guided hardware pairing and a private per-device setup pack in addition to the local dashboard, backend and device API. `python3 tools/run_demo.py` starts the software demo. Follow the [hardware pairing runbook](Hardware-Pairing-Runbook.md) for the server, supplier and first-unit steps. Live speech remains dependent on configured provider access.
 
 This document separates executable software evidence from target-device acceptance. The complete physical-prototype PRD definition of done has **not** been met. No physical device, live speech account, deployment domain, measured battery/acoustics or intended-user trial has been supplied for these later integration checks.
 
 ## Recorded results — 23 September 2026, Singapore time
+
+- Hardware-pairing update: **60 backend tests passed on SQLite and 60 on PostgreSQL 15.14**. New coverage includes simultaneous one-use claims, private provisioning/rollback, claim renewal, scoped diagnostics, heartbeat-derived status, disconnect and revocation.
+- Pairing UI: **10 frontend tests passed** and the production build passed. The added checks cover failed-code retention, duplicate submission prevention, paired/online distinction, honest voice status and revocation controls.
+- A new isolated real-browser scenario passed **7 checks**: claim, authenticated socket status, connection preflight, fixture WAV → read-back → confirmation → exactly one shared note in the already-open caregiver timeline, caregiver permissions, 320/390/768/1440 px layout, and disconnect/revocation. Desktop/mobile screenshots were inspected. Evidence is under ignored `runtime/pairing-check-20260923/`; no physical device or live ASR/TTS was involved.
+- The readiness client's **4 tests passed**, including a real loopback HTTP/WebSocket service, unauthorized access, redirect refusal and oversized responses. Its report explicitly leaves live speech and hardware unverified.
+- Espressif's v5.4.2 NVS generator accepted the private provisioning CSV and produced the expected `0x6000`-byte partition. Nothing was flashed to hardware.
+- The updated firmware, including the five-second boot gesture to change Wi-Fi while preserving credentials/ledger, compiled successfully. Native core tests passed. The new image size/hash and remaining 1% partition headroom are recorded in the firmware README; button behavior still needs bench verification.
+
+Earlier baseline checks below remain useful evidence for unchanged workflows:
 
 - Software demo launcher: started both services with a fresh isolated SQLite database; the **10 browser workflow checks passed again** on this setup. A second launch refused occupied ports, Ctrl+C stopped both service listeners, and restarting preserved all table row counts. The demo is usable without hardware or cloud credentials; live voice remains explicitly unavailable until configured separately.
 - Backend: **44 tests passed on SQLite and 44 passed on PostgreSQL 15.14**, using mocked provider calls. PostgreSQL ran in a disposable, password-protected loopback cluster with a separate random schema per database-backed test. This does not validate the deployment container's PostgreSQL 17 image.

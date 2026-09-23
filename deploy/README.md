@@ -27,12 +27,13 @@ docker compose --env-file deploy/.env exec \
   --email owner@example.com --name 'Demo owner' --role owner
 ```
 
-Replace the illustrative address and name. Create the patient, assign its owner, then provision a device. The device credential is shown once. Put it in the device's private NVS provisioning file; give the owner only its short-lived claim code. Keep development seed accounts out of this deployment.
+Replace the illustrative address and name. Create the patient, assign its owner, then use `prepare-device` to make a private per-unit NVS setup pack. The [pairing runbook](../docs/careloop/Hardware-Pairing-Runbook.md) includes the container command and secure handoff flow. Give the owner their setup sheet; keep the device credential with the flashing files. Keep development seed accounts out of this deployment.
 
 ## Deployment checks
 
 - `/healthz` responds over the actual HTTPS domain and the browser completes login, proposal and confirmation through the proxy.
 - An unclaimed/revoked device is rejected; a claimed device can upload a WAV and connect to WSS with its own Bearer credential.
+- Run `tools/check_hardware_ready.py` with the claimed unit's private NVS file against the actual HTTPS domain. It checks TLS, protocol, reconciliation and WSS; provider configuration and physical operation are reported separately.
 - A live synthetic sentence passes the configured ASR, interpreter and TTS providers. Confirm the resulting WAV is intelligible on the assembled device.
 - Restart the backend during a turn/reminder and reconcile the durable state without duplicate care records or replaying expired commands.
 - Verify the target phone/hotspot, latency, audio and power measurements specified by the PRD.

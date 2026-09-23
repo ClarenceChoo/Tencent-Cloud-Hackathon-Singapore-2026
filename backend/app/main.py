@@ -2,7 +2,7 @@ import asyncio
 import json
 import secrets
 from contextlib import asynccontextmanager
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Dict, Optional, Set
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -10,13 +10,14 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from . import models as m
 from .config import Settings, get_settings
 from .database import Database
+from .device_setup import device_status, service_readiness, PROTOCOL
 from .schemas import (
     DeviceAck,
     DeviceClaim,
@@ -72,16 +73,29 @@ MISSING_CALLING_ROUTE = "No calling route is configured. Use your usual local su
 class SocketRegistry:
     def __init__(self):
         self.connections: Dict[str, Set[WebSocket]] = {}
+        self.heartbeats: Dict[WebSocket, datetime] = {}
 
     def add(self, device_id: str, websocket: WebSocket) -> None:
         self.connections.setdefault(device_id, set()).add(websocket)
 
     def remove(self, device_id: str, websocket: WebSocket) -> None:
         self.connections.get(device_id, set()).discard(websocket)
+        self.heartbeats.pop(websocket, None)
+
+    def heartbeat(self, websocket: WebSocket) -> None:
+        self.heartbeats[websocket] = utcnow()
+
+    def active_ids(self) -> set[str]:
+        cutoff = utcnow() - timedelta(seconds=PROTOCOL['offline_after_seconds'])
+        connections = [(key, tuple(value)) for key, value in list(self.connections.items())]
+        return {key for key, sockets in connections if any(
+            (seen := self.heartbeats.get(socket)) is not None and seen >= cutoff
+            for socket in sockets)}
 
     async def close_device(self, device_id: str) -> None:
         sockets = list(self.connections.pop(device_id, set()))
         for websocket in sockets:
+            self.heartbeats.pop(websocket, None)
             try:
                 await websocket.close(code=4403, reason="Device revoked")
             except Exception:
@@ -133,7 +147,7 @@ def _proposal_visible(proposal: m.ConfirmationProposal, user_id: str, scopes: li
     return False
 
 
-def _dashboard(db: Session, patient: m.Patient, scopes: list, viewer_user_id: str) -> dict:
+def _dashboard(db: Session, patient: m.Patient, scopes: list, viewer_user_id: str, connected_ids: set[str]) -> dict:
     all_access = "*" in scopes or "read:dashboard" in scopes
 
     def allowed(name: str) -> bool:
@@ -181,7 +195,7 @@ def _dashboard(db: Session, patient: m.Patient, scopes: list, viewer_user_id: st
 
     return {
         "patient": {"id": patient.id, "name": patient.name, "preferred_name": patient.preferred_name, "timezone": patient.timezone, "language": patient.language, "daily_check_in_enabled": patient.daily_check_in_enabled, "daily_check_in_local_time": patient.daily_check_in_local_time, "calling_route": patient.calling_route},
-        "devices": [{"id": item.id, "status": ("revoked" if item.revoked_at else "connected" if item.last_seen and now - aware(item.last_seen) <= timedelta(seconds=15) else "stale"), "last_seen": iso(item.last_seen), "battery_mv": item.battery_mv, "rssi": item.rssi, "firmware_version": item.firmware_version, "revoked_at": iso(item.revoked_at)} for item in devices],
+        "devices": [device_status(item, connected_ids) for item in devices],
         "medication_plans": [plan_dict(item) for item in plans],
         "doses": [{"id": item.id, "plan_version": item.plan_version, "medicine_id": item.medicine_id, "medicine_name": item.medicine_name, "scheduled_at": iso(item.scheduled_at), "delivery_state": command_by_dose[item.id].delivery_state if item.id in command_by_dose else "not_queued", "report_state": item.report_state, "report_time": iso(item.report_time), "taken_time_text": item.taken_time_text} for item in doses],
         "notes": [{"id": item.id, "wording": item.wording, "symptom": item.symptom, "occurrence_text": item.occurrence_text, "occurred_at": iso(item.occurred_at), "timezone": item.timezone, "created_at": iso(item.created_at), "shared_with_user_ids": item.shared_with_user_ids if "*" in scopes or "manage:sharing" in scopes else [viewer_user_id], "version": item.version} for item in notes],
@@ -258,7 +272,11 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         patient = db.get(m.Patient, patient_id)
         if not patient:
             raise HTTPException(status_code=403, detail="Patient access is not permitted")
-        return _dashboard(db, patient, scopes, user.id)
+        connected = request.app.state.sockets.active_ids()
+        result = _dashboard(db, patient, scopes, user.id, connected)
+        if any(scope in scopes for scope in ('*', 'manage:devices', 'read:devices', 'read:dashboard')):
+            result['device_setup'] = service_readiness(request.app)
+        return result
 
     @app.post("/v1/app/patients/{patient_id}/proposals", status_code=201)
     def proposal_create(patient_id: str, data: ProposalCreate, request: Request, db: Session = Depends(get_db)):
@@ -372,10 +390,17 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
             db.add(m.AuditEvent(actor_type="user", actor_id=user.id, patient_id=data.patient_id, action="device.claim_failed", details={}))
             db.commit()
             raise HTTPException(status_code=400, detail="Claim code is invalid, expired, or already used")
-        device.patient_id = data.patient_id
-        device.claimed_at = utcnow()
-        device.claim_code_hash = None
-        device.claim_expires_at = None
+        # Compare-and-set prevents the same code binding two patients concurrently.
+        claimed = db.execute(update(m.Device).where(
+            m.Device.id == device.id,
+            m.Device.claim_code_hash == sha256(data.code.strip().upper()),
+            m.Device.patient_id.is_(None), m.Device.claimed_at.is_(None),
+            m.Device.revoked_at.is_(None), m.Device.claim_expires_at > utcnow(),
+        ).values(patient_id=data.patient_id, claimed_at=utcnow(), claim_code_hash=None,
+                 claim_expires_at=None).execution_options(synchronize_session=False))
+        if claimed.rowcount != 1:
+            db.rollback()
+            raise HTTPException(status_code=409, detail='This device code has already been used. Refresh device settings.')
         db.add(m.AuditEvent(actor_type="user", actor_id=user.id, patient_id=data.patient_id, action="device.claimed", object_type="device", object_id=device.id, details={}))
         db.commit()
         return {"device_id": device.id, "status": "claimed"}
@@ -561,6 +586,12 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
             raise HTTPException(status_code=410, detail="Shared summary is no longer available")
         patient = db.get(m.Patient, summary.patient_id)
         return {"patient": {"name": patient.name}, "summary": summary_dict(summary, public=True), "read_only": True}
+
+    @app.get('/v1/device/info')
+    def device_info(request: Request, authorization: Optional[str] = Header(default=None), db: Session = Depends(get_db)):
+        device = authenticate_device_header(db, authorization)
+        return {'device_id': device.id, 'pairing_state': 'paired', 'server_time': iso(utcnow()),
+                **service_readiness(request.app)}
 
     @app.post("/v1/device/turns", status_code=202)
     async def device_turn(request: Request, background: BackgroundTasks, authorization: Optional[str] = Header(default=None), idempotency_key: Optional[str] = Header(default=None, alias="Idempotency-Key"), context_id: Optional[str] = Header(default=None, alias="X-Context-Id"), db: Session = Depends(get_db)):
@@ -757,6 +788,9 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
                 if heartbeat.firmware_version is not None:
                     fresh.firmware_version = heartbeat.firmware_version
                 db.commit()
+                websocket.app.state.sockets.heartbeat(websocket)
+                await websocket.send_json({'protocol_version': PROTOCOL['version'], 'type': 'heartbeat.ack',
+                                           'device_id': device.id, 'server_time': iso(fresh.last_seen)})
         except HTTPException as exc:
             await websocket.close(code=4401 if exc.status_code == 401 else 4403, reason=exc.detail)
         except WebSocketDisconnect:

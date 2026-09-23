@@ -3,10 +3,17 @@ export type Patient = { id: string; name: string; timezone: string; preferred_na
 export type Session = { user: User; patients: Patient[]; csrf_token: string };
 export type Proposal = { id: string; kind: string; payload: Record<string, unknown>; readback: string; status: string; expires_at?: string };
 export type Row = Record<string, unknown> & { id?: string };
+export type DeviceSetupStatus = {
+  service_address: string | null;
+  voice_service: 'unconfigured' | 'configured' | 'simulated' | 'invalid_configuration';
+  live_voice_verified: boolean;
+  scheduler_enabled: boolean;
+};
 export type Dashboard = {
   patient: Patient & Record<string, unknown>;
   devices: Row[]; medication_plans: Row[]; doses: Row[]; notes: Row[]; measurements: Row[];
   preventive_tasks: Row[]; support_requests: Row[]; followups: Row[]; proposals: Proposal[]; permissions: string[]; access_grants: Row[]; allowed_recipients: Row[]; summaries: Row[];
+  device_setup?: DeviceSetupStatus;
 };
 
 let csrfToken = '';

@@ -28,6 +28,8 @@ Content-Type: application/json
 
 `GET /v1/app/patients/{patient_id}/dashboard`
 
+Callers with device/dashboard access also receive `device_setup`: `service_address`, `voice_service` (`unconfigured`, `configured`, `simulated`, `invalid_configuration`), `live_voice_verified:false`, `scheduler_enabled` and `protocol`. `configured` describes provider settings only; it is not evidence of a successful live call. Device status is `awaiting_connection` before any contact, `connected` only while an authenticated socket has a fresh heartbeat, `stale` after disconnect or heartbeat timeout, and `revoked` after access is removed. A previous upload timestamp alone cannot make a device connected.
+
 ```json
 {
   "patient": {"id":"pat_…","name":"Fictional Mei Tan","preferred_name":"Mei","timezone":"Asia/Singapore","language":"en","daily_check_in_enabled":true,"daily_check_in_local_time":"09:00","calling_route":"Call the configured family number"},
@@ -124,6 +126,8 @@ The normalized summary schema is `sections:[{"title":"Reported measurements","it
 
 Every device HTTPS call uses `Authorization: Bearer <unique device credential>`. Credentials never appear in URLs. Revoked or unclaimed credentials are rejected. Device identity and patient identity are always derived from the credential binding.
 
+`GET /v1/device/info` returns the bound `device_id`, `pairing_state:"paired"`, `server_time`, and the same connection/provider configuration facts in `device_setup`. It includes no patient records or credential. Protocol v1 is Wi-Fi, mono 16 kHz signed 16-bit PCM WAV, 0.3–20 seconds, with a 768 KiB upload limit, a 5-second heartbeat target and a 15-second stale threshold. This endpoint is used by `tools/check_hardware_ready.py` before physical acceptance.
+
 `POST /v1/device/turns` requires `Content-Type: audio/wav`, UUID `Idempotency-Key`, and optional `X-Context-Id`. The body must be mono signed 16-bit PCM WAV at 16 kHz, 0.3–20 seconds, at most 768 KiB.
 
 ```json
@@ -148,7 +152,7 @@ Same key, bytes, and context returns the same turn even after that turn committe
 
 `POST /v1/device/acks` body `{"ack_id":"<UUID>","command_id":"cmd_…","stage":"received|playback_started|playback_completed|interrupted|failed|expired","device_time":"…"}` is idempotent for medication reminders and check-ins. `playback_started` is rejected for a stale medication plan. Playback state does not modify the dose report state.
 
-`WSS /v1/device/events` uses the same Bearer header. Events use the command envelopes above or `type:"turn.result"`. Device messages are `{"type":"heartbeat","battery_mv":3950,"rssi":-55,"firmware_version":"0.1.0"}`. Heartbeats update last seen; sockets receive due durable outbox events. Five seconds is the demo heartbeat target and 15 seconds marks a dashboard connection stale. Every outbound WSS event and the complete pending-commands response is capped at 16 KiB; the server closes an oversize WSS event with code `4400` and fails an oversize polling response closed.
+`WSS /v1/device/events` uses the same Bearer header. Events use the command envelopes above or `type:"turn.result"`. Device messages are `{"type":"heartbeat","battery_mv":3950,"rssi":-55,"firmware_version":"0.1.0"}`. Optional measurements may be omitted. The server replies `{"protocol_version":1,"type":"heartbeat.ack","device_id":"dev_…","server_time":"…"}` after committing each heartbeat. Firmware may ignore that additive event; connection-check tools use it to verify the authenticated channel. Sockets also receive due durable outbox events. Five seconds is the demo heartbeat target and 15 seconds marks a dashboard connection stale; a closed socket is offline immediately when the server observes closure. Every outbound WSS event and the complete pending-commands response is capped at 16 KiB; the server closes an oversize WSS event with code `4400` and fails an oversize polling response closed.
 
 ## Errors
 

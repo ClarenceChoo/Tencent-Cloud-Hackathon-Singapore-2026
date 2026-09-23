@@ -268,7 +268,7 @@ Persist a small command ledger before playback starts so redelivery does not rep
 
 AI output is an untrusted draft validated against a schema and allowlisted intents. Confirmations, permissions, scheduling and database writes are application logic. Medication explanations retrieve the active source text; uploaded documents and speech cannot override system permissions. Care summaries label observations as reported and link each assertion to entries. Backend services never put a patient's entire record into a prompt merely because it is available.
 
-The phone obtains initial data over authenticated HTTPS, receives event notifications, and refetches affected records. A closed/background browser is not a guaranteed caregiver notification channel in P0. Acknowledgement in the open dashboard is a human action, not a network delivery receipt.
+The implemented phone dashboard obtains data over authenticated HTTPS and quietly polls approximately once per second while visible. WSS commands go to the pendant. A closed/background browser is not a guaranteed caregiver notification channel in P0. Acknowledgement in the open dashboard is a human action, not a network delivery receipt.
 
 Measurements use confirmed external readings reported by the patient; the pendant is not a measurement sensor. Plot dated values with units and sample count, preserve missing data, and avoid mixing incompatible types or units. One reading is a single observation, not a trend. A correction supersedes the original value and invalidates affected summary drafts.
 
@@ -301,9 +301,9 @@ Before hardware arrives, use a developer API test harness to upload WAV fixtures
 ## 13. Immediate engineering decisions
 
 1. Ask the supplier to freeze the exact BOM, GPIO map, USB access and power diagram before assembly.
-2. Create the backend echo endpoint and a developer API test harness while preparing firmware for the selected ESP32 board.
+2. Follow the [pairing runbook](Hardware-Pairing-Runbook.md) to deploy the implemented backend and prepare each unit's private NVS pack. The WAV harness and browser pairing fixture now exercise the transport before hardware arrives.
 3. Confirm Tencent account access, a clip-capable transcription provider, TTS output format and an application domain.
 4. Bring up microphone and playback independently, then connect the echo round trip.
-5. Implement the first confirmed health-note journey before adding the medication scheduler.
+5. Run the implemented confirmed-note and medication-scheduler journeys on the real cardholder, recording the bench results.
 
-No live endpoint or firmware is supplied by this document; implementation and bench validation are the next work stage.
+Firmware source, the private provisioning CLI, pairing UI and transport checks are implemented in this repository. A public deployment, configured live providers, supplier-specific firmware configuration and physical acceptance remain the next integration steps. Compiled default-pin firmware is not an image approved for an unknown board.

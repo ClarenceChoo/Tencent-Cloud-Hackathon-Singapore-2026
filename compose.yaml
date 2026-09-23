@@ -1,0 +1,60 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: careloop
+      POSTGRES_USER: careloop
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the deployment environment}
+    volumes:
+      - database:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U careloop -d careloop"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+  backend:
+    build:
+      context: .
+      dockerfile: deploy/backend.Dockerfile
+    environment:
+      CARELOOP_DATABASE_URL: postgresql+psycopg://careloop:${POSTGRES_PASSWORD}@db:5432/careloop
+      CARELOOP_ALLOWED_ORIGINS: '["https://${CARELOOP_DOMAIN:?Set CARELOOP_DOMAIN}"]'
+      CARELOOP_COOKIE_SECURE: "true"
+      CARELOOP_DEVELOPMENT_SEED: "false"
+      CARELOOP_TESTING: "false"
+      CARELOOP_PROVIDER: ${CARELOOP_PROVIDER:-unconfigured}
+      TENCENT_SECRET_ID: ${TENCENT_SECRET_ID:-}
+      TENCENT_SECRET_KEY: ${TENCENT_SECRET_KEY:-}
+      TENCENT_SESSION_TOKEN: ${TENCENT_SESSION_TOKEN:-}
+      CARELOOP_ASR_HOST: ${CARELOOP_ASR_HOST:-asr.tencentcloudapi.com}
+      CARELOOP_ASR_ENGINE: ${CARELOOP_ASR_ENGINE:-16k_en}
+      CARELOOP_TTS_HOST: ${CARELOOP_TTS_HOST:-tts.intl.tencentcloudapi.com}
+      CARELOOP_TTS_VOICE_TYPE: ${CARELOOP_TTS_VOICE_TYPE:-}
+      CARELOOP_TTS_PRIMARY_LANGUAGE: ${CARELOOP_TTS_PRIMARY_LANGUAGE:-2}
+      CARELOOP_LLM_BASE_URL: ${CARELOOP_LLM_BASE_URL:-}
+      CARELOOP_LLM_MODEL: ${CARELOOP_LLM_MODEL:-}
+      CARELOOP_LLM_API_KEY: ${CARELOOP_LLM_API_KEY:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+  web:
+    build:
+      context: .
+      dockerfile: deploy/web.Dockerfile
+    environment:
+      CARELOOP_DOMAIN: ${CARELOOP_DOMAIN:?Set CARELOOP_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+    restart: unless-stopped
+volumes:
+  database:
+  caddy_data:
+  caddy_config:

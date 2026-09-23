@@ -1,0 +1,44 @@
+menu "CareLoop hardware (supplier must confirm every pin)"
+config CARELOOP_MIC_BCLK_GPIO
+    int "INMP441 BCLK GPIO (-1 disables microphone)"
+    default -1
+config CARELOOP_MIC_WS_GPIO
+    int "INMP441 WS GPIO (-1 disables microphone)"
+    default -1
+config CARELOOP_MIC_DATA_GPIO
+    int "INMP441 SD GPIO (-1 disables microphone)"
+    default -1
+config CARELOOP_MIC_LEFT_CHANNEL
+    bool "INMP441 selected channel is left"
+    default y
+config CARELOOP_SPK_BCLK_GPIO
+    int "MAX98357A BCLK GPIO (-1 disables speaker)"
+    default -1
+config CARELOOP_SPK_WS_GPIO
+    int "MAX98357A LRC GPIO (-1 disables speaker)"
+    default -1
+config CARELOOP_SPK_DATA_GPIO
+    int "MAX98357A DIN GPIO (-1 disables speaker)"
+    default -1
+config CARELOOP_AMP_ENABLE_GPIO
+    int "Amplifier enable GPIO (-1 if no enable pin)"
+    default -1
+config CARELOOP_AMP_ENABLE_ACTIVE_HIGH
+    bool "Amplifier enable is active high"
+    default y
+config CARELOOP_PTT_GPIO
+    int "Push-to-talk GPIO (-1 disables button)"
+    default -1
+config CARELOOP_PTT_ACTIVE_LOW
+    bool "Push-to-talk is active low"
+    default y
+config CARELOOP_HAPTIC_GPIO
+    int "Motor-driver enable GPIO (-1 disables haptics)"
+    default -1
+config CARELOOP_HAPTIC_ACTIVE_HIGH
+    bool "Motor-driver enable is active high"
+    default y
+config CARELOOP_BATTERY_ADC_GPIO
+    int "Battery-sense GPIO (-1 if unavailable)"
+    default -1
+endmenu

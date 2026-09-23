@@ -1,0 +1,12 @@
+{
+  "name": "careloop-browser-checks",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Real browser checks against a fictional local CareLoop database",
+  "scripts": {
+    "test": "node browser_smoke.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}

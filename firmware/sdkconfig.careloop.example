@@ -1,0 +1,13 @@
+# Copy to sdkconfig.defaults or set these in idf.py menuconfig only after the
+# supplier signs off the board revision and electrical connection map. Never
+# assume these demonstration placeholders match a production board.
+CONFIG_CARELOOP_MIC_BCLK_GPIO=-1
+CONFIG_CARELOOP_MIC_WS_GPIO=-1
+CONFIG_CARELOOP_MIC_DATA_GPIO=-1
+CONFIG_CARELOOP_SPK_BCLK_GPIO=-1
+CONFIG_CARELOOP_SPK_WS_GPIO=-1
+CONFIG_CARELOOP_SPK_DATA_GPIO=-1
+CONFIG_CARELOOP_AMP_ENABLE_GPIO=-1
+CONFIG_CARELOOP_PTT_GPIO=-1
+CONFIG_CARELOOP_HAPTIC_GPIO=-1
+CONFIG_CARELOOP_BATTERY_ADC_GPIO=-1

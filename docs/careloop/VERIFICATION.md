@@ -1,9 +1,12 @@
 # CareLoop verification and remaining acceptance work
 
-This document separates executable software evidence from target-device acceptance. The complete PRD definition of done has **not** been met. No physical device, live speech account, deployment domain, measured battery/acoustics or intended-user trial has been supplied for these checks.
+The current user-requested milestone is **software first**: the local dashboard, backend and device API can be delivered and used with fictional data independently of cardholder availability. `python3 tools/run_demo.py` starts that local software demo. Live speech remains dependent on configured provider access.
+
+This document separates executable software evidence from target-device acceptance. The complete physical-prototype PRD definition of done has **not** been met. No physical device, live speech account, deployment domain, measured battery/acoustics or intended-user trial has been supplied for these later integration checks.
 
 ## Recorded results — 23 September 2026, Singapore time
 
+- Software demo launcher: started both services with a fresh isolated SQLite database; the **10 browser workflow checks passed again** on this setup. A second launch refused occupied ports, Ctrl+C stopped both service listeners, and restarting preserved all table row counts. The demo is usable without hardware or cloud credentials; live voice remains explicitly unavailable until configured separately.
 - Backend: **44 tests passed on SQLite and 44 passed on PostgreSQL 15.14**, using mocked provider calls. PostgreSQL ran in a disposable, password-protected loopback cluster with a separate random schema per database-backed test. This does not validate the deployment container's PostgreSQL 17 image.
 - Dashboard: production build passed; **5 tests passed**, covering errors, date handling, confirmation and separation of scheduled doses from actual medication reports.
 - Main browser scenario: **10 checks passed** against the running React/FastAPI application. A separate **30-event** local baseline measured **806 ms p50, 1,317 ms p95 and 1,321 ms maximum**, from confirmation-request start to visibility in an already-open dashboard. This includes request/commit time and uses headless desktop Chrome, loopback networking and fictional SQLite records. Target-phone/network acceptance remains unverified.

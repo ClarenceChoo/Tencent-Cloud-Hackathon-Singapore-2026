@@ -2,6 +2,12 @@
 
 These tools exercise implementation contracts with fictional data. The product voice client remains the ESP32 cardholder.
 
+## Software demo
+
+After installing backend and frontend dependencies, run `python3 tools/run_demo.py` from the repository root. This macOS/Linux launcher starts the dashboard at `http://127.0.0.1:5173`, with the backend on port 8001. Both bind only to loopback. Choose alternate ports with `--web-port` and `--api-port`; an occupied port is reported without stopping its existing service.
+
+The launcher uses a separate, persistent fictional database under `runtime/software-demo/`, explicitly disables live providers, and saves one-time seed device credentials to a private file rather than printing them. Ctrl+C stops its service processes and keeps the demo records. This is the software-first workflow; it does not require a cardholder, Docker or cloud account. Use the separate provider/deployment setup when ready to test live voice.
+
 ## Resumable WAV transport
 
 `device_harness.py` uses Python's standard library. Export `CARELOOP_DEVICE_TOKEN` securely in your terminal environment, then upload a deliberate 0.3–20 second mono 16-bit PCM WAV at 16 kHz:

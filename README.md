@@ -2,7 +2,19 @@
 
 CareLoop is a voice companion for older adults, built into the back of a 3D-printed transit/ID cardholder. The ESP32-S3 handles push-to-talk and playback; a FastAPI backend handles confirmed care records and speech-provider adapters; a responsive React dashboard supports the owner and permitted caregivers.
 
-This is an engineering prototype using fictional development data. The firmware compiles, but the assembled cardholder, live cloud services and target-network acceptance still need testing. See [verification status](docs/careloop/VERIFICATION.md) for evidence and outstanding work.
+The current delivery milestone is **software first**: a working dashboard, backend and device API using fictional development data. You can create checked medication plans, confirm care notes and reported readings, manage preventive tasks and support follow-ups, and review/share visit summaries before hardware arrives. Live speech requires provider credentials; assembled-cardholder validation belongs to the later integration stage. See [verification status](docs/careloop/VERIFICATION.md) for the evidence and remaining checks.
+
+## Start the software demo
+
+Install dependencies once with `uv sync --frozen --extra test` inside `backend/` and `npm ci` inside `frontend/`. Then run this from the repository root:
+
+```sh
+python3 tools/run_demo.py
+```
+
+Open **http://127.0.0.1:5173**. Sign in as `owner@careloop.invalid` with password `fictional-demo-only`. The caregiver account is `caregiver@careloop.invalid` / `fictional-caregiver-only`.
+
+The launcher starts both services, seeds fictional accounts, keeps demo records in the ignored `runtime/software-demo/` directory, and preserves them between runs. It uses backend port 8001 and dashboard port 5173; change these with `--api-port` and `--web-port` if occupied. Ctrl+C stops the demo. Existing databases, environment files and other running services are left untouched. Voice providers are explicitly unconfigured in this local demo; the device API remains available for development.
 
 ## Run the software locally
 

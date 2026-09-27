@@ -62,3 +62,16 @@ it('approves an expiring phone code through the phone flow and labels phone iden
   expect(screen.getByText('Parse phone · Mei iPhone')).toBeTruthy();
   expect(screen.getByText(/code expires after ten minutes/)).toBeTruthy();
 });
+
+it('separates saved push registration from foreground presence and local alert coverage',()=>{
+  const props={canManage:true,onClaim:vi.fn(),onRevoke:vi.fn()};
+  const phone={id:'phone1',device_type:'phone',platform:'ios',display_name:'Mei iPhone',status:'stale',phone_presence:{foreground_ready:false,last_reported_lifecycle:'background',notification_permission:'granted',background_alerts_enabled:true,scheduled_until:'2026-09-28T00:00:00Z',push_registered:false}};
+  const {rerender}=render(<DeviceSetup data={{...data,devices:[phone]}} {...props}/>);
+  expect(screen.getByText('Last reported in background')).toBeTruthy();
+  expect(screen.getByText('Enabled · delivery subject to OS settings')).toBeTruthy();
+  expect(screen.getByText('Not registered')).toBeTruthy();
+  expect(screen.queryByText('Online',{selector:'.pairing-state'})).toBeNull();
+  rerender(<DeviceSetup data={{...data,devices:[{...phone,phone_presence:{...phone.phone_presence,push_registered:true}}]}} {...props}/>);
+  expect(screen.getByText('Registered · delivery depends on phone settings')).toBeTruthy();
+  expect(screen.queryByText('Online',{selector:'.pairing-state'})).toBeNull();
+});

@@ -198,6 +198,33 @@ def schedule(
 class Registration(BaseModel):
     model_config = ConfigDict(extra="forbid")
     token: str | None = Field(default=None, max_length=240)
+    expected_version: int = Field(ge=0)
+    expected_route_generation: int = Field(ge=0)
+
+
+def registration_view(db, device, settings):
+    state = db.get(m.PhoneState, device.id)
+    return {
+        "device_id": device.id,
+        "registered": bool(state and state.push_token and not state.push_disabled_at),
+        "push_configured": settings.expo_push_enabled,
+        "version": state.push_version if state else 0,
+        "disabled": bool(state and state.push_disabled_at),
+        "notification_permission": state.notification_permission if state else "unknown",
+        "active_companion": route_view(db, device.patient_id),
+    }
+
+
+@router.get("/notification-registration")
+def registration_status(
+    request: Request,
+    response: Response,
+    authorization: str | None = Header(default=None),
+    db=Depends(phone_db),
+):
+    device = authenticate_phone(db, authorization)
+    response.headers["Cache-Control"] = "private, no-store"
+    return registration_view(db, device, request.app.state.settings)
 
 
 @router.put("/notification-registration")
@@ -217,6 +244,14 @@ def register(
     ):
         raise HTTPException(422, "Invalid Expo push token")
     state = state_for(db, device)
+    route = route_view(db, device.patient_id)
+    if state.push_version != data.expected_version or route["generation"] != data.expected_route_generation:
+        raise HTTPException(409, "Notification registration changed; refresh before retrying")
+    if data.token and (
+        route["device_id"] != device.id
+        or state.notification_permission not in {"granted", "provisional"}
+    ):
+        raise HTTPException(409, "Select this phone and enable notification permission before registering push")
     if state.push_token != data.token or state.push_disabled_at:
         invalidate_notifications(db, device.id)
         state.push_token = data.token
@@ -231,11 +266,7 @@ def register(
         raise HTTPException(
             409, "This notification token is registered to another installation"
         )
-    return {
-        "registered": bool(state.push_token),
-        "push_configured": request.app.state.settings.expo_push_enabled,
-        "version": state.push_version,
-    }
+    return registration_view(db, device, request.app.state.settings)
 
 
 class Presence(BaseModel):

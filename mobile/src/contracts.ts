@@ -111,3 +111,13 @@ export type LedgerEntry = {
   ackIds: Partial<Record<PlaybackStage, string>>;
   terminalAck?: "recorded" | "rejected";
 };
+
+export type PushRegistration = {
+  device_id: string;
+  registered: boolean;
+  push_configured: boolean;
+  version: number;
+  disabled: boolean;
+  notification_permission: string;
+  active_companion: { device_id: string | null; generation: number };
+};

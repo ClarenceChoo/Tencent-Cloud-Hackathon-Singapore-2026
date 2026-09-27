@@ -10,6 +10,7 @@ import type {
   Reminder,
   ReminderSchedule,
   PlaybackStage,
+  PushRegistration,
 } from "./contracts";
 import { audioPath } from "./validation";
 import { ApiError } from "./errors";
@@ -173,13 +174,22 @@ export class PhoneApi {
       body: JSON.stringify(body),
     });
   }
-  registerPush(token: string | null) {
-    return this.request<{ registered: boolean; push_configured: boolean }>(
+  pushRegistration() {
+    return this.request<PushRegistration>(
+      "/v1/phone/notification-registration",
+    );
+  }
+  registerPush(token: string | null, state: PushRegistration) {
+    return this.request<PushRegistration>(
       "/v1/phone/notification-registration",
       {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
+        body: JSON.stringify({
+          token,
+          expected_version: state.version,
+          expected_route_generation: state.active_companion.generation,
+        }),
       },
     );
   }

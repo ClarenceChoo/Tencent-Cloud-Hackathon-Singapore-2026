@@ -71,8 +71,11 @@ def presence(client, headers, permission="granted"):
 
 def register(client, headers, token="ExpoPushToken[fixture_test_token_1234]"):
     assert presence(client, headers).status_code == 200
+    state = client.get("/v1/phone/notification-registration", headers=headers).json()
     result = client.put(
-        "/v1/phone/notification-registration", headers=headers, json={"token": token}
+        "/v1/phone/notification-registration", headers=headers,
+        json={"token": token, "expected_version": state["version"],
+              "expected_route_generation": state["active_companion"]["generation"]}
     )
     assert result.status_code == 200, result.text
     return result
@@ -357,3 +360,65 @@ def test_phone_presence_is_separate_from_background_alert_capability(phone):
         device["status"] == "connected" and device["phone_presence"]["foreground_ready"]
     )
     assert "fixture_test_token" not in json.dumps(dashboard)
+
+
+def registration_body(state, token="ExpoPushToken[refreshed_fixture_token]"):
+    return {"token": token, "expected_version": state["version"],
+            "expected_route_generation": state["active_companion"]["generation"]}
+
+
+def test_registration_readback_is_private_and_requires_current_permission_and_route(phone):
+    client, app, ids, headers = phone
+    path = "/v1/phone/notification-registration"
+    empty = client.get(path, headers=headers)
+    assert empty.status_code == 200 and empty.headers["cache-control"] == "private, no-store"
+    assert empty.json()["device_id"] == ids["phone"] and not empty.json()["registered"]
+    assert client.put(path, headers=headers, json=registration_body(empty.json())).status_code == 409
+    assert client.put(path, headers=headers, json={"token": "ExpoPushToken[missing_version_token]"}).status_code == 422
+    registered = register(client, headers).json()
+    restored = client.get(path, headers=headers).json()
+    assert restored == registered and restored["registered"]
+    assert "fixture_test_token" not in str(restored) and "push_token" not in restored
+    assert client.get(path).status_code == 401
+    assert client.get(path, headers={"Authorization": "Bearer " + ids["credential"]}).status_code == 403
+    owner = login(client)
+    assert client.post("/v1/app/devices/" + ids["phone"] + "/revoke", headers=owner).status_code == 200
+    assert client.get(path, headers=headers).status_code == 403
+
+
+def test_registration_delayed_write_cannot_override_denial_or_quiescence(phone):
+    client, app, ids, headers = phone
+    path = "/v1/phone/notification-registration"
+    state = register(client, headers).json()
+    assert presence(client, headers, "denied").status_code == 200
+    assert client.put(path, headers=headers, json=registration_body(state)).status_code == 409
+    denied = client.get(path, headers=headers).json()
+    assert denied["disabled"] and not denied["registered"]
+    assert client.put(path, headers=headers, json=registration_body(denied)).status_code == 409
+    state = register(client, headers).json()
+    assert client.post("/v1/phone/quiesce", headers=headers,
+        json={"playback_stopped": True, "local_alerts_cleared": True}).status_code == 200
+    assert client.put(path, headers=headers, json=registration_body(state)).status_code == 409
+    paused = client.get(path, headers=headers).json()
+    assert not paused["registered"] and paused["active_companion"]["device_id"] is None
+    assert client.put(path, headers=headers, json=registration_body(paused)).status_code == 409
+
+
+def test_concurrent_token_replacements_use_version_compare_and_set(phone):
+    from concurrent.futures import ThreadPoolExecutor
+    client, app, ids, headers = phone
+    state = register(client, headers).json()
+    path = "/v1/phone/notification-registration"
+    tokens = ["ExpoPushToken[replacement_token_one]", "ExpoPushToken[replacement_token_two]"]
+    def write(token):
+        return client.put(path, headers=headers, json=registration_body(state, token)).status_code
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        assert sorted(pool.map(write, tokens)) == [200, 409]
+    current = client.get(path, headers=headers).json()
+    assert current["registered"] and current["version"] == state["version"] + 1
+    with app.state.db.SessionLocal() as db:
+        assert db.get(m.PhoneState, ids["phone"]).push_token in tokens
+    # Even a delayed unregister cannot erase a newer replacement.
+    assert client.put(path, headers=headers, json=registration_body(state, None)).status_code == 409
+    assert client.put(path, headers=headers, json=registration_body(current, None)).status_code == 200
+    assert not client.get(path, headers=headers).json()["registered"]

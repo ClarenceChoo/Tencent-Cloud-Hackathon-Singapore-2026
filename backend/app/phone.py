@@ -172,6 +172,8 @@ def quiesce(data: Quiescence, response: Response,
     if not device:
         raise HTTPException(401, "Paired phone installation not found")
     pause_phone(db, device)
+    from .notification_api import invalidate_notifications
+    invalidate_notifications(db, device.id)
     db.commit()
     response.headers["Cache-Control"] = "private, no-store"
     return {"status": "paused"}

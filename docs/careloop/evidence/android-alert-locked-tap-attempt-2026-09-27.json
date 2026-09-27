@@ -1,0 +1,10 @@
+{
+  "at_host_ms": 1790511288059,
+  "identity": "parse.dev_5b702870fa704c5bb3ccebad18bb433b.occ_9b6539ddbdc54b1bacdace9158023474.g3",
+  "dose_id": "dose_1ee7e3ec45b047febdfec221df5f3309",
+  "method": "Resume the same still-posted alert; re-enter swipe keyguard and tap its observed notification text directly. No adb activity launch.",
+  "source_sha256": "180b7ef411a920650b62b5282202455b844c70522312f280321427d4c5ee7640",
+  "observed_tap_bounds": "[179,588][891,641]",
+  "failure": "RuntimeError: The notification tap did not reveal the native home screen",
+  "failure_annotation": "Recorded from the supplemental script terminal exit; a later independent audit found the app resumed on Settings and the exact opened event was present."
+}

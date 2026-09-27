@@ -158,6 +158,43 @@ Use `PARSE_NATIVE_RECEIPT_FAULT=disconnect` for an abrupt connection close. The 
 
 The normal r4 preview is `runtime/releases/parse-companion-android-arm64-preview-2026-09-27-r4.apk` (31,318,447 bytes; SHA-256 `dfd18427a243ba9eb7012c14b86fb240f88fa338480e4cf860c01058f2f9329d`). Compilation, signature verification, install, matching installed digest and cold launch without Metro passed. It uses the standard debug signing key and contains no fixture trust resources. The pairing screen appeared without observed process-scoped native/JavaScript errors. [Artifact and launch report](evidence/android-preview-r4-2026-09-27.json), [pairing screen](evidence/android-preview-r4-pairing-2026-09-27.png). Earlier r2/r3 artifact evidence remains specific to those builds.
 
+## Android lock-screen and normal-termination alerts
+
+The [locked-screen run](evidence/android-alert-locked-initial-2026-09-27.json) scheduled a real local notification for a specific dose and routing generation, then enabled the emulator's swipe keyguard. Android reported `mIsShowing=true` with the screen off. The actual alert appeared with only “Open Parse to check your care schedule.”; no medicine name or instruction was present. [Lock-screen screenshot](evidence/android-alert-locked-2026-09-27.png). Posting was 111.451 seconds after the server due time; a contemporaneous bracketed clock sample measured Android only 416.5 ms ahead of the host with a 27 ms round trip. This remains delayed emulator delivery, not evidence of timely physical-phone alerts. The keyguard had no PIN/biometric credential.
+
+The first harness failed while expanding the notification shade immediately after dismissing keyguard. The alert remained posted. A separate direct tap on that same lock-screen alert reopened Parse; its initial greeting-visibility assertion failed because Settings resumed at the previous scroll position. A [separate audit](evidence/android-alert-locked-tap-audit-2026-09-27.json) verified the resumed native activity, visible Settings controls, exactly one `opened` event for the original identity and an unchanged `unconfirmed` dose. [Tap attempt](evidence/android-alert-locked-tap-attempt-2026-09-27.json), [opened app](evidence/android-alert-locked-opened-2026-09-27.png). The original failures are preserved; they are not rewritten as a clean end-to-end run. The harness now taps the lock-screen entry directly and checks the actual resumed activity and opened event, without requiring a particular scroll position.
+
+The [corrected locked-screen rerun](evidence/android-alert-locked-fixed-2026-09-27.json) passed the complete sequence without an out-of-band launch: exact-dose scheduling, confirmed swipe-keyguard state, actual generic alert, direct tap, resumed native activity, matching opened event and unchanged unconfirmed dose. Raw delay was 95.196 seconds; the clock-adjusted estimate was 94.829 seconds. [Final lock screen](evidence/android-alert-locked-fixed-2026-09-27.png), [opened app](evidence/android-alert-locked-fixed-opened-2026-09-27.png).
+
+The [normal background-process termination run](evidence/android-alert-terminated-2026-09-27.json) passed end to end. Android `am kill` removed the background process while package state remained `stopped=false`; this is process reclamation, not a user force-stop or a recents swipe. The OS later started a new process and posted the exact scheduled notification. The real notification tap reopened Parse and produced an opened event without a medication report. Raw posting delay was 69.450 seconds; the measured 375 ms clock offset gives an approximate 69.075-second adjusted delay. [Notification](evidence/android-alert-terminated-2026-09-27.png), [opened app](evidence/android-alert-terminated-opened-2026-09-27.png).
+
+Reproduce with the prepared fictional fixture and installed verification APK, using one state per invocation:
+
+```sh
+PARSE_NATIVE_RESUME_PAIRED=1 PARSE_NATIVE_ALERT_STATE=locked \
+  node tools/android_native_smoke.cjs
+PARSE_NATIVE_RESUME_PAIRED=1 PARSE_NATIVE_ALERT_STATE=terminated \
+  node tools/android_native_smoke.cjs
+```
+
+Keep `PARSE_NATIVE_FIXTURE_DIR` and the documented Playwright dependency configured. The termination case uses `am kill` only after backgrounding, checks that the process is absent and the package is not force-stopped, then waits for its real scheduled alarm. Neither mode synthesizes an OS notification. The helper matches the exact device/occurrence/route identity, records clock skew and posting delay, opens the actual alert, and checks that the dose remains unconfirmed. It restores the original keyguard setting in `finally`. These cases concern local medication alerts on the Android emulator; secure-lock behavior, iOS, real push, Focus/power restrictions and physical-device delivery remain separate gates.
+
+## Phone-sized visit-summary workflow
+
+A [four-check browser run](evidence/phone-viewport-summary-2026-09-27.json) at 390 × 844 with mobile/touch emulation uses actual previously confirmed phone-sourced notes from this native fixture. The owner prepares a draft, checks its source links, omits one source, saves a review and explicitly shares a read-only copy. The omitted wording is absent, retained wording is present, and the owner/restricted/public pages have no horizontal overflow. The restricted caregiver has no prepare/share controls. A separate share with a 60-second lifetime becomes unavailable after real server-clock expiry; revoking the original link also makes it unavailable. [Read-only phone layout](evidence/phone-viewport-summary-2026-09-27.png), [revoked view](evidence/phone-viewport-summary-revoked-2026-09-27.png). This is desktop Chrome 153 emulation, not Android/iOS browser or physical-phone acceptance.
+
+The [first attempt](evidence/phone-viewport-summary-before-route-2026-09-27.json) reached the owner controls but could not open the public page: the test fixture's static mount lacked the `/shared/summaries/{token}` entry route. The production Caddy configuration already falls back to `index.html`. The local fixture now explicitly serves the same built entry page for that route and leaves API paths unchanged.
+
+The fixture's new `resume` mode checks the existing fictional patient/owner markers and original loopback TLS origin before reopening its database. It does not reseed. [The restart audit](evidence/android-fixture-resume-2026-09-27.json) confirms preservation of all existing record identities and metadata, including the installed phone's pairing. Stop only the known fixture process and verify it has exited before resuming:
+
+```sh
+backend/.venv/bin/python tools/android_native_fixture.py resume \
+  --data-dir "$PARSE_NATIVE_FIXTURE_DIR"
+node tools/browser_phone_summary.cjs
+```
+
+Keep the documented Playwright dependency configured. `serve` still refuses an existing database; `prepare` still requires a new directory. The notification runs above used the earlier committed fixture source before this restart; their source hashes identify that version. The summary report identifies the updated fixture source.
+
 ## Caption-only native demo
 
 `runtime/native-care-20260927/parse-native-demo-captioned.mp4` is a 90-second, 1440 × 900, 30 fps H.264 recording with no audio track. It shows the actual Android emulator app, note correction and confirmation, then a captured caregiver dashboard showing the saved phone-sourced note. Captions label the emulator, scripted speech and fictional data throughout; the app portion plays at 1.16× speed. This is native app evidence, not a physical-phone/live-speech or hardware-pendant film.

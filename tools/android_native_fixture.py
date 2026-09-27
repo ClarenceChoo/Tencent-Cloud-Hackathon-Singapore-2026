@@ -2,7 +2,8 @@
 """Loopback HTTPS/native-module fixture. Scripted interpretation is NOT live ASR.
 
 prepare creates a fresh private test directory and an external Gradle verification
-variant. serve runs the real API/dashboard against a fictional database. A local
+variant. serve runs the real API/dashboard against a fictional database; resume
+reopens only a validated existing fixture without reseeding. A local
 next-utterance.json file arms exactly one scripted transcript for the next native
 recording. No fixture routes or trust anchors are added to the production app.
 """
@@ -89,11 +90,23 @@ def prepare(directory: Path):
     print("Prepared private local TLS fixture and separate nativeVerification variant.")
 
 
-def serve(directory: Path, port: int):
+def serve(directory: Path, port: int, resume: bool = False):
     if not (directory / "tls/server.key").is_file():
         raise SystemExit("Prepare a new fixture directory first.")
-    if (directory / "fixture.db").exists():
-        raise SystemExit("Refusing to reuse a fixture database; prepare a new directory.")
+    if resume:
+        import sqlite3
+        if not (directory / "fixture.db").is_file() or not (directory / "fixture.json").is_file():
+            raise SystemExit("Resume requires an existing fictional fixture database and metadata.")
+        metadata = json.loads((directory / "fixture.json").read_text())
+        if metadata.get("origin") != f"https://127.0.0.1:{port}":
+            raise SystemExit("Resume must retain the fixture's original loopback TLS origin.")
+        with sqlite3.connect(f"file:{directory / 'fixture.db'}?mode=ro", uri=True) as db:
+            if not db.execute("SELECT 1 FROM patients WHERE id=? AND name='Fictional Mei Tan'", (metadata.get("patient_id"),)).fetchone():
+                raise SystemExit("Fictional fixture patient marker is missing.")
+            if not db.execute("SELECT 1 FROM users WHERE email='owner@native.invalid' AND role='owner'").fetchone():
+                raise SystemExit("Fictional fixture owner marker is missing.")
+    elif (directory / "fixture.db").exists():
+        raise SystemExit("Refusing to reseed an existing fixture; use resume or prepare a new directory.")
     if not (ROOT / "frontend/dist/index.html").is_file():
         raise SystemExit("Build frontend/dist before starting the native fixture.")
     os.environ.update(CARELOOP_PROVIDER="fixture", CARELOOP_TESTING="true",
@@ -107,6 +120,7 @@ def serve(directory: Path, port: int):
     from app import phone_audio, worker
     from fastapi import HTTPException
     from starlette.staticfiles import StaticFiles
+    from starlette.responses import FileResponse
     import uvicorn
 
     # A fixture tone exercises native WAV decoding/playback callbacks only.
@@ -164,19 +178,25 @@ def serve(directory: Path, port: int):
     provider = ArmedNativeProvider({}, str(directory / "reply.wav"))
     # Scoped to this test-only process; production provider selection is unchanged.
     worker._provider = lambda _app: provider
-    with app.state.db.SessionLocal() as db:
-        patient = Patient(name="Fictional Mei Tan", preferred_name="Mei", timezone="Asia/Singapore", language="en")
-        users = [User(name=name, email=f"{role}@native.invalid", role="owner" if role == "owner" else "caregiver",
-                      password_hash=hash_password("fictional-native-only")) for role, name in [
-                          ("owner", "Fictional Alex Tan"), ("caregiver", "Fictional Jamie Lim"),
-                          ("restricted", "Fictional Second Caregiver")]]
-        db.add_all([patient, *users])
-        db.flush()
-        db.add_all([AccessGrant(user_id=user.id, patient_id=patient.id, relationship=user.role,
-                               scopes=["*"] if user.role == "owner" else ["read:dashboard", "ack:support", "resolve:support"]) for user in users])
-        db.commit()
-        metadata = {"patient_id": patient.id, "caregiver_id": users[1].id, "origin": origin}
-    private_file(directory / "fixture.json", json.dumps(metadata))
+    if not resume:
+        with app.state.db.SessionLocal() as db:
+            patient = Patient(name="Fictional Mei Tan", preferred_name="Mei", timezone="Asia/Singapore", language="en")
+            users = [User(name=name, email=f"{role}@native.invalid", role="owner" if role == "owner" else "caregiver",
+                          password_hash=hash_password("fictional-native-only")) for role, name in [
+                              ("owner", "Fictional Alex Tan"), ("caregiver", "Fictional Jamie Lim"),
+                              ("restricted", "Fictional Second Caregiver")]]
+            db.add_all([patient, *users])
+            db.flush()
+            db.add_all([AccessGrant(user_id=user.id, patient_id=patient.id, relationship=user.role,
+                                   scopes=["*"] if user.role == "owner" else ["read:dashboard", "ack:support", "resolve:support"]) for user in users])
+            db.commit()
+            metadata = {"patient_id": patient.id, "caregiver_id": users[1].id, "origin": origin}
+        private_file(directory / "fixture.json", json.dumps(metadata))
+    @app.get("/shared/summaries/{token}", include_in_schema=False)
+    def shared_summary_page(token: str):
+        # Match the deployed SPA entry route without hiding unknown API paths.
+        return FileResponse(ROOT / "frontend/dist/index.html")
+
     app.mount("/", StaticFiles(directory=ROOT / "frontend/dist", html=True), name="fixture-dashboard")
     print("Native fixture ready: local HTTPS, fictional records, SCRIPTED interpretation and tone replies.", flush=True)
     uvicorn.run(app, host="127.0.0.1", port=port, ssl_keyfile=str(directory / "tls/server.key"),
@@ -185,7 +205,7 @@ def serve(directory: Path, port: int):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=["prepare", "serve"])
+    parser.add_argument("mode", choices=["prepare", "serve", "resume"])
     parser.add_argument("--data-dir", type=Path, required=True)
     parser.add_argument("--port", type=int, default=8443)
     args = parser.parse_args()
@@ -194,7 +214,7 @@ def main():
         raise SystemExit("Use a NEW directory within this repository's ignored runtime folder.")
     if not 1024 <= args.port <= 65535:
         raise SystemExit("Use an unprivileged local port.")
-    prepare(directory) if args.mode == "prepare" else serve(directory, args.port)
+    prepare(directory) if args.mode == "prepare" else serve(directory, args.port, resume=args.mode == "resume")
 
 
 if __name__ == "__main__":

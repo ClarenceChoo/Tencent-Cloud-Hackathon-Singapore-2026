@@ -1,0 +1,31 @@
+{
+  "identity": "parse.dev_5b702870fa704c5bb3ccebad18bb433b.occ_9b6539ddbdc54b1bacdace9158023474.g3",
+  "dose_id": "dose_1ee7e3ec45b047febdfec221df5f3309",
+  "initial_run": "native-alert-locked-initial.json",
+  "direct_tap_attempt": "native-locked-direct-tap.json",
+  "native_app_resumed": true,
+  "visible_screen": "Settings, restored at its existing scroll position",
+  "opened_events": [
+    [
+      "parse.dev_5b702870fa704c5bb3ccebad18bb433b.occ_9b6539ddbdc54b1bacdace9158023474.g3",
+      "opened",
+      "2026-09-27 12:14:52.881513"
+    ]
+  ],
+  "medication_report": "unconfirmed",
+  "passed": true,
+  "limitation": "The original shade-after-unlock check and supplemental greeting-visibility assertion failed. This separate audit verifies the actual direct lock-screen tap via resumed native activity, observed Settings controls and the exact opened event; it does not rewrite those failures.",
+  "evidence_sha256": {
+    "locked-tap-last-ui.xml": "034c2d9b289feda291a870004823c48c40238dbebf4697b2d484d4e885208b38",
+    "locked-opened-activity.txt": "7e22136ae5e1222d7c00661c6af2d3246c3fde2a84b1253a2050d38ab880f95f",
+    "native-locked-opened-settings.png": "09c96f7d0c30b085536f5685698224cd96d5402f4ae093a8e37b543c86d0fe6a",
+    "resume-locked-tap.py": "180b7ef411a920650b62b5282202455b844c70522312f280321427d4c5ee7640"
+  },
+  "clock_observation": {
+    "host_before_ms": 1790511130268,
+    "host_after_ms": 1790511130295,
+    "android_ms": 1790511130698,
+    "android_minus_host_midpoint_ms": 416.5,
+    "roundtrip_ms": 27
+  }
+}

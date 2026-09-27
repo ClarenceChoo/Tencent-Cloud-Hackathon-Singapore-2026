@@ -19,7 +19,7 @@ sys.path.insert(0, str(ROOT / "backend"))
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("mode", choices=["enqueue", "inspect"])
-    parser.add_argument("--kind", choices=["medication", "checkin", "turns"], default="medication")
+    parser.add_argument("--kind", choices=["medication", "checkin", "turns", "alerts"], default="medication")
     parser.add_argument("--data-dir", type=Path, required=True)
     args = parser.parse_args()
     directory = args.data_dir.resolve()
@@ -46,6 +46,18 @@ def main():
         patient = db.get(m.Patient, metadata["patient_id"])
         if not patient or patient.name != "Fictional Mei Tan":
             raise SystemExit("Unexpected fixture patient.")
+        if args.kind == "alerts":
+            if args.mode != "inspect":
+                raise SystemExit("Notification metadata inspection is read-only.")
+            route = db.get(m.CompanionRoute, patient.id)
+            occurrences = db.scalars(select(m.ReminderOccurrence).where(m.ReminderOccurrence.patient_id == patient.id)).all()
+            events = db.scalars(select(m.NotificationEvidence).join(m.Device).where(m.Device.patient_id == patient.id)).all()
+            print(json.dumps({
+                "route": {"device_id": route.active_device_id, "generation": route.generation} if route else None,
+                "occurrences": [{"id": row.id, "dose_id": row.dose_instance_id, "kind": row.kind} for row in occurrences],
+                "events": [{"identity": row.identity, "stage": row.stage, "at": row.received_at.isoformat()} for row in events],
+            }))
+            return
         if args.kind == "turns":
             if args.mode != "inspect":
                 raise SystemExit("Turn metadata inspection is read-only.")

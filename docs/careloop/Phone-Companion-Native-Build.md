@@ -406,3 +406,23 @@ node tools/android_native_smoke.cjs
 ```
 
 The bounded harness keeps Saver active until delivery or two minutes after the due time, then allows recovery after releasing the restriction. This run delivered before release, so the deferred-until-release branch was not exercised. The check establishes AOSP emulator policy behavior with local HTTPS, scripted interpretation and tone replies. It does not establish battery life/consumption, physical sound, manufacturer-specific restrictions, live push, iOS behavior or full E08 acceptance.
+
+## Native Android PIN-protected lock screen
+
+The unchanged r6 verification APK passed five checks behind Android 16's actual PIN keyguard. The guarded emulator helper first verified that no credential existed, then installed a fictional test PIN and turned the screen off. `secure`, keyguard showing and input restriction were all true at the due time and when the exact notification was observed. The existing lock-screen settings permitted private notification content; the app itself still supplied only the generic prompt.
+
+The scheduler queued the dose reminder while locked. Android posted **“Open Parse to check your care schedule.”** **97.196 seconds after the due timestamp (96.8565 seconds after clock adjustment)**. No medicine name or instruction was present. A tap on this actual lock-screen notification displayed the system PIN prompt. At that point, native view inspection found no Parse care UI, and the command still had no audio access or playback acknowledgements. The OS screen capture at the PIN prompt was black, so it is not presented as a readable PIN-screen screenshot; the [native hierarchy](evidence/android-secure-lock-pin-required-2026-09-27.xml) records `Enter PIN`, the PIN field and system keypad before entry.
+
+Typing the fictional PIN through Android's input UI unlocked the keyguard and resumed Parse without directly launching the activity or dismissing the secure lock. The app fetched the current reminder and emitted fixture-tone playback callbacks. Medication stayed `unconfirmed`, and the same five notes remained. Cleanup removed the temporary PIN and verified the original keyguard and notification settings exactly.
+
+[Five-check source/APK/OS-state report](evidence/android-secure-lock-2026-09-27.json) · [generic alert behind the PIN lock](evidence/android-secure-lock-notification-2026-09-27.png) · [opened app](evidence/android-secure-lock-opened-2026-09-27.png).
+
+A separate [post-cleanup restart audit](evidence/android-secure-lock-restart-2026-09-27.json) verifies background process absence before a cold activity launch, a different new process, the paired native home and the same selected device/generation. [Restarted home](evidence/android-secure-lock-restart-2026-09-27.png) · [native view hierarchy](evidence/android-secure-lock-restart-2026-09-27.xml). This confirms that this temporary PIN change did not lose the installation's pairing; it is not a full Keystore/reinstall or device-security assessment.
+
+```sh
+PARSE_NATIVE_FIXTURE_DIR="$PWD/runtime/native-care-20260927" \
+PARSE_NATIVE_RESUME_PAIRED=1 PARSE_NATIVE_ALERT_STATE=secure-locked \
+node tools/android_native_smoke.cjs
+```
+
+For the supplemental restart check, background the restored app, use normal `am kill` and verify process absence, then start its activity and inspect the paired home and server-selected device. No app data clearing or re-enrollment is involved. This run used the Android emulator, local HTTPS, scripted interpretation and tone replies. Physical PIN/biometric flows, audible speech, iOS and full E08 acceptance remain unverified. The host still has only Command Line Tools; a current `xcrun --find simctl` check cannot find the iOS Simulator tools. No production app/backend change or new APK was required for this verification.

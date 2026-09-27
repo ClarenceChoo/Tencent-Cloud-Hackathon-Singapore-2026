@@ -16,7 +16,7 @@ const decode = value => value.replace(/&quot;/g, '"').replace(/&apos;/g, "'").re
 
 async function main() {
   const alertState = process.env.PARSE_NATIVE_ALERT_STATE || '';
-  assert(['', 'locked', 'terminated', 'offline-plan', 'revoked', 'offline-revoked', 'doze', 'dnd', 'battery-saver'].includes(alertState));
+  assert(['', 'locked', 'secure-locked', 'terminated', 'offline-plan', 'revoked', 'offline-revoked', 'doze', 'dnd', 'battery-saver'].includes(alertState));
   const alertLifecycle = !!alertState;
   const connectionOnly = process.env.PARSE_NATIVE_CONNECTION_ONLY === '1';
   const callsOnly = process.env.PARSE_NATIVE_CALLS_ONLY === '1';
@@ -140,6 +140,10 @@ async function main() {
   }
   if (alertState === 'battery-saver') {
     const file = 'tools/android_native_battery.cjs';
+    report.source_sha256[file] = createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex');
+  }
+  if (alertState === 'secure-locked') {
+    const file = 'tools/android_native_secure_lock.cjs';
     report.source_sha256[file] = createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex');
   }
   const pass = name => { report.checks.push({ name, passed: true }); save(); console.log('PASS ' + name); };

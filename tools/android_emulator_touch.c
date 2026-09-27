@@ -42,7 +42,7 @@ static void tap(int x, int y, int id) {
 }
 int main(int argc, char **argv) {
   char prop[PROP_VALUE_MAX] = {0}, name[128] = {0};
-  if (argc != 2 || (strcmp(argv[1], "next") && strcmp(argv[1], "logo") && strcmp(argv[1], "double"))) return 2;
+  if (argc != 2 || (strcmp(argv[1], "next") && strcmp(argv[1], "previous") && strcmp(argv[1], "logo") && strcmp(argv[1], "double"))) return 2;
   __system_property_get("ro.kernel.qemu", prop);
   if (strcmp(prop, "1")) { fputs("Disposable emulator required\n", stderr); return 3; }
   fd = open("/dev/input/event1", O_RDWR | O_CLOEXEC);
@@ -52,9 +52,11 @@ int main(int argc, char **argv) {
   if (ioctl(fd, EVIOCGABS(ABS_MT_POSITION_X), &x) || ioctl(fd, EVIOCGABS(ABS_MT_POSITION_Y), &y) ||
       x.minimum != 0 || y.minimum != 0 || x.maximum != 32767 || y.maximum != 32767) return 6;
   atexit(lift);
-  if (!strcmp(argv[1], "next")) {
-    down(280, 1000, 41);
-    for (int i = 1; i <= 16; i++) { usleep(12500); position(280 + 500*i/16, 1000); emit(EV_SYN, SYN_REPORT, 0); }
+  if (!strcmp(argv[1], "next") || !strcmp(argv[1], "previous")) {
+    int start = !strcmp(argv[1], "next") ? 280 : 780;
+    int delta = !strcmp(argv[1], "next") ? 500 : -500;
+    down(start, 1000, 41);
+    for (int i = 1; i <= 16; i++) { usleep(12500); position(start + delta*i/16, 1000); emit(EV_SYN, SYN_REPORT, 0); }
     lift();
   } else if (!strcmp(argv[1], "logo")) tap(170, 250, 42);
   else { tap(540, 1100, 43); usleep(90000); tap(540, 1100, 44); }

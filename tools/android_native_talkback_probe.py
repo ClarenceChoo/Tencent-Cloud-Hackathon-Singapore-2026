@@ -24,7 +24,7 @@ def now():
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
-def main():
+def main(care=None):
     fixture = json.loads((FIXTURE / 'fixture.json').read_text())
     assert fixture['origin'].startswith('https://127.0.0.1:')
     assert 'uid=0' in adb('shell', 'id')
@@ -39,8 +39,12 @@ def main():
               'parse_apk_sha256': digest(ROOT / 'mobile/android/app/build/outputs/apk/nativeVerification/app-nativeVerification.apk'),
               'tooling_provenance_sha256': digest(OUT / 'setup-provenance.json'),
               'checks': [], 'focus_sequence': []}
+    if care:
+        report['scope'] += ' Extended flow verifies scripted note correction, review, explicit confirmation and already-open caregiver visibility using actual screen-reader gestures.'
+        for relative in ['tools/android_native_talkback_care.py', 'tools/android_talkback_dashboard.cjs', 'tools/android_native_fixture.py']:
+            report['source_sha256'][relative] = digest(ROOT / relative)
     def save():
-        (OUT / 'talkback-probe.json').write_text(json.dumps(report, indent=2) + '\n')
+        (OUT / ('talkback-care.json' if care else 'talkback-probe.json')).write_text(json.dumps(report, indent=2) + '\n')
     def passed(name):
         report['checks'].append({'name': name, 'passed': True}); save(); print('PASS', name, flush=True)
     def dump(name):
@@ -56,8 +60,9 @@ def main():
         return adb('shell', 'find', '/data/user/0/' + APP + '/cache', '-type', 'f', '-name', 'recording-*').splitlines()
     def uploads():
         return len((FIXTURE / 'native-uploads.jsonl').read_text().strip().splitlines())
-    def next_focus(index):
-        adb('shell', '/data/local/tmp/parse-emulator-touch', 'next')
+    def next_focus(index, direction='next'):
+        assert direction in ('next', 'previous')
+        adb('shell', '/data/local/tmp/parse-emulator-touch', direction)
         # TalkBack may finish auto-scrolling and focus asynchronously. A .2s
         # snapshot raced the focus event and sent a second swipe past Cancel.
         time.sleep(.8)
@@ -158,6 +163,12 @@ def main():
         screenshot('talkback-cancelled')
         started = False
         passed('TalkBack gestures reach and activate Cancel; capture stops, cached audio is removed, and no upload is sent')
+        if care:
+            care(dict(root=ROOT, out=OUT, fixture_dir=FIXTURE, app=APP,
+                      fixture=fixture, adb=adb, dump=dump, focused=focused,
+                      screenshot=screenshot, files=files, uploads=uploads,
+                      next_focus=next_focus, double_tap=double_tap,
+                      report=report, passed=passed, save=save))
     except Exception as error:
         report['error'] = str(error)
         screenshot('talkback-probe-failure')

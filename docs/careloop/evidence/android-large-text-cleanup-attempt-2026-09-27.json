@@ -1,0 +1,205 @@
+{
+  "at": "2026-09-27T13:25:14.627Z",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "environment": "Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and fixture tone replies. No real speech or acoustic audibility evidence.",
+  "source_sha256": {
+    "mobile/src/App.tsx": "040650c4ba7d61a35e2c5926c616a0f09a051f03da778766a3241dcd2ccdb275",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "mobile/src/api.ts": "c47f9fd49c83ec14df83d1939a941d6a2b48cddd8548807d123941b523b328cf",
+    "mobile/src/storage.ts": "d617df7a010d6cc68f0cd5dc6e3dfac021b1684bc6e10bc5fa50963871f3d99f",
+    "tools/android_native_fixture.py": "02f47605eb96b79595ccfb991cd8c2ecf72808bc3680386853d97b2113b75271",
+    "tools/android_native_smoke.cjs": "1b235e41ae155a906782d9ef93f686f3039f7ef2213200806a7798cfe266e9d3",
+    "tools/android_native_care.cjs": "48be6db43584dba70abb17294f000c2e29741f389a531b2ba656b4373bf2897b",
+    "mobile/src/useTalkMode.ts": "c159dcedbad3b79d5a76b7238391bf7a4cc9d310b2b02bfae4aabef7ab1cc941",
+    "tools/android_native_large_text.cjs": "1df17f8e44846f1e396c51b4864de83db21668933d768ca583fa7674ebbc9a10"
+  },
+  "checks": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    }
+  ],
+  "installed_apk_sha256": "6b774f9ae08a14e32a0c089ae469c6d649bae2f06f1f82d54360c1b7702a2c0f",
+  "mode": "large-text",
+  "enrollmentCreatedInThisRun": false,
+  "large_text": {
+    "scale": 2,
+    "original_scale": "1.0",
+    "density_dpi": 420,
+    "screen_reader_tested": false,
+    "controls": [
+      {
+        "label": "Tap to start recording",
+        "bounds": "[63,1698][1017,2239]",
+        "width_dp": 363.42857142857144,
+        "height_dp": 206.0952380952381
+      },
+      {
+        "label": "Tap to start recording",
+        "bounds": "[63,1698][1017,2239]",
+        "width_dp": 363.42857142857144,
+        "height_dp": 206.0952380952381
+      },
+      {
+        "label": "Cancel recording",
+        "bounds": "[63,1971][1017,2156]",
+        "width_dp": 363.42857142857144,
+        "height_dp": 70.47619047619048
+      }
+    ],
+    "baseline_note_ids": [
+      "note_274df94653ac4332aeb5e10c1add1a14",
+      "note_da2714b3ddfa45ed87cef8c72046e6e4",
+      "note_e3cac52e3601453bba0eab7c2746ba6e",
+      "note_e880d910db694a28b93939f9a3e6e37f"
+    ],
+    "cancel_observations": [
+      [
+        {
+          "text": "YOUR CARE COMPANION",
+          "label": "",
+          "bounds": "[63,128][937,58]",
+          "enabled": "true"
+        },
+        {
+          "text": "HELLO, Mei",
+          "label": "",
+          "bounds": "[63,152][1017,237]",
+          "enabled": "true"
+        },
+        {
+          "text": "How are you&#10;feeling today?",
+          "label": "",
+          "bounds": "[63,284][1017,558]",
+          "enabled": "true"
+        },
+        {
+          "text": "Your microphone turns on only when you choose to speak. Parse checks the details with you before saving.",
+          "label": "",
+          "bounds": "[63,606][1017,1096]",
+          "enabled": "true"
+        },
+        {
+          "text": "Test speech is enabled on this server. These responses are simulated.",
+          "label": "",
+          "bounds": "[110,1190][970,1582]",
+          "enabled": "true"
+        },
+        {
+          "text": "",
+          "label": "Recording. Tap to send.",
+          "bounds": "[63,1698][1017,2239]",
+          "enabled": "true"
+        },
+        {
+          "text": "●",
+          "label": "",
+          "bounds": "[500,1791][580,1973]",
+          "enabled": "true"
+        },
+        {
+          "text": "Tap to finish",
+          "label": "",
+          "bounds": "[272,2015][808,2145]",
+          "enabled": "true"
+        },
+        {
+          "text": "Listening. Tap to send, or choose Cancel recording.",
+          "label": "",
+          "bounds": "[63,2286][1017,2274]",
+          "enabled": "true"
+        }
+      ],
+      [
+        {
+          "text": "Your microphone turns on only when you choose to speak. Parse checks the details with you before saving.",
+          "label": "",
+          "bounds": "[63,128][1017,365]",
+          "enabled": "true"
+        },
+        {
+          "text": "Test speech is enabled on this server. These responses are simulated.",
+          "label": "",
+          "bounds": "[110,459][970,851]",
+          "enabled": "true"
+        },
+        {
+          "text": "",
+          "label": "Recording. Tap to send.",
+          "bounds": "[63,967][1017,1508]",
+          "enabled": "true"
+        },
+        {
+          "text": "●",
+          "label": "",
+          "bounds": "[500,1060][580,1242]",
+          "enabled": "true"
+        },
+        {
+          "text": "Tap to finish",
+          "label": "",
+          "bounds": "[272,1284][808,1414]",
+          "enabled": "true"
+        },
+        {
+          "text": "Listening. Tap to send, or choose Cancel recording.",
+          "label": "",
+          "bounds": "[63,1555][1017,1751]",
+          "enabled": "true"
+        },
+        {
+          "text": "Tap to start and stop",
+          "label": "",
+          "bounds": "[63,1812][796,1910]",
+          "enabled": "true"
+        },
+        {
+          "text": "",
+          "label": "Use tap instead of hold to record",
+          "bounds": "[891,1798][1017,1924]",
+          "enabled": "false"
+        },
+        {
+          "text": "",
+          "label": "Cancel recording",
+          "bounds": "[63,1971][1017,2156]",
+          "enabled": "true"
+        },
+        {
+          "text": "Cancel recording",
+          "label": "",
+          "bounds": "[240,2010][840,2116]",
+          "enabled": "true"
+        },
+        {
+          "text": "",
+          "label": "Today",
+          "bounds": "[63,2256][360,2274]",
+          "enabled": "true"
+        },
+        {
+          "text": "Today",
+          "label": "",
+          "bounds": "[105,2290][318,2274]",
+          "enabled": "true"
+        },
+        {
+          "text": "",
+          "label": "Medicines",
+          "bounds": "[381,2256][827,2274]",
+          "enabled": "true"
+        },
+        {
+          "text": "Medicines",
+          "label": "",
+          "bounds": "[423,2290][785,2274]",
+          "enabled": "true"
+        }
+      ]
+    ],
+    "cancel_elapsed_ms": 5056,
+    "restored_font_scale": "1.0"
+  },
+  "failure": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ '/data/user/0/sg.parse.companion.verification/cache/Audio/recording-546c897c-0311-4fed-aa07-2b27972c1e90.m4a'\n- ''\n"
+}

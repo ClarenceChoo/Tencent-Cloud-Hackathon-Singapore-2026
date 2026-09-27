@@ -253,6 +253,25 @@ The helper requires the inspected 1080 × 2400 emulator layout. UIAutomator omit
 
 Three earlier harness attempts remain recorded separately: [the modem-list attempt](evidence/android-call-modem-attempt-2026-09-27.json) incorrectly relied on `gsm list`, which returned empty while Android was ringing; [the key-event attempt](evidence/android-call-answer-attempt-2026-09-27.json) did not answer the call; [the partial UI attempt](evidence/android-call-partial-2026-09-27.json) passed recording cancellation but tapped Answer too early during the playback case. The final complete run uses telephony state and the settled native Answer control. These harness corrections required no production app change.
 
+## Paired Android care at 200% text size
+
+The [complete large-text run](evidence/android-large-text-2026-09-27.json) uses the unchanged r5 verification APK at Android `font_scale=2.0`, 1080 × 2400 pixels and 420 dpi. It exercises actual native recording, read-back, explicit confirmation, all four care tabs and the reachable Settings actions. The report includes source/APK hashes and measured bounds for each exercised control. Every measured target exceeds 48 logical units in each dimension; the talk control is approximately 363 × 206, the Cancel button 363 × 70, and the shortest measured tab about 66 units tall.
+
+Cancel is reached and tapped 5.130 seconds after starting the test's recording action. Native cleanup deletes the recording without an upload or new note. A subsequent native recording returns a scripted proposal whose enlarged read-back includes the fictional note and its sharing recipient. Confirm and Cancel this update are both reachable; explicit Confirm saves exactly one phone-sourced note in the already-open permitted caregiver page, while the restricted account cannot see it. Restart retains exactly one copy. [Talk](evidence/android-large-text-talk-2026-09-27.png), [stopped capture](evidence/android-large-text-cancelled-2026-09-27.png), [read-back](evidence/android-large-text-review-2026-09-27.png), [confirmation controls](evidence/android-large-text-confirm-controls-2026-09-27.png), [caregiver result](evidence/android-large-text-caregiver-2026-09-27.png).
+
+The native tabs wrap and remain operable: [Today](evidence/android-large-text-today-2026-09-27.png), [Medicines](evidence/android-large-text-medicines-2026-09-27.png), [Care](evidence/android-large-text-care-2026-09-27.png), [Settings](evidence/android-large-text-settings-2026-09-27.png). The [permission, dashboard and unpair actions](evidence/android-large-text-settings-actions-2026-09-27.png) are fully reachable and measured, without activating those external/destructive actions. Screenshots were visually reviewed. Long pages require vertical scrolling; this is not evidence for every possible care text or device size.
+
+Reproduce with the prepared fictional fixture, paired verification installation and documented Playwright dependency:
+
+```sh
+PARSE_NATIVE_RESUME_PAIRED=1 PARSE_NATIVE_LARGE_TEXT_ONLY=1 \
+  node tools/android_native_smoke.cjs
+```
+
+The helper restores the original font scale and backgrounds the app in `finally`. After the passing run, the scale was independently checked at 1.0 and the known native cache contained no recording/reply files. No production app code changed. Earlier harness failures are preserved: [initial search](evidence/android-large-text-first-attempt-2026-09-27.json), [scroll trace](evidence/android-large-text-scroll-attempt-2026-09-27.json), [immediate cleanup assertion](evidence/android-large-text-cleanup-attempt-2026-09-27.json), [status wording assertion](evidence/android-large-text-status-attempt-2026-09-27.json). The final helper avoids flinging past controls, handles Android's inverted offscreen bounds, waits for native cleanup and checks the actual Stop completion message.
+
+This covers a paired Android emulator at 200% text, using scripted speech and fixture tones with host audio disabled. It does not establish TalkBack/VoiceOver behavior, physical accessibility, iOS layout, acoustic audibility or the full E10 acceptance gate.
+
 ## Phone-sized visit-summary workflow
 
 A [four-check browser run](evidence/phone-viewport-summary-2026-09-27.json) at 390 × 844 with mobile/touch emulation uses actual previously confirmed phone-sourced notes from this native fixture. The owner prepares a draft, checks its source links, omits one source, saves a review and explicitly shares a read-only copy. The omitted wording is absent, retained wording is present, and the owner/restricted/public pages have no horizontal overflow. The restricted caregiver has no prepare/share controls. A separate share with a 60-second lifetime becomes unavailable after real server-clock expiry; revoking the original link also makes it unavailable. [Read-only phone layout](evidence/phone-viewport-summary-2026-09-27.png), [revoked view](evidence/phone-viewport-summary-revoked-2026-09-27.png). This is desktop Chrome 153 emulation, not Android/iOS browser or physical-phone acceptance.

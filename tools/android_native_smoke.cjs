@@ -20,6 +20,7 @@ async function main() {
   const alertLifecycle = !!alertState;
   const connectionOnly = process.env.PARSE_NATIVE_CONNECTION_ONLY === '1';
   const callsOnly = process.env.PARSE_NATIVE_CALLS_ONLY === '1';
+  const largeTextOnly = process.env.PARSE_NATIVE_LARGE_TEXT_ONLY === '1';
   const recoveryOnly = process.env.PARSE_NATIVE_RECOVERY_ONLY === '1';
   const receiptFault = process.env.PARSE_NATIVE_RECEIPT_FAULT || 'disconnect';
   assert(['disconnect', '503'].includes(receiptFault));
@@ -27,7 +28,7 @@ async function main() {
   const lifecycleOnly = process.env.PARSE_NATIVE_LIFECYCLE_ONLY === '1' || confirmationOnly;
   const alertsOnly = process.env.PARSE_NATIVE_ALERTS_ONLY === '1';
   const remindersOnly = process.env.PARSE_NATIVE_REMINDERS_ONLY === '1' || alertsOnly;
-  assert([lifecycleOnly, remindersOnly, recoveryOnly, alertLifecycle, connectionOnly, callsOnly].filter(Boolean).length <= 1, 'Select one native verification mode');
+  assert([lifecycleOnly, remindersOnly, recoveryOnly, alertLifecycle, connectionOnly, callsOnly, largeTextOnly].filter(Boolean).length <= 1, 'Select one native verification mode');
   assert(directory.startsWith(path.join(root, 'runtime') + path.sep));
   assert(/^emulator-\d+$/.test(serial), 'This fixture runs only on a disposable emulator');
   const fixture = JSON.parse(fs.readFileSync(path.join(directory, 'fixture.json')));
@@ -123,7 +124,11 @@ async function main() {
     for (const file of ['tools/android_native_calls.cjs', 'tools/android_native_control.py'])
       report.source_sha256[file] = createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex');
   }
-  const save = () => fs.writeFileSync(path.join(directory, callsOnly ? 'native-calls-evidence.json' : connectionOnly ? 'native-connection-evidence.json' : alertLifecycle ? `native-alert-${alertState}-evidence.json` : recoveryOnly ? `native-recovery-${receiptFault}-evidence.json` : alertsOnly ? 'native-alerts-evidence.json' : confirmationOnly ? 'native-confirmation-evidence.json' : lifecycleOnly ? 'native-lifecycle-evidence.json' : remindersOnly ? 'native-reminders-evidence.json' : 'native-integration-evidence.json'), JSON.stringify(report, null, 2));
+  if (largeTextOnly) {
+    for (const file of ['mobile/src/useTalkMode.ts', 'tools/android_native_large_text.cjs'])
+      report.source_sha256[file] = createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex');
+  }
+  const save = () => fs.writeFileSync(path.join(directory, largeTextOnly ? 'native-large-text-evidence.json' : callsOnly ? 'native-calls-evidence.json' : connectionOnly ? 'native-connection-evidence.json' : alertLifecycle ? `native-alert-${alertState}-evidence.json` : recoveryOnly ? `native-recovery-${receiptFault}-evidence.json` : alertsOnly ? 'native-alerts-evidence.json' : confirmationOnly ? 'native-confirmation-evidence.json' : lifecycleOnly ? 'native-lifecycle-evidence.json' : remindersOnly ? 'native-reminders-evidence.json' : 'native-integration-evidence.json'), JSON.stringify(report, null, 2));
   const pass = name => { report.checks.push({ name, passed: true }); save(); console.log('PASS ' + name); };
   const browser = await chromium.launch({ headless: true, channel: 'chrome' });
   async function login(role) {
@@ -154,8 +159,8 @@ async function main() {
     await adb('shell', 'am', 'start', '-W', '-n', appId + '/sg.parse.companion.MainActivity');
     let code;
     const resume = process.env.PARSE_NATIVE_RESUME_PAIRED === '1';
-    assert(!(lifecycleOnly || remindersOnly || recoveryOnly || alertLifecycle || connectionOnly || callsOnly) || resume, 'These checks require an existing fictional verification installation');
-    report.mode = callsOnly ? 'calls' : connectionOnly ? 'connection' : alertLifecycle ? 'alert-' + alertState : recoveryOnly ? 'recovery-' + receiptFault : alertsOnly ? 'alerts' : confirmationOnly ? 'confirmation' : lifecycleOnly ? 'lifecycle' : remindersOnly ? 'reminders' : 'care';
+    assert(!(lifecycleOnly || remindersOnly || recoveryOnly || alertLifecycle || connectionOnly || callsOnly || largeTextOnly) || resume, 'These checks require an existing fictional verification installation');
+    report.mode = largeTextOnly ? 'large-text' : callsOnly ? 'calls' : connectionOnly ? 'connection' : alertLifecycle ? 'alert-' + alertState : recoveryOnly ? 'recovery-' + receiptFault : alertsOnly ? 'alerts' : confirmationOnly ? 'confirmation' : lifecycleOnly ? 'lifecycle' : remindersOnly ? 'reminders' : 'care';
     report.enrollmentCreatedInThisRun = !resume;
     if (!resume) {
       await tap('Parse HTTPS service address');
@@ -191,6 +196,11 @@ async function main() {
       'Native-generated secure identity pairs over verified local TLS through owner browser approval');
     const tapSwitch = await find('Use tap instead of hold to record');
     if (tapSwitch.checked !== 'true') await tapNode(tapSwitch);
+    if (largeTextOnly) {
+      await require('./android_native_large_text.cjs')({ arm, ui, adb, tapNode, screenshot, pass, owner, caregiver, restricted, fixture, directory, appId, report });
+      save();
+      return;
+    }
     if (callsOnly) {
       await require('./android_native_calls.cjs')({ find, tap, ui, adb, screenshot, pass, owner, directory, appId, report });
       save();

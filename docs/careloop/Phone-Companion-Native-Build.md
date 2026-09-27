@@ -234,6 +234,25 @@ The helper restores direct routing and clears the fault in `finally`; stop the p
 
 The normal r5 preview is `runtime/releases/parse-companion-android-arm64-preview-2026-09-27-r5.apk` (31,319,647 bytes; SHA-256 `f144dba7c46e6ce18e9cddd4dbb14625af0edc74d4a6c0eedbc7152e966b0c82`). It builds, verifies its signature, installs and cold-launches without Metro, with a matching installed digest and no observed process-scoped native/JavaScript errors. It uses the standard debug key and excludes the verification fixture resources. [Artifact and launch report](evidence/android-preview-r5-2026-09-27.json), [normal pairing screen](evidence/android-preview-r5-pairing-2026-09-27.png). Earlier alert and recovery results remain tied to their recorded APKs; the r5 binary is not claimed to have rerun every previous native scenario.
 
+## Android incoming-call interruptions
+
+The [complete native call run](evidence/android-call-interruptions-2026-09-27.json) uses the unchanged r5 verification APK, Android's simulated GSM modem and the native dialer. It verifies both ringing and answered states through `dumpsys telephony.registry`; no external telephone call is made.
+
+Answering the simulated call cancels an active native recording and deletes its cache file without uploading it. Returning to Parse leaves recording idle and care notes unchanged. Ringing alone did not cancel capture in this run, so this evidence is specifically for an answered call. [Recording while ringing](evidence/android-call-recording-ringing-2026-09-27.png), [return after cancellation](evidence/android-call-recording-return-2026-09-27.png).
+
+A real scheduled reminder plays an 18-second fixture tone, with Android reporting an active player and the server receiving `playback_started`. Incoming ringing stops that player while Parse is still the resumed activity, before Answer is tapped. Cached speech is removed and the server records `interrupted`, without `playback_completed`. Returning and restarting do not replay the reminder, add notes or change its unconfirmed medication report. [Playback interrupted during ringing](evidence/android-call-playback-ringing-2026-09-27.png), [return to Parse](evidence/android-call-playback-return-2026-09-27.png). Host audio is disabled; physical-phone behavior and acoustic audibility remain unverified.
+
+Reproduce with the prepared fictional fixture, the paired verification installation, direct 8443 reverse mapping and the documented Playwright dependency:
+
+```sh
+PARSE_NATIVE_RESUME_PAIRED=1 PARSE_NATIVE_CALLS_ONLY=1 \
+  node tools/android_native_smoke.cjs
+```
+
+The helper requires the inspected 1080 × 2400 emulator layout. UIAutomator omits the nonfocused incoming-call overlay, so it captures the current screen and taps the observed Answer coordinates after the animation settles, then requires actual active-call state. It restores the original fixture tone, ends only its own simulated call and backgrounds Parse in cleanup.
+
+Three earlier harness attempts remain recorded separately: [the modem-list attempt](evidence/android-call-modem-attempt-2026-09-27.json) incorrectly relied on `gsm list`, which returned empty while Android was ringing; [the key-event attempt](evidence/android-call-answer-attempt-2026-09-27.json) did not answer the call; [the partial UI attempt](evidence/android-call-partial-2026-09-27.json) passed recording cancellation but tapped Answer too early during the playback case. The final complete run uses telephony state and the settled native Answer control. These harness corrections required no production app change.
+
 ## Phone-sized visit-summary workflow
 
 A [four-check browser run](evidence/phone-viewport-summary-2026-09-27.json) at 390 × 844 with mobile/touch emulation uses actual previously confirmed phone-sourced notes from this native fixture. The owner prepares a draft, checks its source links, omits one source, saves a review and explicitly shares a read-only copy. The omitted wording is absent, retained wording is present, and the owner/restricted/public pages have no horizontal overflow. The restricted caregiver has no prepare/share controls. A separate share with a 60-second lifetime becomes unavailable after real server-clock expiry; revoking the original link also makes it unavailable. [Read-only phone layout](evidence/phone-viewport-summary-2026-09-27.png), [revoked view](evidence/phone-viewport-summary-revoked-2026-09-27.png). This is desktop Chrome 153 emulation, not Android/iOS browser or physical-phone acceptance.

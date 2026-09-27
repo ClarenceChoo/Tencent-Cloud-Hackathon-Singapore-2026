@@ -59,6 +59,14 @@ This produces Hermes JavaScript bundles, not an installable application. Use `np
 
 Only one deliberate voice interaction should run at a time. Until the routing and notifications gates are completed, this development checkpoint does not replace the pendant's background reminders.
 
+## Care sources and spoken status
+
+The phone home response and the caregiver dashboard expose a `provenance` object on medication reports, notes, measurements, preventive tasks, support requests and follow-ups. It identifies a confirmed phone, cardholder or dashboard source, with the originating turn/proposal and confirmation time where available. Missing evidence is `unknown`; it is not inferred to be a dashboard action. Record visibility is checked before provenance is assembled. Device credentials, raw transcripts and recipient emails are not part of this metadata.
+
+Preventive tasks retain their clinical `source` separately from the recording channel. Their `transitions` preserve appointment and completion dates; dose `report_history` and follow-up `resolutions` retain each confirmation source. The phone response includes up to 20 history entries per record with `history_truncated` when older entries are omitted. The native screen shows the latest three updates; the dashboard expands the history. A reading entered by phone is still labelled with its reported external measurement source and timing.
+
+For support and follow-up status questions, the interpreter identifies a record using `support_status` or `followup_status`. The backend renders the answer from the patient's stored acknowledgement/resolution/outcome fields and ignores model-written status prose. An unknown or foreign record requires clarification. Status is rechecked after speech generation, and newly generated status audio returns 410 if its record has changed before retrieval. This does not establish freshness for an audio file already downloaded to a phone; native playback freshness remains an acceptance item.
+
 ## Select the reminder companion
 
 In the owner dashboard, Settings → Reminder companion selects exactly one paired phone or cardholder. Pairing alone does not select a new device. Existing databases backfill only an unambiguous single device; ambiguous installations start paused.

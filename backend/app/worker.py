@@ -9,6 +9,7 @@ from sqlalchemy import select, update
 from . import models as m
 from .providers import SpeechTooLong
 from .security import aware, iso, utcnow
+from .care_status import status_reply
 from .services import (
     build_readback,
     commit_proposal,
@@ -122,8 +123,8 @@ def _context(db, device: m.Device, context_id: Optional[str]) -> dict:
         if grant and (not grant.expires_at or aware(grant.expires_at) > utcnow()):
             recipients.append(row)
     tasks = db.scalars(select(m.PreventiveTask).where(m.PreventiveTask.patient_id == device.patient_id)).all()
-    supports = db.scalars(select(m.SupportRequest).where(m.SupportRequest.patient_id == device.patient_id, m.SupportRequest.status != "resolved")).all()
-    followups = db.scalars(select(m.FollowUp).where(m.FollowUp.patient_id == device.patient_id, m.FollowUp.resolution_state == "open")).all()
+    supports = db.scalars(select(m.SupportRequest).where(m.SupportRequest.patient_id == device.patient_id).order_by(m.SupportRequest.created_at.desc()).limit(30)).all()
+    followups = db.scalars(select(m.FollowUp).where(m.FollowUp.patient_id == device.patient_id).order_by(m.FollowUp.check_at.desc()).limit(30)).all()
     patient = db.get(m.Patient, device.patient_id)
     return {
         "device": {"id": device.id, "preferred_name": patient.preferred_name or patient.name, "language": patient.language, "timezone": patient.timezone, "calling_route": patient.calling_route, "calling_route_message": patient.calling_route or "No calling route is configured. Use your usual local support or emergency contact method."},
@@ -134,8 +135,8 @@ def _context(db, device: m.Device, context_id: Optional[str]) -> dict:
         "doses": [{"id": dose.id, "medicine_id": dose.medicine_id, "medicine_name": dose.medicine_name, "scheduled_at": iso(dose.scheduled_at), "report_state": dose.report_state} for dose in doses],
         "permitted_recipients": [{"id": row.id, "name": row.name} for row in recipients],
         "preventive_tasks": [{"id": task.id, "description": task.description, "state": task.state, "due_date": iso(task.due_date)} for task in tasks],
-        "support_requests": [{"id": item.id, "request_text": item.request_text, "status": item.status} for item in supports],
-        "followups": [{"id": item.id, "related_type": item.related_type, "related_id": item.related_id, "resolution_state": item.resolution_state} for item in followups],
+        "support_requests": [{"id": item.id, "request_text": item.request_text, "status": item.status, "acknowledged_at": iso(item.acknowledged_at), "resolved_at": iso(item.resolved_at), "outcome": item.outcome} for item in supports],
+        "followups": [{"id": item.id, "related_type": item.related_type, "related_id": item.related_id, "resolution_state": item.resolution_state, "reported_outcome": item.reported_outcome} for item in followups],
     }
 
 
@@ -197,7 +198,7 @@ async def process_turn(app, turn_id: str) -> None:
         raw = await provider.interpret_turn(turn.transcript, context)
         require_active_device()
         interpretation = Interpretation.model_validate(raw)
-        if interpretation.intent not in {"proposal", "confirm", "correct", "clarify", "explain", "chat"}:
+        if interpretation.intent not in {"proposal", "confirm", "correct", "clarify", "explain", "support_status", "followup_status", "chat"}:
             raise ValueError("Provider returned an unsupported intent")
 
         proposal = None
@@ -207,6 +208,7 @@ async def process_turn(app, turn_id: str) -> None:
         spoken = interpretation.spoken_text.strip() or "Please try that again."
         current = context.get("current_proposal")
         action = None
+        status_guard = None
         kind = interpretation.kind
         if interpretation.intent == "proposal" or interpretation.intent == "correct" and current:
             kind = current["kind"] if interpretation.intent == "correct" else kind
@@ -227,6 +229,10 @@ async def process_turn(app, turn_id: str) -> None:
                 spoken, action = "Saved.", "confirm"
         elif interpretation.intent == "explain":
             spoken = _grounded_explanation(context, interpretation)
+        elif interpretation.intent in {"support_status", "followup_status"}:
+            spoken, status_guard = status_reply(db, turn.patient_id, interpretation.intent, interpretation.payload.get("record_id"))
+            if not status_guard:
+                status = "clarification_required"
         elif interpretation.intent == "clarify":
             status = "clarification_required"
 
@@ -257,6 +263,10 @@ async def process_turn(app, turn_id: str) -> None:
                 fresh_context = _context(db, device, turn.context_id)
                 if _grounded_explanation(fresh_context, interpretation) != spoken:
                     raise HTTPException(409, "The medication plan changed. Please ask for the explanation again.")
+            elif interpretation.intent in {"support_status", "followup_status"}:
+                fresh_spoken, fresh_guard = status_reply(db, turn.patient_id, interpretation.intent, interpretation.payload.get("record_id"))
+                if (fresh_spoken, fresh_guard) != (spoken, status_guard):
+                    raise HTTPException(409, "The recorded status changed. Please ask again for the current update.")
         except HTTPException as exc:
             db.rollback()
             proposal, record_type, record_id = None, None, None
@@ -265,7 +275,9 @@ async def process_turn(app, turn_id: str) -> None:
             lock_patient(db, turn.patient_id)
             require_active_device()
         guard = None
-        if proposal:
+        if status_guard and status == "completed":
+            guard = {"status_record": status_guard}
+        elif proposal:
             guard = {"proposal_id":proposal.id,"status":"pending"}
         elif status=="committed" and current:
             guard = {"proposal_id":current["id"],"status":"committed"}

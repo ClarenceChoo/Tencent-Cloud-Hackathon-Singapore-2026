@@ -30,6 +30,7 @@ import {
 import * as Notifications from "expo-notifications";
 import { useVoice } from "./useVoice";
 import { useReminders } from "./useReminders";
+import { CareOrigin, CareHistory } from "./CareOrigin";
 
 const value = (row: CareRow, key: string) =>
   typeof row[key] === "string" ? (row[key] as string) : "";
@@ -588,6 +589,12 @@ function Companion() {
                         {new Date(value(note, "created_at")).toLocaleString()}
                       </Text>
                       <Text style={s.body}>{value(note, "wording")}</Text>
+                      {value(note, "occurrence_text") ? (
+                        <Text style={s.caption}>
+                          Reported time: {value(note, "occurrence_text")}
+                        </Text>
+                      ) : null}
+                      <CareOrigin row={note} />
                     </View>
                   ))
                 ) : (
@@ -604,6 +611,17 @@ function Companion() {
                     <Text style={s.body}>
                       {value(row, "source_description")}
                     </Text>
+                    <Text style={s.caption}>
+                      Reported time:{" "}
+                      {value(row, "occurrence_text") ||
+                        value(row, "occurred_at") ||
+                        "Not recorded"}
+                    </Text>
+                    <Text style={s.caption}>
+                      Reporter:{" "}
+                      {value(row, "reporting_actor") || "Not recorded"}
+                    </Text>
+                    <CareOrigin row={row} />
                   </View>
                 ))}
               </>
@@ -641,6 +659,12 @@ function Companion() {
                     <Text style={s.caption}>
                       {value(dose, "report_state").replaceAll("_", " ")}
                     </Text>
+                    {dose.report_time ? (
+                      <>
+                        <CareOrigin row={dose} />
+                        <CareHistory row={dose} />
+                      </>
+                    ) : null}
                   </View>
                 ))}
               </>
@@ -652,8 +676,24 @@ function Companion() {
                   <View key={task.id} style={s.entry}>
                     <Text style={s.body}>{value(task, "description")}</Text>
                     <Text style={s.caption}>
-                      {value(task, "state")} · {value(task, "due_date")}
+                      {value(task, "state")} · Due {value(task, "due_date")}
                     </Text>
+                    {task.appointment_date ? (
+                      <Text style={s.caption}>
+                        Appointment: {value(task, "appointment_date")}
+                      </Text>
+                    ) : null}
+                    {task.completion_date ? (
+                      <Text style={s.caption}>
+                        Completed: {value(task, "completion_date")}
+                      </Text>
+                    ) : null}
+                    <Text style={s.caption}>
+                      Care-plan source:{" "}
+                      {value(task, "source") || "Not recorded"}
+                    </Text>
+                    <CareOrigin row={task} />
+                    <CareHistory row={task} />
                   </View>
                 ))}
                 {home.support_requests.map((request) => (
@@ -663,6 +703,18 @@ function Companion() {
                       {value(request, "status")}
                       {request.outcome ? " · " + value(request, "outcome") : ""}
                     </Text>
+                    {request.barrier_text ? (
+                      <Text style={s.body}>
+                        Reported barrier: {value(request, "barrier_text")}
+                      </Text>
+                    ) : null}
+                    {request.calling_route ? (
+                      <Text style={s.body}>
+                        Calling route: {value(request, "calling_route")}. Parse
+                        does not dispatch help.
+                      </Text>
+                    ) : null}
+                    <CareOrigin row={request} prefix="Request recorded" />
                   </View>
                 ))}
                 {home.followups.map((followup) => (
@@ -674,6 +726,8 @@ function Companion() {
                       {value(followup, "resolution_state")} ·{" "}
                       {value(followup, "reported_outcome")}
                     </Text>
+                    <CareOrigin row={followup} prefix="Follow-up created" />
+                    <CareHistory row={followup} />
                   </View>
                 ))}
                 <Text style={s.body}>

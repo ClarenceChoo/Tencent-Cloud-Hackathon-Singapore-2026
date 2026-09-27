@@ -284,12 +284,10 @@ def home(request: Request, response: Response, authorization: str | None = Heade
     recipients = db.execute(select(m.AccessGrant, m.User).join(m.User, m.User.id == m.AccessGrant.user_id).where(
         m.AccessGrant.patient_id == patient.id, m.AccessGrant.revoked_at.is_(None), m.User.active.is_(True))).all()
 
-    def source(proposal_id):
-        p = db.get(m.ConfirmationProposal, proposal_id) if proposal_id else None
-        t = db.get(m.VoiceTurn, p.source_turn_id) if p and p.source_turn_id else None
-        d = db.get(m.Device, t.device_id) if t else None
-        return {'type': d.device_type if d else 'dashboard', 'device_id': d.id if d else None,
-                'turn_id': t.id if t else None}
+    from .provenance import CareEvidence
+    evidence = CareEvidence(db, patient.id, doses=doses, notes=notes, measurements=measurements,
+                            tasks=tasks, supports=supports, followups=followups)
+    source = evidence.source
 
     return {
         'device_id': device.id, 'server_time': iso(utcnow()),
@@ -304,21 +302,33 @@ def home(request: Request, response: Response, authorization: str | None = Heade
         'medication_plan': plan_dict(plan) if plan else None,
         'doses': [{'id': d.id, 'medicine_id': d.medicine_id, 'medicine_name': d.medicine_name,
                    'plan_version': d.plan_version, 'scheduled_at': iso(d.scheduled_at), 'report_state': d.report_state,
-                   'report_time': iso(d.report_time), 'source': source(d.confirmation_proposal_id)} for d in doses],
+                   'report_time': iso(d.report_time), 'taken_time_text': d.taken_time_text,
+                   'source': source(d.confirmation_proposal_id), 'provenance': source(d.confirmation_proposal_id),
+                   'report_history': evidence.reports[d.id][-20:], 'history_truncated': len(evidence.reports[d.id]) > 20} for d in doses],
         'notes': [{'id': n.id, 'wording': n.wording, 'created_at': iso(n.created_at),
-                   'shared_with_user_ids': n.shared_with_user_ids, 'source': source(n.proposal_id)} for n in notes],
+                   'shared_with_user_ids': n.shared_with_user_ids, 'source': source(n.proposal_id),
+                   'provenance': source(n.proposal_id), 'occurrence_text': n.occurrence_text,
+                   'occurred_at': iso(n.occurred_at), 'timezone': n.timezone} for n in notes],
         'measurements': [{'id': r.id, 'systolic': r.systolic, 'diastolic': r.diastolic, 'unit': r.unit,
                           'occurred_at': iso(r.occurred_at), 'source_description': r.source_description,
-                          'reporting_actor': r.reporting_actor, 'source': source(r.proposal_id)} for r in measurements],
+                          'reporting_actor': r.reporting_actor, 'source': source(r.proposal_id),
+                          'provenance': source(r.proposal_id), 'created_at': iso(r.created_at),
+                          'occurrence_text': r.occurrence_text, 'timezone': r.timezone} for r in measurements],
         'preventive_tasks': [{'id': t.id, 'description': t.description, 'state': t.state,
                               'source': t.source, 'due_date': iso(t.due_date),
-                              'appointment_date': iso(t.appointment_date), 'completion_date': iso(t.completion_date)} for t in tasks],
+                              'appointment_date': iso(t.appointment_date), 'completion_date': iso(t.completion_date),
+                              'provenance': source(t.last_proposal_id), 'transitions': evidence.transitions[t.id][-20:], 'history_truncated': len(evidence.transitions[t.id]) > 20,
+                              'created_at': iso(t.created_at), 'updated_at': iso(t.updated_at)} for t in tasks],
         'support_requests': [{'id': s.id, 'request_text': s.request_text, 'status': s.status,
                               'acknowledged_at': iso(s.acknowledged_at), 'resolved_at': iso(s.resolved_at),
-                              'outcome': s.outcome, 'calling_route': s.calling_route_snapshot} for s in supports],
+                              'outcome': s.outcome, 'calling_route': s.calling_route_snapshot or ('No calling route is configured. Use your usual local support or emergency contact method.' if s.urgency == 'urgent' else None),
+                              'calling_route_configured': bool(s.calling_route_snapshot),
+                              'provenance': source(s.proposal_id), 'created_at': iso(s.created_at),
+                              'urgency': s.urgency, 'barrier_text': s.barrier_text} for s in supports],
         'followups': [{'id': f.id, 'related_type': f.related_type, 'related_id': f.related_id,
                        'check_at': iso(f.check_at), 'resolution_state': f.resolution_state,
-                       'reported_outcome': f.reported_outcome} for f in followups],
+                       'reported_outcome': f.reported_outcome, 'provenance': source(f.proposal_id),
+                       'resolutions': evidence.resolutions[f.id][-20:], 'history_truncated': len(evidence.resolutions[f.id]) > 20, 'created_at': iso(f.created_at)} for f in followups],
         'permitted_recipients': [{'id': u.id, 'name': u.name, 'relationship': g.relationship}
                                 for g, u in recipients if not g.expires_at or aware(g.expires_at) > utcnow()],
     }

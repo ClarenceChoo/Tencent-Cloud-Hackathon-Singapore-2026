@@ -368,3 +368,23 @@ node tools/android_native_smoke.cjs
 ```
 
 The harness retains Doze until delivery or two minutes after the due time, then allows a bounded recovery window; this run delivered during Doze, so the deferred-until-wake branch was not exercised. Four checks passed. The source/API/OS-state evidence is specific to this emulator and r6 APK: no physical-phone, audible-speech, live-push, DND, Battery Saver/OEM restriction or iOS acceptance is claimed.
+
+## Native Android Do Not Disturb
+
+The unchanged r6 verification APK was exercised under Android 16's actual `ZEN_MODE_NO_INTERRUPTIONS` policy (interruption filter 3), with Parse in the background. A checked fictional plan scheduled the exact local occurrence. The app displayed its existing warning about Focus/battery delays before the test enabled DND. No notification-policy access or channel exemption was granted.
+
+Android posted the generic **“Open Parse to check your care schedule.”** entry **85.576 seconds, or 85.300 seconds after clock adjustment,** after its due timestamp. Its matching `NotificationRecord` reported `mIntercept=true`, suppressed visual effects 159, and `mBypassDnd=false` on `parse-care`. The entry remained available in the notification shade under this policy. Before opening, the associated server command was queued with no audio access or playback acknowledgements.
+
+An actual tap on that entry reopened Parse while DND remained active. The refreshed reminder produced native fixture-tone player callbacks; medication remained `unconfirmed` and the number of care notes was unchanged. Host audio was disabled, so callback completion establishes neither audible playback nor acoustic silence. Original DND mode, interruption filter and effective policy were restored and verified.
+
+[Complete source/APK/state report](evidence/android-dnd-2026-09-27.json) · [restriction warning](evidence/android-dnd-scheduled-2026-09-27.png) · [generic notification with DND active](evidence/android-dnd-notification-2026-09-27.png) · [opened app](evidence/android-dnd-opened-2026-09-27.png).
+
+The [first attempt](evidence/android-dnd-policy-attempt-2026-09-27.json) passed the four behavior checks but failed a raw-string restoration assertion: Android added deprecated screen-on/off aggregate flags while retaining the same specific visual restrictions. The helper now compares the effective restrictions and every other policy field. Android documents those [legacy flag mappings](https://developer.android.com/reference/android/app/NotificationManager.Policy#suppressedVisualEffects). Checks against the recorded policies accept that equivalence and reject changed allowed callers or notification-list suppression. A fresh full native run then passed, including restoration. No production app/backend change or new APK was needed.
+
+```sh
+PARSE_NATIVE_FIXTURE_DIR="$PWD/runtime/native-care-20260927" \
+PARSE_NATIVE_RESUME_PAIRED=1 PARSE_NATIVE_ALERT_STATE=dnd \
+node tools/android_native_smoke.cjs
+```
+
+This is a scheduled local-alert and Android interruption-policy check. It does not establish physical audibility, actual APNs/FCM, iOS Focus behavior, Battery Saver/OEM restrictions or full E08 acceptance.

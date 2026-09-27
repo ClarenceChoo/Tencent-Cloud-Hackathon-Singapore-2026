@@ -1,0 +1,163 @@
+{
+  "at": "2026-09-27T15:05:27.582Z",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "environment": "Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and fixture tone replies. No real speech or acoustic audibility evidence.",
+  "source_sha256": {
+    "mobile/src/App.tsx": "040650c4ba7d61a35e2c5926c616a0f09a051f03da778766a3241dcd2ccdb275",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "mobile/src/api.ts": "c47f9fd49c83ec14df83d1939a941d6a2b48cddd8548807d123941b523b328cf",
+    "mobile/src/storage.ts": "d617df7a010d6cc68f0cd5dc6e3dfac021b1684bc6e10bc5fa50963871f3d99f",
+    "tools/android_native_fixture.py": "02f47605eb96b79595ccfb991cd8c2ecf72808bc3680386853d97b2113b75271",
+    "tools/android_native_smoke.cjs": "976ee5c8acd73e9373ff8a455ddac4937287e97474bed095a9c9db48dd2dc0c4",
+    "tools/android_native_care.cjs": "48be6db43584dba70abb17294f000c2e29741f389a531b2ba656b4373bf2897b",
+    "mobile/src/useReminders.ts": "ace3aff6d600a44a73aa5a7384cb15ee616624e42d17d42e13930aa2960ce269",
+    "mobile/src/alertSchedule.ts": "1c3f4f23ea35da5981b6fb4642e668444085f6120476238c101c6b1a477c051e",
+    "tools/android_native_alert_lifecycle.cjs": "a41d28e2c96fb5ed3f7412c221db190c5f91ed4c53af61e2cdbb7c896ad8c410",
+    "tools/android_native_power.cjs": "6aec1e672db88eb18290ab7b5bf4f607cc67d960f5610eb860982f4227b57d8a",
+    "tools/android_native_revocation.cjs": "635bcd81c0f108720e78f95117035c96dbb77bf28534b81b8cf25a9a74ef1435",
+    "tools/android_native_fault_proxy.py": "8619dd07b52ca3a888d8126e4885d506a44fde5988c71a5bd75b6bea6ef2e7dd",
+    "tools/android_native_control.py": "868f5d6fc4867f05fa625e9ddb089bea4845be0af3799d9ada76cf0e87187f35",
+    "tools/android_native_dnd.cjs": "903ba042a21da015f188eb8455523fea61979ee84d3ff070cf09717b948e72dd"
+  },
+  "checks": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    },
+    {
+      "name": "Native alert is scheduled for the exact dose before entering dnd state",
+      "passed": true
+    },
+    {
+      "name": "Android posts the exact generic alert in dnd state without recording a dose",
+      "passed": true
+    },
+    {
+      "name": "Actual dnd notification tap opens the native app and remains separate from medication reporting",
+      "passed": true
+    }
+  ],
+  "installed_apk_sha256": "15ad0b843daad17bd030dad58e8db29d9269f2317707db3236dec80484b33c3e",
+  "mode": "alert-dnd",
+  "enrollmentCreatedInThisRun": false,
+  "alert_state": "dnd",
+  "original_lock_disabled": true,
+  "clocks_before": {
+    "host_before_ms": 1790521538660,
+    "host_after_ms": 1790521538678,
+    "android_ms": 1790521538945,
+    "android_minus_host_midpoint_ms": 276,
+    "roundtrip_ms": 18
+  },
+  "dnd": {
+    "original": {
+      "at": "2026-09-27T15:05:38.702Z",
+      "setting": "0",
+      "mode": "ZEN_MODE_OFF",
+      "interruption_filter": 1,
+      "consolidated_policy": "NotificationManager.Policy[priorityCategories=PRIORITY_CATEGORY_ALARMS,PRIORITY_CATEGORY_MEDIA,PRIORITY_CATEGORY_MESSAGES,PRIORITY_CATEGORY_CALLS,PRIORITY_CATEGORY_REPEAT_CALLERS,PRIORITY_CATEGORY_CONVERSATIONS,priorityCallSenders=PRIORITY_SENDERS_STARRED,priorityMessageSenders=PRIORITY_SENDERS_STARRED,priorityConvSenders=important,suppressedVisualEffects=SUPPRESSED_EFFECT_SCREEN_OFF,SUPPRESSED_EFFECT_SCREEN_ON,SUPPRESSED_EFFECT_FULL_SCREEN_INTENT,SUPPRESSED_EFFECT_LIGHTS,SUPPRESSED_EFFECT_PEEK,SUPPRESSED_EFFECT_AMBIENT,hasPriorityChannels=false,allowPriorityChannels=true]"
+    },
+    "note": "Actual Android interruption policy and per-notification interception; host audio is disabled, so no acoustic silence or audibility is established.",
+    "entered": {
+      "at": "2026-09-27T15:06:10.915Z",
+      "setting": "2",
+      "mode": "ZEN_MODE_NO_INTERRUPTIONS",
+      "interruption_filter": 3,
+      "consolidated_policy": "NotificationManager.Policy[priorityCategories=,priorityCallSenders=PRIORITY_SENDERS_STARRED,priorityMessageSenders=PRIORITY_SENDERS_STARRED,priorityConvSenders=none,suppressedVisualEffects=SUPPRESSED_EFFECT_SCREEN_OFF,SUPPRESSED_EFFECT_SCREEN_ON,SUPPRESSED_EFFECT_FULL_SCREEN_INTENT,SUPPRESSED_EFFECT_LIGHTS,SUPPRESSED_EFFECT_PEEK,SUPPRESSED_EFFECT_AMBIENT,hasPriorityChannels=false,allowPriorityChannels=false]"
+    },
+    "last_observed": {
+      "at": "2026-09-27T15:09:38.781Z",
+      "setting": "2",
+      "mode": "ZEN_MODE_NO_INTERRUPTIONS",
+      "interruption_filter": 3,
+      "consolidated_policy": "NotificationManager.Policy[priorityCategories=,priorityCallSenders=PRIORITY_SENDERS_STARRED,priorityMessageSenders=PRIORITY_SENDERS_STARRED,priorityConvSenders=none,suppressedVisualEffects=SUPPRESSED_EFFECT_SCREEN_OFF,SUPPRESSED_EFFECT_SCREEN_ON,SUPPRESSED_EFFECT_FULL_SCREEN_INTENT,SUPPRESSED_EFFECT_LIGHTS,SUPPRESSED_EFFECT_PEEK,SUPPRESSED_EFFECT_AMBIENT,hasPriorityChannels=false,allowPriorityChannels=false]"
+    },
+    "at_due": {
+      "at": "2026-09-27T15:08:01.786Z",
+      "setting": "2",
+      "mode": "ZEN_MODE_NO_INTERRUPTIONS",
+      "interruption_filter": 3,
+      "consolidated_policy": "NotificationManager.Policy[priorityCategories=,priorityCallSenders=PRIORITY_SENDERS_STARRED,priorityMessageSenders=PRIORITY_SENDERS_STARRED,priorityConvSenders=none,suppressedVisualEffects=SUPPRESSED_EFFECT_SCREEN_OFF,SUPPRESSED_EFFECT_SCREEN_ON,SUPPRESSED_EFFECT_FULL_SCREEN_INTENT,SUPPRESSED_EFFECT_LIGHTS,SUPPRESSED_EFFECT_PEEK,SUPPRESSED_EFFECT_AMBIENT,hasPriorityChannels=false,allowPriorityChannels=false]"
+    },
+    "at_notification": {
+      "at": "2026-09-27T15:09:27.326Z",
+      "setting": "2",
+      "mode": "ZEN_MODE_NO_INTERRUPTIONS",
+      "interruption_filter": 3,
+      "consolidated_policy": "NotificationManager.Policy[priorityCategories=,priorityCallSenders=PRIORITY_SENDERS_STARRED,priorityMessageSenders=PRIORITY_SENDERS_STARRED,priorityConvSenders=none,suppressedVisualEffects=SUPPRESSED_EFFECT_SCREEN_OFF,SUPPRESSED_EFFECT_SCREEN_ON,SUPPRESSED_EFFECT_FULL_SCREEN_INTENT,SUPPRESSED_EFFECT_LIGHTS,SUPPRESSED_EFFECT_PEEK,SUPPRESSED_EFFECT_AMBIENT,hasPriorityChannels=false,allowPriorityChannels=false]"
+    },
+    "notification": {
+      "intercepted": true,
+      "suppressed_visual_effects": 159,
+      "channel": "NotificationChannel{mId='parse-care', mName=Parse care reminders, mDescription=, mImportance=3, mBypassDnd=false, mLockscreenVisibility=-1000, mSound=content://settings/system/notification_sound, mLights=false, mLightColor=0, mVibrationPattern=null, mVibrationEffect=null, mUserLockedFields=0, mUserVisibleTaskShown=false, mVibrationEnabled=false, mShowBadge=true, mDeleted=false, mDeletedTimeMs=-1, mGroup='null', mAudioAttributes=AudioAttributes: usage=USAGE_NOTIFICATION content=CONTENT_TYPE_SONIFICATION flags=0x800 tags= bundle=null, mBlockableSystem=false, mAllowBubbles=-1, mImportanceLockedDefaultApp=false, mOriginalImp=3, mParent=null, mConversationId=null, mDemoted=false, mImportantConvo=false, mLastNotificationUpdateTimeMs=0}"
+    },
+    "after_opening": {
+      "at": "2026-09-27T15:09:38.781Z",
+      "setting": "2",
+      "mode": "ZEN_MODE_NO_INTERRUPTIONS",
+      "interruption_filter": 3,
+      "consolidated_policy": "NotificationManager.Policy[priorityCategories=,priorityCallSenders=PRIORITY_SENDERS_STARRED,priorityMessageSenders=PRIORITY_SENDERS_STARRED,priorityConvSenders=none,suppressedVisualEffects=SUPPRESSED_EFFECT_SCREEN_OFF,SUPPRESSED_EFFECT_SCREEN_ON,SUPPRESSED_EFFECT_FULL_SCREEN_INTENT,SUPPRESSED_EFFECT_LIGHTS,SUPPRESSED_EFFECT_PEEK,SUPPRESSED_EFFECT_AMBIENT,hasPriorityChannels=false,allowPriorityChannels=false]"
+    },
+    "restored": {
+      "at": "2026-09-27T15:09:40.944Z",
+      "setting": "0",
+      "mode": "ZEN_MODE_OFF",
+      "interruption_filter": 1,
+      "consolidated_policy": "NotificationManager.Policy[priorityCategories=PRIORITY_CATEGORY_ALARMS,PRIORITY_CATEGORY_MEDIA,PRIORITY_CATEGORY_MESSAGES,PRIORITY_CATEGORY_CALLS,PRIORITY_CATEGORY_REPEAT_CALLERS,PRIORITY_CATEGORY_CONVERSATIONS,priorityCallSenders=PRIORITY_SENDERS_STARRED,priorityMessageSenders=PRIORITY_SENDERS_STARRED,priorityConvSenders=important,suppressedVisualEffects=SUPPRESSED_EFFECT_SCREEN_OFF,SUPPRESSED_EFFECT_SCREEN_ON,SUPPRESSED_EFFECT_FULL_SCREEN_INTENT,SUPPRESSED_EFFECT_LIGHTS,SUPPRESSED_EFFECT_PEEK,SUPPRESSED_EFFECT_AMBIENT,hasPriorityChannels=false,allowPriorityChannels=true]"
+    },
+    "restored_effective_policy_matches": true
+  },
+  "reminder_device_id": "dev_61c7c95d16034baaacd3220d4a41947d",
+  "plan_version": 18,
+  "dose_id": "dose_dd5ed568c2a845a3a6911dd16743ff9e",
+  "due_at": "2026-09-27T15:08:00Z",
+  "identity": "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_b9d18b5c5fce4578a958884f08897042.g15",
+  "native_scheduled_before": [
+    "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_771de8a961ab4d5bbaca4ba396121910.g15",
+    "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_b9d18b5c5fce4578a958884f08897042.g15"
+  ],
+  "observation_window_seconds_after_due": 300,
+  "command_while_dnd": {
+    "id": "cmd_5c496bfbfd32442ea3588c1970c2d911",
+    "dose_id": "dose_dd5ed568c2a845a3a6911dd16743ff9e",
+    "state": "queued",
+    "cancel_reason": null,
+    "audio_accessed": false,
+    "acks": []
+  },
+  "command_before_opening": {
+    "id": "cmd_5c496bfbfd32442ea3588c1970c2d911",
+    "dose_id": "dose_dd5ed568c2a845a3a6911dd16743ff9e",
+    "state": "queued",
+    "cancel_reason": null,
+    "audio_accessed": false,
+    "acks": []
+  },
+  "posted_at": "2026-09-27T15:09:25.576Z",
+  "delay_ms": 85576,
+  "clocks_after": {
+    "host_before_ms": 1790521767801,
+    "host_after_ms": 1790521767819,
+    "android_ms": 1790521768086,
+    "android_minus_host_midpoint_ms": 276,
+    "roundtrip_ms": 18
+  },
+  "clock_adjusted_delay_ms": 85300,
+  "raw_notification_sha256": "7bccd1a834598b8181f1fcc6b94b1318165a9e07795367c4139b54865bcdcf86",
+  "pid_after_notification": "2111",
+  "opened": true,
+  "medication_report": "unconfirmed",
+  "command_after_opening": {
+    "id": "cmd_5c496bfbfd32442ea3588c1970c2d911",
+    "dose_id": "dose_dd5ed568c2a845a3a6911dd16743ff9e",
+    "state": "playback_completed",
+    "cancel_reason": null,
+    "audio_accessed": true,
+    "acks": [
+      "received",
+      "playback_started",
+      "playback_completed"
+    ]
+  }
+}

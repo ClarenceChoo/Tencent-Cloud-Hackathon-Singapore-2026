@@ -16,7 +16,7 @@ const decode = value => value.replace(/&quot;/g, '"').replace(/&apos;/g, "'").re
 
 async function main() {
   const alertState = process.env.PARSE_NATIVE_ALERT_STATE || '';
-  assert(['', 'locked', 'terminated', 'offline-plan', 'revoked', 'offline-revoked', 'doze'].includes(alertState));
+  assert(['', 'locked', 'terminated', 'offline-plan', 'revoked', 'offline-revoked', 'doze', 'dnd'].includes(alertState));
   const alertLifecycle = !!alertState;
   const connectionOnly = process.env.PARSE_NATIVE_CONNECTION_ONLY === '1';
   const callsOnly = process.env.PARSE_NATIVE_CALLS_ONLY === '1';
@@ -134,6 +134,10 @@ async function main() {
       report.source_sha256[file] = createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex');
   }
   const save = () => fs.writeFileSync(path.join(directory, clockOnly ? 'native-clock-evidence.json' : largeTextOnly ? 'native-large-text-evidence.json' : callsOnly ? 'native-calls-evidence.json' : connectionOnly ? 'native-connection-evidence.json' : alertLifecycle ? `native-alert-${alertState}-evidence.json` : recoveryOnly ? `native-recovery-${receiptFault}-evidence.json` : alertsOnly ? 'native-alerts-evidence.json' : confirmationOnly ? 'native-confirmation-evidence.json' : lifecycleOnly ? 'native-lifecycle-evidence.json' : remindersOnly ? 'native-reminders-evidence.json' : 'native-integration-evidence.json'), JSON.stringify(report, null, 2));
+  if (alertState === 'dnd') {
+    const file = 'tools/android_native_dnd.cjs';
+    report.source_sha256[file] = createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex');
+  }
   const pass = name => { report.checks.push({ name, passed: true }); save(); console.log('PASS ' + name); };
   const browser = await chromium.launch({ headless: true, channel: 'chrome' });
   async function login(role) {

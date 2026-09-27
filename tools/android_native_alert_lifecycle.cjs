@@ -8,7 +8,7 @@ const execute = require('node:util').promisify(execFile);
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, screenshot, pass, owner, fixture, directory, appId, report, alertState }) {
-  assert(['locked', 'secure-locked', 'terminated', 'offline-plan', 'revoked', 'offline-revoked', 'doze', 'dnd', 'battery-saver'].includes(alertState));
+  assert(['locked', 'secure-locked', 'terminated', 'recents', 'offline-plan', 'revoked', 'offline-revoked', 'doze', 'dnd', 'battery-saver'].includes(alertState));
   const lockedScreen = alertState === 'locked' || alertState === 'secure-locked';
   const batterySaver = alertState === 'battery-saver';
   const powerName = batterySaver ? 'Battery Saver' : 'deep Doze';
@@ -69,6 +69,7 @@ module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, sc
     batterySaver ? await require('./android_native_battery.cjs')({ adb, appId, report }) : null;
   const dnd = alertState === 'dnd' ? await require('./android_native_dnd.cjs')({ adb, report }) : null;
   const secureLock = alertState === 'secure-locked' ? await require('./android_native_secure_lock.cjs')({ adb, ui, screenshot, appId, report }) : null;
+  const recents = alertState === 'recents' ? await require('./android_native_recents.cjs')({ adb, ui, screenshot, appId, report }) : null;
   try {
     await tap('Settings');
     await tap('Enable alerts');
@@ -129,6 +130,10 @@ module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, sc
       await power.enter();
     } else if (dnd) {
       await dnd.enter();
+    } else if (recents) {
+      await recents.dismiss();
+      report.native_scheduled_after_dismissal = await scheduledIds();
+      assert(report.native_scheduled_after_dismissal.includes(identity));
     } else {
       report.pid_before_termination = await pid();
       assert(report.pid_before_termination);
@@ -151,7 +156,7 @@ module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, sc
     report.observation_window_seconds_after_due = power ? 420 : 300;
     console.log('Waiting for actual OS alert ' + identity + ', due ' + dose.scheduled_at);
     while (Date.now() < Date.parse(dose.scheduled_at) + report.observation_window_seconds_after_due * 1000) {
-      if ((power || dnd || secureLock) && !restrictedCommand && Date.now() >= Date.parse(dose.scheduled_at)) {
+      if ((power || dnd || secureLock || recents) && !restrictedCommand && Date.now() >= Date.parse(dose.scheduled_at)) {
         await control('tick', 'medication');
         restrictedCommand = (await metadata()).commands.find(c => c.dose_id === dose.id);
         assert(restrictedCommand && restrictedCommand.state === 'queued' && !restrictedCommand.audio_accessed && restrictedCommand.acks.length === 0);
@@ -161,9 +166,12 @@ module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, sc
         } else if (dnd) {
           report.command_while_dnd = restrictedCommand;
           report.dnd.at_due = await dnd.observe();
-        } else {
+        } else if (secureLock) {
           report.command_while_locked = restrictedCommand;
           report.secure_lock.at_due = await secureLock.observe();
+        } else {
+          report.command_while_dismissed = restrictedCommand;
+          report.recents.at_due = await recents.observe();
         }
       }
       if (offlineRevoked && !revokedOffline && Date.now() >= Date.parse(dose.scheduled_at)) {
@@ -237,6 +245,12 @@ module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, sc
         }
         if (secureLock) {
           report.secure_lock.at_notification = await secureLock.observe();
+          const command = (await metadata()).commands.find(c => c.id === restrictedCommand?.id);
+          assert(command && !command.audio_accessed && command.acks.length === 0);
+          report.command_before_opening = command;
+        }
+        if (recents) {
+          report.recents.at_notification = await recents.observe();
           const command = (await metadata()).commands.find(c => c.id === restrictedCommand?.id);
           assert(command && !command.audio_accessed && command.acks.length === 0);
           report.command_before_opening = command;
@@ -352,13 +366,27 @@ module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, sc
     assert.equal((await owner.dash()).doses.find(d => d.id === dose.id).report_state, 'unconfirmed');
     report.opened = true;
     report.medication_report = 'unconfirmed';
-    if (power || dnd || secureLock) {
+    if (power || dnd || secureLock || recents) {
       report.command_after_opening = (await metadata()).commands.find(c => c.id === restrictedCommand.id);
       report.notes_after = (await owner.dash()).notes.length;
       assert.equal(report.notes_after, notesBefore);
     }
     if (batterySaver) report.power.after_opening = await power.observe();
     if (dnd) report.dnd.after_opening = await dnd.observe();
+    if (recents) {
+      await recents.opened();
+      // A new process can record the tap before its first reminder poll. Wait
+      // for actual player acknowledgements rather than treating opening as speech.
+      await until(async () => {
+        const command = (await metadata()).commands.find(c => c.id === restrictedCommand.id);
+        report.command_after_opening = command;
+        return command?.state === 'playback_completed' && command.audio_accessed &&
+          command.acks.includes('playback_started') && command.acks.includes('playback_completed');
+      }, 'The current reminder did not finish native playback after recents dismissal');
+      report.notes_after = (await owner.dash()).notes.length;
+      assert.equal(report.notes_after, notesBefore);
+      assert.equal((await owner.dash()).doses.find(d => d.id === dose.id).report_state, 'unconfirmed');
+    }
     await screenshot('native-' + alertState + '-opened');
     pass('Actual ' + alertState + ' notification tap opens the native app and remains separate from medication reporting');
   } finally {

@@ -426,3 +426,22 @@ node tools/android_native_smoke.cjs
 ```
 
 For the supplemental restart check, background the restored app, use normal `am kill` and verify process absence, then start its activity and inspect the paired home and server-selected device. No app data clearing or re-enrollment is involved. This run used the Android emulator, local HTTPS, scripted interpretation and tone replies. Physical PIN/biometric flows, audible speech, iOS and full E08 acceptance remain unverified. The host still has only Command Line Tools; a current `xcrun --find simctl` check cannot find the iOS Simulator tools. No production app/backend change or new APK was required for this verification.
+
+
+## Native Android recent-apps dismissal
+
+The unchanged r6 verification APK passed four checks after an actual upward swipe of its **Parse local verification** card in Android 16's recent-apps view. The harness selects that exact native card and leaves other tasks alone. Android removed task 103 and its process (PID 7284); the package remained `stopped=false`. The exact occurrence remained registered in native notification storage. This case uses neither `am kill` nor `force-stop`.
+
+At the due time the app still had no task or process. The actual scheduler queued its current reminder, with no audio access or playback acknowledgements. Android later started PID 8285 to post the generic **“Open Parse to check your care schedule.”** alert, without recreating an app task. Posting was **75.428 seconds after the due time (75.134 seconds after clock adjustment)**. No medicine-specific text appeared in the alert.
+
+Tapping that actual notification created a new Parse task (105). The harness waits separately for the server's native-player acknowledgements: `received`, `playback_started`, then `playback_completed`. Medication remains `unconfirmed` and all five care notes remain unchanged. Opening is therefore distinct from playback and from a medication report. An initial run captured the open event before the first reminder poll; a later read confirmed completion, and the final rerun explicitly awaited it. No production app/backend change or new APK was needed.
+
+[Complete source/APK/task/notification report](evidence/android-recents-2026-09-27.json) · [exact card before dismissal](evidence/android-recents-card-2026-09-27.png) · [after dismissal](evidence/android-recents-dismissed-2026-09-27.png) · [generic notification](evidence/android-recents-notification-2026-09-27.png) · [opened app after playback](evidence/android-recents-opened-2026-09-27.png).
+
+```sh
+PARSE_NATIVE_FIXTURE_DIR="$PWD/runtime/native-care-20260927" \
+PARSE_NATIVE_RESUME_PAIRED=1 PARSE_NATIVE_ALERT_STATE=recents \
+node tools/android_native_smoke.cjs
+```
+
+This is a controlled AOSP emulator check using local HTTPS, scripted interpretation and tone replies with host audio disabled. It does not establish physical-device audibility, manufacturer-specific task dismissal, force-stop recovery, iOS behavior or full E08 acceptance.

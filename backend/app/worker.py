@@ -1,12 +1,10 @@
 import asyncio
-from datetime import datetime, time, timedelta, timezone
+from datetime import timedelta
 from typing import Optional
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import BaseModel, ConfigDict
 from fastapi import HTTPException
 from sqlalchemy import select, update
-from sqlalchemy.exc import IntegrityError
 
 from . import models as m
 from .providers import SpeechTooLong
@@ -20,6 +18,7 @@ from .services import (
     proposal_dict,
     sha_bytes,
     validate_wav,
+    validate_payload,
 )
 
 
@@ -194,6 +193,7 @@ async def process_turn(app, turn_id: str) -> None:
         db.commit()
         turn = db.get(m.VoiceTurn, turn_id)
         context = _context(db, device, turn.context_id)
+        db.commit()
         raw = await provider.interpret_turn(turn.transcript, context)
         require_active_device()
         interpretation = Interpretation.model_validate(raw)
@@ -206,44 +206,64 @@ async def process_turn(app, turn_id: str) -> None:
         status = "completed"
         spoken = interpretation.spoken_text.strip() or "Please try that again."
         current = context.get("current_proposal")
-        if interpretation.intent == "proposal":
-            if not interpretation.kind:
+        action = None
+        kind = interpretation.kind
+        if interpretation.intent == "proposal" or interpretation.intent == "correct" and current:
+            kind = current["kind"] if interpretation.intent == "correct" else kind
+            if not kind:
                 raise ValueError("Proposal intent omitted a kind")
-            proposal = create_proposal(db, turn.patient_id, interpretation.kind, interpretation.payload, source_turn_id=turn.id)
+            clean, _ = validate_payload(db, turn.patient_id, kind, interpretation.payload)
+            spoken = build_readback(kind, clean)
             status = "awaiting_confirmation"
-            spoken = proposal.readback
+            action = "proposal"
         elif interpretation.intent == "correct":
-            if not current:
-                status = "clarification_required"
-                spoken = "I do not have a current item to correct. Please state the full item again."
-            else:
-                previous = db.get(m.ConfirmationProposal, current["id"])
-                proposal = create_proposal(db, turn.patient_id, previous.kind, interpretation.payload, source_turn_id=turn.id, replaces=previous)
-                status = "awaiting_confirmation"
-                spoken = proposal.readback
+            status = "clarification_required"
+            spoken = "I do not have a current item to correct. Please state the full item again."
         elif interpretation.intent == "confirm":
             if not current or not explicit_confirmation(turn.transcript):
                 status = "clarification_required"
                 spoken = "Please clearly confirm the current read-back, or state the correction."
             else:
-                try:
-                    committed = commit_proposal(db, current["id"], patient_id=turn.patient_id)
-                    status = "committed"
-                    record_type, record_id = committed.record_type, committed.record_id
-                    spoken = "Saved."
-                except HTTPException as exc:
-                    status = "clarification_required"
-                    spoken = str(exc.detail)
+                spoken, action = "Saved.", "confirm"
         elif interpretation.intent == "explain":
             spoken = _grounded_explanation(context, interpretation)
         elif interpretation.intent == "clarify":
             status = "clarification_required"
-            spoken = spoken or "Please tell me one item at a time."
-        elif interpretation.intent == "chat":
-            status = "completed"
 
+        # Prepare audio without persisting a proposal/record or holding write locks.
+        # Revalidate and commit care effects, assets and the result atomically below.
+        db.commit()
         clips = await _synthesise_sequence(provider, spoken)
+        from .routing import current_attempt, lock_patient
+        lock_patient(db, turn.patient_id)
         require_active_device()
+        try:
+            if turn.context_id:
+                for model in (m.ReminderCommand, m.CheckInDelivery):
+                    reminder = db.scalar(select(model).where(model.device_id == device.id, model.context_id == turn.context_id))
+                    if reminder and not current_attempt(db, device, reminder, for_playback=False):
+                        raise HTTPException(409, "The reminder changed. Please identify the item again.")
+            if action == "proposal":
+                previous = db.get(m.ConfirmationProposal, current["id"], populate_existing=True) if interpretation.intent == "correct" else None
+                proposal = create_proposal(db, turn.patient_id, kind, interpretation.payload,
+                                           source_turn_id=turn.id, replaces=previous)
+                if proposal.readback != spoken:
+                    raise HTTPException(409, "The care details changed. Please state the item again.")
+            elif action == "confirm":
+                committed = commit_proposal(db, current["id"], patient_id=turn.patient_id)
+                status = "committed"
+                record_type, record_id = committed.record_type, committed.record_id
+            elif interpretation.intent == "explain":
+                fresh_context = _context(db, device, turn.context_id)
+                if _grounded_explanation(fresh_context, interpretation) != spoken:
+                    raise HTTPException(409, "The medication plan changed. Please ask for the explanation again.")
+        except HTTPException as exc:
+            db.rollback()
+            proposal, record_type, record_id = None, None, None
+            status, spoken = "clarification_required", str(exc.detail)
+            clips = await _synthesise_sequence(provider, spoken)
+            lock_patient(db, turn.patient_id)
+            require_active_device()
         audio_paths = []
         for wav, duration_ms in clips:
             asset = m.AudioAsset(device_id=device.id, wav_bytes=wav, content_sha256=sha_bytes(wav), duration_ms=duration_ms, expires_at=utcnow() + timedelta(minutes=5))
@@ -286,41 +306,22 @@ def event_envelope(event: m.DeviceEvent, device_id: str) -> dict:
     return {"protocol_version": 1, "event_id": event.id, "type": event.event_type, "device_id": device_id, "server_time": iso(utcnow()), "expires_at": iso(event.expires_at), "payload": event.payload}
 
 
-def command_envelope(command: m.ReminderCommand) -> dict:
-    return {
-        "protocol_version": 1,
-        "event_id": command.event_id,
-        "type": "reminder.play",
-        "device_id": command.device_id,
-        "server_time": iso(utcnow()),
-        "expires_at": iso(command.expires_at),
-        "payload": {"command_id": command.id, "dose_instance_id": command.dose_instance_id, "plan_version": command.plan_version, "context_id": command.context_id, "audio_path": "/v1/device/audio/%s" % command.audio_asset_id},
-    }
+def command_envelope(command):
+    from .routing import envelope
+    return envelope(command)
 
 
-def checkin_envelope(checkin: m.CheckInDelivery) -> dict:
-    paths = ["/v1/device/audio/%s" % asset_id for asset_id in checkin.audio_asset_ids]
-    return {
-        "protocol_version": 1,
-        "event_id": checkin.event_id,
-        "type": "checkin.play",
-        "device_id": checkin.device_id,
-        "server_time": iso(utcnow()),
-        "expires_at": iso(checkin.expires_at),
-        "payload": {"command_id": checkin.id, "context_id": checkin.context_id, "greeting_text": checkin.greeting_text, "audio_path": paths[0], "audio_paths": paths},
-    }
+def checkin_envelope(checkin):
+    from .routing import envelope
+    return envelope(checkin)
 
 
 async def scheduler_tick(app) -> None:
     db = app.state.db.SessionLocal()
     now = utcnow()
     try:
-        expired = db.scalars(select(m.ReminderCommand).where(m.ReminderCommand.expires_at < now, m.ReminderCommand.delivery_state.in_(["queued", "received"]))).all()
-        for command in expired:
-            command.delivery_state = "expired"
-        expired_checkins = db.scalars(select(m.CheckInDelivery).where(m.CheckInDelivery.expires_at < now, m.CheckInDelivery.delivery_state.in_(["preparing", "queued", "received"]))).all()
-        for checkin in expired_checkins:
-            checkin.delivery_state = "expired"
+        from .routing import expire_attempts
+        expire_attempts(db, now)
         abandoned_before = now - timedelta(hours=app.state.settings.audio_retention_hours)
         for turn in db.scalars(select(m.VoiceTurn).where(m.VoiceTurn.raw_audio.is_not(None), m.VoiceTurn.received_at < abandoned_before)).all():
             turn.raw_audio = None
@@ -342,86 +343,8 @@ async def scheduler_tick(app) -> None:
             materialize_plan_doses(db, plan, now=now)
         db.commit()
 
-        checkin_patients = db.scalars(select(m.Patient).where(m.Patient.daily_check_in_enabled.is_(True), m.Patient.daily_check_in_local_time.is_not(None))).all()
-        for patient in checkin_patients:
-            try:
-                tz = ZoneInfo(patient.timezone)
-                hour, minute = [int(part) for part in patient.daily_check_in_local_time.split(":")]
-            except (ZoneInfoNotFoundError, ValueError):
-                continue
-            local_now = now.astimezone(tz)
-            due_at = datetime.combine(local_now.date(), time(hour, minute), tzinfo=tz).astimezone(timezone.utc)
-            if now < due_at:
-                continue
-            existing_checkin = db.scalar(select(m.CheckInDelivery.id).where(m.CheckInDelivery.patient_id == patient.id, m.CheckInDelivery.local_date == local_now.date()))
-            if existing_checkin:
-                continue
-            expires_at = due_at + timedelta(minutes=30)
-            greeting = "Hello %s. This is your daily check-in. How are you today?" % (patient.preferred_name or patient.name)
-            device = db.scalar(select(m.Device).where(m.Device.patient_id == patient.id, m.Device.revoked_at.is_(None)))
-            checkin = m.CheckInDelivery(device_id=device.id if device else None, patient_id=patient.id, local_date=local_now.date(), greeting_text=greeting, delivery_state="preparing", due_at=due_at, expires_at=expires_at)
-            db.add(checkin)
-            try:
-                db.commit()
-            except IntegrityError:
-                db.rollback()
-                continue
-            if now >= expires_at or not device:
-                checkin = db.get(m.CheckInDelivery, checkin.id)
-                checkin.delivery_state = "expired" if now >= expires_at else "failed"
-                db.commit()
-                continue
-            try:
-                clips = await _synthesise_sequence(_provider(app), greeting)
-            except Exception:
-                checkin = db.get(m.CheckInDelivery, checkin.id)
-                checkin.delivery_state = "failed"
-                db.add(m.AuditEvent(actor_type="system", patient_id=patient.id, action="checkin.audio_failed", object_type="patient", object_id=patient.id, details={"retryable": True}))
-                db.commit()
-                continue
-            asset_ids = []
-            for wav, duration_ms in clips:
-                asset = m.AudioAsset(device_id=device.id, wav_bytes=wav, content_sha256=sha_bytes(wav), duration_ms=duration_ms, expires_at=expires_at)
-                db.add(asset); db.flush(); asset_ids.append(asset.id)
-            checkin = db.get(m.CheckInDelivery, checkin.id)
-            checkin.audio_asset_ids = asset_ids
-            checkin.delivery_state = "queued"
-            db.flush()
-            envelope = checkin_envelope(checkin)
-            db.add(m.DeviceEvent(id=checkin.event_id, device_id=device.id, event_type="checkin.play", payload=envelope["payload"], expires_at=expires_at))
-            db.commit()
-
-        due_doses = db.scalars(
-            select(m.DoseInstance)
-            .join(m.MedicationPlanVersion, m.DoseInstance.plan_id == m.MedicationPlanVersion.id)
-            .where(m.MedicationPlanVersion.active.is_(True), m.DoseInstance.scheduled_at <= now, m.DoseInstance.scheduled_at >= now - timedelta(minutes=2))
-        ).all()
-        for dose in due_doses:
-            exists = db.scalar(select(m.ReminderCommand.id).where(m.ReminderCommand.dose_instance_id == dose.id))
-            if exists:
-                continue
-            device = db.scalar(select(m.Device).where(m.Device.patient_id == dose.patient_id, m.Device.revoked_at.is_(None)))
-            if not device:
-                continue
-            provider = _provider(app)
-            spoken = "Reminder for %s scheduled now. Playback does not record whether it was taken. Please report your status separately." % dose.medicine_name
-            try:
-                wav = await provider.synthesise_speech(spoken)
-                duration_ms = validate_wav(wav)
-            except Exception:
-                db.add(m.AuditEvent(actor_type="system", patient_id=dose.patient_id, action="reminder.audio_failed", object_type="dose", object_id=dose.id, details={"retryable": True}))
-                db.commit()
-                continue
-            expiry = now + timedelta(minutes=2)
-            asset = m.AudioAsset(device_id=device.id, wav_bytes=wav, content_sha256=sha_bytes(wav), duration_ms=duration_ms, expires_at=expiry)
-            db.add(asset)
-            db.flush()
-            command = m.ReminderCommand(device_id=device.id, dose_instance_id=dose.id, plan_version=dose.plan_version, audio_asset_id=asset.id, expires_at=expiry)
-            db.add(command)
-            db.flush()
-            event = m.DeviceEvent(device_id=device.id, event_type="reminder.play", payload=command_envelope(command)["payload"], expires_at=expiry, id=command.event_id)
-            db.add(event)
-            db.commit()
+        from .reminders import schedule_reminders
+        await schedule_reminders(app, now, lambda: _provider(app), _synthesise_sequence)
     finally:
         db.close()
 

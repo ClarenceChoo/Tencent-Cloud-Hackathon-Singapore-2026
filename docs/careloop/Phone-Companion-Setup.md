@@ -1,6 +1,6 @@
 # Parse phone companion — development setup
 
-This is an implementation in progress against [the full PRD](Phone-Companion-PRD.md). Read the [verification ledger](Phone-Companion-Verification.md) before using the build in a demonstration. Foreground voice source is implemented; active routing and native background reminders are not finished.
+This is an implementation in progress against [the full PRD](Phone-Companion-PRD.md). Read the [verification ledger](Phone-Companion-Verification.md) before using the build in a demonstration. Foreground voice and server-side active reminder routing are implemented. Native reminder delivery, background notifications and real-phone verification are not finished.
 
 ## Backend and database
 
@@ -59,9 +59,23 @@ This produces Hermes JavaScript bundles, not an installable application. Use `np
 
 Only one deliberate voice interaction should run at a time. Until the routing and notifications gates are completed, this development checkpoint does not replace the pendant's background reminders.
 
+## Select the reminder companion
+
+In the owner dashboard, Settings → Reminder companion selects exactly one paired phone or cardholder. Pairing alone does not select a new device. Existing databases backfill only an unambiguous single device; ambiguous installations start paused.
+
+Before switching away from a cardholder, physically power it off and acknowledge this in the dashboard. The legacy firmware can hold downloaded speech that the server cannot stop remotely. Before switching away from a phone, use **Settings → Pause reminders** on that phone. The app stops admitted audio operations, disables recording, cancels and verifies removal of scheduled native alerts, then attests cleanup to the server. The server deactivates only that installation. Owner revocation does not pretend to stop already downloaded audio; the revoked phone can still use the restricted cleanup endpoint, which exposes no care records.
+
+`PUT /v1/app/patients/{id}/active-companion` accepts `device_id`, `expected_generation` and `other_pendants_powered_off` through normal owner session/CSRF authorization. A stale generation returns 409. `POST /v1/phone/quiesce` accepts `playback_stopped: true` and `local_alerts_cleared: true` using the phone credential. Client code must perform and await those actions before sending this acknowledgement.
+
+One logical occurrence retains all per-device attempts. Only an unplayed, route-cancelled attempt may be requeued to a new generation within the original expiry. Downloaded/started/unknown/interrupted/completed delivery does not silently replay on a replacement. Neither playback nor a switch confirms medication taken. The dashboard API exposes attempt history separately from dose state.
+
+The database upgrade `0003_reminder_routes` preserves old command and acknowledgement identities. Since the previous build did not record downloads, old non-preparing attempts are treated as potentially heard. Downgrading after multiple attempts exist is rejected rather than dropping history; restore a pre-upgrade backup if a full rollback is required.
+
+The native reminder receiver and notification scheduling remain unfinished: selecting this development phone does **not** yet provide automatic reminder delivery. Use this control for development validation only until the ledger's device and notification gates pass.
+
 ## Identity, permissions and removal
 
-Unpair sends revocation before clearing the local identity. If the phone is offline, revocation cannot be claimed; the care-space owner can revoke it from the dashboard. Uninstall alone does not revoke server access.
+Unpair stops audio and clears local alerts, completes server quiescence for a bound phone, then sends revocation before clearing the local identity. If the phone is offline, revocation cannot be claimed; the care-space owner can revoke it from the dashboard. Uninstall alone does not revoke server access.
 
 SecureStore uses a device-only Keychain accessibility class, and Android backups are disabled. iOS Keychain entries can survive uninstall. An absent local installation marker with an existing secure identity triggers a re-pair warning; the owner should revoke the old installation. Backup/reinstall behavior still needs physical-platform verification.
 

@@ -71,6 +71,12 @@ class DeviceClaim(BaseModel):
     patient_id: str
 
 
+class ActiveCompanionSelect(BaseModel):
+    device_id: Optional[str] = Field(default=None, max_length=64)
+    expected_generation: int = Field(ge=0)
+    other_pendants_powered_off: bool = False
+
+
 class ResolveRequest(BaseModel):
     outcome: str = Field(min_length=1, max_length=2000)
 

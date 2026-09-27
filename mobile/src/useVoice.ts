@@ -13,6 +13,7 @@ import * as Haptics from "expo-haptics";
 import { File, Paths } from "expo-file-system";
 import { ApiError, PhoneApi } from "./api";
 import { loadPending, removeAudio, savePending, sweepAudio } from "./storage";
+import { Operations } from "./operations";
 import { wavDuration } from "./validation";
 import type { PendingTurn, TurnEvent } from "./contracts";
 
@@ -35,6 +36,9 @@ export function useVoice(
     "Hold the talk button, speak, then release.",
   );
   const [lastReply, setLastReply] = useState<TurnEvent | null>(null);
+  const operations = useRef(new Operations());
+  const apiRef = useRef(api);
+  apiRef.current = api;
   const phaseRef = useRef<Phase>("idle");
   const cancelled = useRef(false);
   const capturedContext = useRef<string | null>(null);
@@ -76,7 +80,13 @@ export function useVoice(
   };
 
   async function play(event: TurnEvent, controller: AbortController) {
-    if (!api || !event.payload.audio_paths?.length) return;
+    if (
+      !api ||
+      api !== apiRef.current ||
+      operations.current.closed ||
+      !event.payload.audio_paths?.length
+    )
+      return;
     if (event.payload.audio_paths.length > 20)
       throw new Error("The spoken reply contains too many parts.");
     let seconds = 0;
@@ -218,12 +228,14 @@ export function useVoice(
   async function recover() {
     if (
       !api ||
+      api !== apiRef.current ||
+      operations.current.closed ||
       !active.current ||
       !["idle", "error"].includes(phaseRef.current)
     )
       return;
     const pending = await loadPending();
-    if (!pending) return;
+    if (!pending || operations.current.closed) return;
     const controller = new AbortController();
     job.current = controller;
     try {
@@ -242,6 +254,8 @@ export function useVoice(
   async function begin() {
     if (
       !api ||
+      api !== apiRef.current ||
+      operations.current.closed ||
       !active.current ||
       !["idle", "error"].includes(phaseRef.current)
     )
@@ -371,9 +385,11 @@ export function useVoice(
       removeAudio(uri);
     }
   }
-  finishRef.current = finish;
+  finishRef.current = async (cancel) => {
+    await operations.current.run(() => finish(cancel));
+  };
   interrupted.current = () => {
-    void finish(true).catch(fail);
+    void operations.current.run(() => finish(true)).catch(fail);
   };
   useEffect(() => {
     sweepAudio();
@@ -400,6 +416,7 @@ export function useVoice(
   }, []);
   async function repeat() {
     if (
+      operations.current.closed ||
       !lastReply ||
       !active.current ||
       !["idle", "error"].includes(phaseRef.current)
@@ -416,23 +433,25 @@ export function useVoice(
   return {
     phase,
     message,
-    begin,
-    finish,
-    recover,
-    repeat,
+    begin: () => operations.current.run(begin),
+    finish: (cancel = false) => operations.current.run(() => finish(cancel)),
+    recover: () => operations.current.run(recover),
+    repeat: () => operations.current.run(repeat),
     lastReply,
-    speak: async (event: TurnEvent) => {
-      const controller = new AbortController();
-      job.current?.abort();
-      job.current = controller;
-      setLastReply(event);
-      setMessage(event.payload.spoken_text || "");
-      try {
-        await play(event, controller);
-      } catch (error) {
-        fail(error);
-      }
-    },
+    speak: (event: TurnEvent) =>
+      operations.current.run(async () => {
+        if (api !== apiRef.current) return;
+        const controller = new AbortController();
+        job.current?.abort();
+        job.current = controller;
+        setLastReply(event);
+        setMessage(event.payload.spoken_text || "");
+        try {
+          await play(event, controller);
+        } catch (error) {
+          fail(error);
+        }
+      }),
     discard: async () => {
       job.current?.abort();
       await savePending(null);
@@ -441,9 +460,28 @@ export function useVoice(
         "Unfinished recording discarded. Saved care records are unchanged.",
       );
     },
-    stop: () => {
-      job.current?.abort();
-      void finish(true).catch(fail);
-    },
+    stop: (after?: () => Promise<void>) =>
+      operations.current.stop(
+        async () => {
+          intent.current = false;
+          cancelled.current = true;
+          job.current?.abort();
+          await setIsAudioActiveAsync(false);
+          await finish(true);
+        },
+        async () => {
+          // A permission/prepare call may have been resolving during interruption.
+          // Disable audio again only after every admitted operation has settled.
+          await setIsAudioActiveAsync(false);
+          await setAudioModeAsync({ allowsRecording: false });
+          if (recorder.getStatus().isRecording)
+            throw new Error(
+              "Recording has not stopped. Keep this phone selected and try again.",
+            );
+          sweepAudio();
+          await after?.();
+          move("idle");
+        },
+      ),
   };
 }

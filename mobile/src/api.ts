@@ -135,6 +135,16 @@ export class PhoneApi {
       },
     );
   }
+  quiesce() {
+    return this.request("/v1/phone/quiesce", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        playback_stopped: true,
+        local_alerts_cleared: true,
+      }),
+    });
+  }
   revoke() {
     return this.request("/v1/phone/installation", { method: "DELETE" });
   }

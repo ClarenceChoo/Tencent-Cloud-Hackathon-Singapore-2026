@@ -19,7 +19,9 @@ from .config import Settings, get_settings
 from .database import Database
 from .device_setup import device_status, service_readiness, PROTOCOL
 from .phone import EnrollmentLimiter, router as phone_router
+from .routing import choose_target, current_attempt, lock_patient, route_view
 from .schemas import (
+    ActiveCompanionSelect,
     DeviceAck,
     DeviceClaim,
     GrantCreate,
@@ -159,7 +161,7 @@ def _dashboard(db: Session, patient: m.Patient, scopes: list, viewer_user_id: st
     plans = db.scalars(select(m.MedicationPlanVersion).where(m.MedicationPlanVersion.patient_id == patient.id).order_by(m.MedicationPlanVersion.version.desc())).all() if allowed("medications") else []
     doses = db.scalars(select(m.DoseInstance).where(m.DoseInstance.patient_id == patient.id).order_by(m.DoseInstance.scheduled_at.desc()).limit(100)).all() if allowed("medications") else []
     dose_ids = [item.id for item in doses]
-    commands = db.scalars(select(m.ReminderCommand).where(m.ReminderCommand.dose_instance_id.in_(dose_ids))).all() if dose_ids else []
+    commands = db.scalars(select(m.ReminderCommand).where(m.ReminderCommand.dose_instance_id.in_(dose_ids)).order_by(m.ReminderCommand.created_at)).all() if dose_ids else []
     command_by_dose = {item.dose_instance_id: item for item in commands}
     notes = db.scalars(select(m.HealthNote).where(m.HealthNote.patient_id == patient.id, m.HealthNote.deleted_at.is_(None)).order_by(m.HealthNote.created_at.desc())).all() if allowed("notes") else []
     if "*" not in scopes:
@@ -168,7 +170,24 @@ def _dashboard(db: Session, patient: m.Patient, scopes: list, viewer_user_id: st
     tasks = db.scalars(select(m.PreventiveTask).where(m.PreventiveTask.patient_id == patient.id).order_by(m.PreventiveTask.due_date)).all() if allowed("preventive_tasks") else []
     supports = db.scalars(select(m.SupportRequest).where(m.SupportRequest.patient_id == patient.id).order_by(m.SupportRequest.created_at.desc())).all() if allowed("support") else []
     followups = db.scalars(select(m.FollowUp).where(m.FollowUp.patient_id == patient.id).order_by(m.FollowUp.check_at)).all() if allowed("followups") else []
-    checkins = db.scalars(select(m.CheckInDelivery).where(m.CheckInDelivery.patient_id == patient.id).order_by(m.CheckInDelivery.due_at.desc()).limit(31)).all() if allowed("devices") else []
+    checkin_occurrences = db.scalars(select(m.ReminderOccurrence).where(m.ReminderOccurrence.patient_id == patient.id,
+        m.ReminderOccurrence.kind == "checkin").order_by(m.ReminderOccurrence.local_date.desc()).limit(31)).all() if allowed("devices") else []
+    checkin_attempts = db.scalars(select(m.CheckInDelivery).where(m.CheckInDelivery.occurrence_id.in_(
+        [o.id for o in checkin_occurrences])).order_by(m.CheckInDelivery.created_at)).all() if checkin_occurrences else []
+
+    def attempt_view(item):
+        return {"id": item.id, "device_id": item.device_id, "occurrence_id": item.occurrence_id,
+                "route_generation": item.route_generation, "delivery_state": item.delivery_state,
+                "audio_accessed_at": iso(item.audio_accessed_at), "cancel_reason": item.cancel_reason,
+                "created_at": iso(item.created_at)}
+
+    checkins = []
+    for occurrence in checkin_occurrences:
+        attempts = [item for item in checkin_attempts if item.occurrence_id == occurrence.id]
+        checkins.append({"id": occurrence.id, "local_date": iso(occurrence.local_date),
+                         "due_at": iso(aware(occurrence.expires_at) - timedelta(minutes=30)),
+                         "delivery_state": attempts[-1].delivery_state if attempts else "not_queued",
+                         "created_at": iso(occurrence.created_at), "delivery_attempts": [attempt_view(a) for a in attempts]})
     if "*" not in scopes:
         supports = [item for item in supports if item.recipient_user_id == viewer_user_id]
         followups = [item for item in followups if viewer_user_id in (item.permitted_user_ids or [])]
@@ -197,14 +216,15 @@ def _dashboard(db: Session, patient: m.Patient, scopes: list, viewer_user_id: st
     return {
         "patient": {"id": patient.id, "name": patient.name, "preferred_name": patient.preferred_name, "timezone": patient.timezone, "language": patient.language, "daily_check_in_enabled": patient.daily_check_in_enabled, "daily_check_in_local_time": patient.daily_check_in_local_time, "calling_route": patient.calling_route},
         "devices": [device_status(item, connected_ids) for item in devices],
+        "active_companion": route_view(db, patient.id) if allowed("devices") else None,
         "medication_plans": [plan_dict(item) for item in plans],
-        "doses": [{"id": item.id, "plan_version": item.plan_version, "medicine_id": item.medicine_id, "medicine_name": item.medicine_name, "scheduled_at": iso(item.scheduled_at), "delivery_state": command_by_dose[item.id].delivery_state if item.id in command_by_dose else "not_queued", "report_state": item.report_state, "report_time": iso(item.report_time), "taken_time_text": item.taken_time_text} for item in doses],
+        "doses": [{"id": item.id, "plan_version": item.plan_version, "medicine_id": item.medicine_id, "medicine_name": item.medicine_name, "scheduled_at": iso(item.scheduled_at), "delivery_state": command_by_dose[item.id].delivery_state if item.id in command_by_dose else "not_queued", "delivery_attempts": [attempt_view(a) for a in commands if a.dose_instance_id == item.id], "report_state": item.report_state, "report_time": iso(item.report_time), "taken_time_text": item.taken_time_text} for item in doses],
         "notes": [{"id": item.id, "wording": item.wording, "symptom": item.symptom, "occurrence_text": item.occurrence_text, "occurred_at": iso(item.occurred_at), "timezone": item.timezone, "created_at": iso(item.created_at), "shared_with_user_ids": item.shared_with_user_ids if "*" in scopes or "manage:sharing" in scopes else [viewer_user_id], "version": item.version} for item in notes],
         "measurements": [{"id": item.id, "measurement_type": item.measurement_type, "systolic": item.systolic, "diastolic": item.diastolic, "unit": item.unit, "occurred_at": iso(item.occurred_at), "occurrence_text": item.occurrence_text, "timezone": item.timezone, "source_description": item.source_description, "reporting_actor": item.reporting_actor, "created_at": iso(item.created_at), "supersedes_id": item.supersedes_id, "version": item.version} for item in measurements],
         "preventive_tasks": [{"id": item.id, "task_type": item.task_type, "description": item.description, "source": item.source, "due_date": iso(item.due_date), "timezone": item.timezone, "state": item.state, "appointment_date": iso(item.appointment_date), "completion_date": iso(item.completion_date), "version": item.version} for item in tasks],
         "support_requests": [{"id": item.id, "request_text": item.request_text, "recipient_user_id": item.recipient_user_id, "urgency": item.urgency, "barrier_text": item.barrier_text, "calling_route": item.calling_route_snapshot or (MISSING_CALLING_ROUTE if item.urgency == "urgent" else None), "calling_route_configured": bool(item.calling_route_snapshot), "status": item.status, "created_at": iso(item.created_at), "acknowledged_at": iso(item.acknowledged_at), "resolved_at": iso(item.resolved_at), "outcome": item.outcome} for item in supports],
         "followups": [{"id": item.id, "related_type": item.related_type, "related_id": item.related_id, "check_at": iso(item.check_at), "permission_scope": item.permission_scope, "permitted_user_ids": item.permitted_user_ids if "*" in scopes else [viewer_user_id], "reported_outcome": item.reported_outcome, "resolution_state": item.resolution_state, "created_at": iso(item.created_at)} for item in followups],
-        "check_ins": [{"id": item.id, "local_date": iso(item.local_date), "due_at": iso(item.due_at), "delivery_state": item.delivery_state, "created_at": iso(item.created_at)} for item in checkins],
+        "check_ins": checkins,
         "proposals": [proposal_dict(item) for item in proposals],
         "summaries": summary_rows,
         "access_grants": grants,
@@ -297,7 +317,8 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
             ZoneInfo(data.timezone)
         except ZoneInfoNotFoundError:
             raise HTTPException(status_code=422, detail="Unknown patient timezone")
-        patient = db.get(m.Patient, patient_id)
+        lock_patient(db, patient_id)
+        patient = db.get(m.Patient, patient_id, populate_existing=True)
         patient.preferred_name = data.preferred_name
         patient.language = data.language
         patient.timezone = data.timezone
@@ -308,6 +329,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
             pending_checkins = db.scalars(select(m.CheckInDelivery).where(m.CheckInDelivery.patient_id == patient_id, m.CheckInDelivery.delivery_state.in_(["preparing", "queued", "received"]))).all()
             for checkin in pending_checkins:
                 checkin.delivery_state = "cancelled"
+                checkin.cancel_reason = "checkin_disabled"
         db.add(m.AuditEvent(actor_type="user", actor_id=user.id, patient_id=patient_id, action="patient.profile_updated", object_type="patient", object_id=patient_id, details={"language": patient.language, "timezone": patient.timezone, "daily_check_in_enabled": patient.daily_check_in_enabled, "calling_route_configured": bool(patient.calling_route)}))
         db.commit()
         return {"id": patient.id, "preferred_name": patient.preferred_name, "language": patient.language, "timezone": patient.timezone, "daily_check_in_enabled": patient.daily_check_in_enabled, "daily_check_in_local_time": patient.daily_check_in_local_time, "calling_route": patient.calling_route}
@@ -417,10 +439,21 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
             raise HTTPException(status_code=404, detail="Device not found")
         user, row, grant, scopes = _patient_access(request, db, device.patient_id, "manage:devices")
         require_csrf(request, row)
+        lock_patient(db, device.patient_id)
+        db.refresh(device)
         device.revoked_at = device.revoked_at or utcnow()
         db.commit()
         await request.app.state.sockets.close_device(device.id)
         return {"device_id": device.id, "status": "revoked"}
+
+    @app.put("/v1/app/patients/{patient_id}/active-companion")
+    def active_companion(patient_id: str, data: ActiveCompanionSelect, request: Request, db: Session = Depends(get_db)):
+        user, session, _, _ = _patient_access(request, db, patient_id, "manage:devices")
+        require_csrf(request, session)
+        result = choose_target(db, patient_id, data.device_id, data.expected_generation,
+                               data.other_pendants_powered_off, user.id)
+        db.commit()
+        return result
 
     @app.delete("/v1/app/notes/{note_id}", status_code=204)
     def delete_note(note_id: str, request: Request, db: Session = Depends(get_db)):
@@ -648,25 +681,32 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
     @app.get("/v1/device/audio/{asset_id}")
     def device_audio(asset_id: str, authorization: Optional[str] = Header(default=None), db: Session = Depends(get_db)):
         device = authenticate_device_header(db, authorization)
+        lock_patient(db, device.patient_id)
+        db.refresh(device)
+        if device.revoked_at:
+            raise HTTPException(403, detail="Device is revoked")
         asset = db.get(m.AudioAsset, asset_id)
         if not asset or asset.device_id != device.id:
             raise HTTPException(status_code=404, detail="Audio asset not found")
         if aware(asset.expires_at) <= utcnow():
             raise HTTPException(status_code=410, detail="Audio asset expired")
-        command = db.scalar(select(m.ReminderCommand).where(m.ReminderCommand.audio_asset_id == asset.id))
-        if command:
-            active_plan = db.scalar(select(m.MedicationPlanVersion).where(m.MedicationPlanVersion.patient_id == device.patient_id, m.MedicationPlanVersion.active.is_(True)))
-            if command.cancelled_at or command.delivery_state in {"cancelled", "expired"} or not active_plan or command.plan_version != active_plan.version:
-                raise HTTPException(status_code=410, detail="Reminder audio is no longer current")
+        commands = db.scalars(select(m.ReminderCommand).where(m.ReminderCommand.audio_asset_id == asset.id)).all()
         checkins = db.scalars(select(m.CheckInDelivery).where(m.CheckInDelivery.device_id == device.id)).all()
-        checkin = next((item for item in checkins if asset.id in (item.audio_asset_ids or [])), None)
-        if checkin and (checkin.delivery_state in {"expired", "failed", "cancelled"} or aware(checkin.expires_at) <= utcnow()):
-            raise HTTPException(status_code=410, detail="Check-in audio is no longer current")
+        related = commands + [item for item in checkins if asset.id in (item.audio_asset_ids or [])]
+        if related and not any(current_attempt(db, device, item) for item in related):
+            raise HTTPException(410, detail="Reminder audio is no longer current")
+        for item in related:
+            item.audio_accessed_at = item.audio_accessed_at or utcnow()
+        db.commit()
         return Response(content=asset.wav_bytes, media_type="audio/wav", headers={"Cache-Control": "private, no-store", "Content-Length": str(len(asset.wav_bytes))})
 
     @app.post("/v1/device/acks")
     def device_ack(data: DeviceAck, authorization: Optional[str] = Header(default=None), db: Session = Depends(get_db)):
         device = authenticate_device_header(db, authorization)
+        lock_patient(db, device.patient_id)
+        db.refresh(device)
+        if device.revoked_at:
+            raise HTTPException(403, detail="Device is revoked")
         command = db.get(m.ReminderCommand, data.command_id)
         checkin = db.get(m.CheckInDelivery, data.command_id) if not command else None
         item = command or checkin
@@ -677,6 +717,11 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
             if existing.command_id != item.id or existing.stage != data.stage:
                 raise HTTPException(status_code=409, detail="Acknowledgement ID was reused with different content")
             return {"ack_id": existing.ack_id, "status": "recorded", "stage": existing.stage}
+        selected = route_view(db, device.patient_id)
+        if selected['device_id'] != device.id or selected['generation'] != item.route_generation:
+            raise HTTPException(409, detail="Reminder belongs to a previous companion selection")
+        if data.stage in {'received', 'playback_started'} and not current_attempt(db, device, item):
+            raise HTTPException(409, detail="Playback command is no longer current")
         order = {"queued": 0, "received": 1, "playback_started": 2, "playback_completed": 3, "interrupted": 3, "failed": 3, "expired": 3}
         if data.stage != "expired" and (item.delivery_state in {"expired", "cancelled"} or aware(item.expires_at) <= utcnow()):
             raise HTTPException(status_code=409, detail="Playback command is no longer playable")
@@ -702,9 +747,10 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         plan = db.scalar(select(m.MedicationPlanVersion).where(m.MedicationPlanVersion.patient_id == device.patient_id, m.MedicationPlanVersion.active.is_(True)))
         version = plan.version if plan else None
         commands = db.scalars(select(m.ReminderCommand).where(m.ReminderCommand.device_id == device.id, m.ReminderCommand.cancelled_at.is_(None), m.ReminderCommand.expires_at > utcnow(), m.ReminderCommand.delivery_state.in_(["queued", "received"])).limit(12)).all()
-        current = [item for item in commands if version is not None and item.plan_version == version]
+        current = [item for item in commands if current_attempt(db, device, item)]
         checkins = db.scalars(select(m.CheckInDelivery).where(m.CheckInDelivery.device_id == device.id, m.CheckInDelivery.expires_at > utcnow(), m.CheckInDelivery.delivery_state.in_(["queued", "received"])).order_by(m.CheckInDelivery.due_at).limit(2)).all()
-        payload = {"current_plan_version": version, "commands": [command_envelope(item) for item in current], "checkins": [checkin_envelope(item) for item in checkins]}
+        checkins = [item for item in checkins if current_attempt(db, device, item)]
+        payload = {"active_companion": route_view(db, device.patient_id), "current_plan_version": version, "commands": [command_envelope(item) for item in current], "checkins": [checkin_envelope(item) for item in checkins]}
         if len(json.dumps(payload, separators=(",", ":")).encode()) > DEVICE_JSON_MAX_BYTES:
             raise HTTPException(status_code=503, detail="Pending command response exceeds device transport limit")
         return payload
@@ -727,13 +773,13 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
                 events = db.scalars(select(m.DeviceEvent).where(m.DeviceEvent.device_id == device.id, m.DeviceEvent.expires_at > utcnow()).order_by(m.DeviceEvent.created_at)).all()
                 for event in events:
                     if event.event_type == "reminder.play":
-                        command = db.get(m.ReminderCommand, event.payload.get("command_id"))
+                        command = db.get(m.ReminderCommand, event.payload.get("command_id"), populate_existing=True)
                         active_plan = db.scalar(select(m.MedicationPlanVersion).where(m.MedicationPlanVersion.patient_id == device.patient_id, m.MedicationPlanVersion.active.is_(True)))
-                        if not command or command.cancelled_at or command.delivery_state not in {"queued", "received"} or not active_plan or command.plan_version != active_plan.version:
+                        if not command or not current_attempt(db, fresh, command) or command.delivery_state not in {"queued", "received"}:
                             continue
                     if event.event_type == "checkin.play":
-                        checkin = db.get(m.CheckInDelivery, event.payload.get("command_id"))
-                        if not checkin or checkin.delivery_state not in {"queued", "received"} or aware(checkin.expires_at) <= utcnow():
+                        checkin = db.get(m.CheckInDelivery, event.payload.get("command_id"), populate_existing=True)
+                        if not checkin or not current_attempt(db, fresh, checkin) or checkin.delivery_state not in {"queued", "received"}:
                             continue
                     if event.id not in seen:
                         envelope = event_envelope(event, device.id)
@@ -742,6 +788,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
                             return
                         await websocket.send_json(envelope)
                         seen.add(event.id)
+                db.rollback()  # Release read snapshots before waiting on the network.
                 try:
                     raw = await asyncio.wait_for(websocket.receive_json(), timeout=1)
                 except asyncio.TimeoutError:
@@ -770,6 +817,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         finally:
             if device:
                 try:
+                    lock_patient(db, device.patient_id)
                     started = db.scalars(select(m.ReminderCommand).where(m.ReminderCommand.device_id == device.id, m.ReminderCommand.delivery_state == "playback_started")).all()
                     for command in started:
                         command.delivery_state = "playback_unknown"

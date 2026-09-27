@@ -21,6 +21,7 @@ import {
   loadInstallation,
   newInstallation,
 } from "./storage";
+import * as Notifications from "expo-notifications";
 import { useVoice } from "./useVoice";
 
 const value = (row: CareRow, key: string) =>
@@ -113,6 +114,9 @@ function Companion() {
       } catch (err) {
         if (alive) {
           if (err instanceof ApiError && [401, 403].includes(err.status)) {
+            await stopLocalReminders(async () => {
+              await api!.quiesce();
+            });
             setHome(null);
             setEnrollment(null);
           }
@@ -152,12 +156,56 @@ function Companion() {
       setBusy(false);
     }
   }
-  async function unpair() {
-    voice.stop();
+  async function stopLocalReminders(after?: () => Promise<void>) {
+    await voice.stop(async () => {
+      await Notifications.cancelAllScheduledNotificationsAsync();
+      await Notifications.dismissAllNotificationsAsync();
+      const remaining = await Notifications.getAllScheduledNotificationsAsync();
+      if (remaining.length)
+        throw new Error(
+          "Some alerts are still scheduled. Keep this phone selected and try again.",
+        );
+      await after?.();
+    });
+  }
+  async function pauseReminders() {
+    if (!api) return;
     setBusy(true);
     setError("");
     try {
-      if (api && enrollment?.status === "paired") await api.revoke();
+      await stopLocalReminders(async () => {
+        await api.quiesce();
+      });
+      await refresh();
+    } catch (err) {
+      showError(err);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function unpair() {
+    setBusy(true);
+    setError("");
+    try {
+      const cleanupApi =
+        api || (installation ? new PhoneApi(installation) : null);
+      await stopLocalReminders(async () => {
+        if (cleanupApi) {
+          // A restored/revoked credential is used only for local removal and
+          // restricted server cleanup, never to resume access to care records.
+          try {
+            await cleanupApi.quiesce();
+          } catch (err) {
+            if (!(err instanceof ApiError && err.status === 401)) throw err;
+          }
+          try {
+            await cleanupApi.revoke();
+          } catch (err) {
+            if (!(err instanceof ApiError && [401, 403].includes(err.status)))
+              throw err;
+          }
+        }
+      });
       await clearInstallation();
       setInstallation(null);
       setEnrollment(null);
@@ -172,10 +220,10 @@ function Companion() {
   async function confirm() {
     const proposal = home?.current_proposal;
     if (!proposal || !api) return;
-    voice.stop();
     setBusy(true);
     setError("");
     try {
+      await voice.stop();
       await api.confirm(proposal.id, proposal.context_id);
       await refresh();
       try {
@@ -192,10 +240,10 @@ function Companion() {
   async function cancel() {
     const proposal = home?.current_proposal;
     if (!proposal || !api) return;
-    voice.stop();
     setBusy(true);
     setError("");
     try {
+      await voice.stop();
       await api.cancel(proposal.id, proposal.context_id);
       await refresh();
     } catch (err) {
@@ -402,7 +450,9 @@ function Companion() {
               <Button
                 title={isRecording ? "Cancel recording" : "Stop"}
                 secondary
-                onPress={voice.stop}
+                onPress={() => {
+                  void voice.stop().catch(showError);
+                }}
               />
             )}
             {voice.phase === "error" && (
@@ -442,7 +492,7 @@ function Companion() {
                   secondary
                   disabled={busy || isRecording}
                   onPress={() => {
-                    voice.stop();
+                    void voice.stop().catch(showError);
                     void api!
                       .speech(
                         home.current_proposal!.id,
@@ -592,7 +642,7 @@ function Companion() {
                   title="Review visit summaries in dashboard"
                   secondary
                   onPress={() => {
-                    voice.stop();
+                    void voice.stop().catch(showError);
                     void Linking.openURL(installation!.service);
                   }}
                 />
@@ -607,15 +657,27 @@ function Companion() {
                   of wellbeing.
                 </Text>
                 <Text style={s.body}>
-                  Reminder selection and native alerts are being implemented.
-                  This development build does not yet replace background
-                  reminders.
+                  {home.active_companion.device_id === home.device_id
+                    ? "This phone is selected for reminders. Pause it here before choosing another companion in the dashboard."
+                    : "This phone is not selected for reminders. The care-space owner can change the selection in the dashboard."}
+                </Text>
+                <Button
+                  title="Pause reminders"
+                  secondary
+                  disabled={busy}
+                  onPress={() => {
+                    void pauseReminders();
+                  }}
+                />
+                <Text style={s.body}>
+                  Native reminder alerts are still being implemented. This
+                  development build does not yet replace background reminders.
                 </Text>
                 <Button
                   title="Open phone permission settings"
                   secondary
                   onPress={() => {
-                    voice.stop();
+                    void voice.stop().catch(showError);
                     void Linking.openSettings();
                   }}
                 />
@@ -623,7 +685,7 @@ function Companion() {
                   title="Open care dashboard"
                   secondary
                   onPress={() => {
-                    voice.stop();
+                    void voice.stop().catch(showError);
                     void Linking.openURL(installation!.service);
                   }}
                 />

@@ -89,3 +89,52 @@ def test_downgrade_preserves_care_and_revokes_new_phone_credentials(legacy):
         assert c.execute(text('SELECT wording FROM health_notes')).scalar_one() == 'Preserved note'
         assert c.execute(text("SELECT revoked_at FROM devices WHERE id='d3'")).scalar_one() is not None
     migrate.upgrade(legacy)
+
+
+def populate_legacy_delivery(engine):
+    from datetime import timedelta
+    from sqlalchemy import MetaData
+    from app.security import utcnow
+    from conftest import wav_bytes
+    now = utcnow()
+    tables = MetaData(); tables.reflect(bind=engine)
+    with engine.begin() as c:
+        def add(table, **values): c.execute(tables.tables[table].insert().values(**values))
+        add('users',id='owner',name='Owner',email='fixture@example.invalid',role='owner',password_hash='fixture',active=True)
+        add('medication_plan_versions',id='plan',patient_id='single',version=1,timezone='Asia/Singapore',source='Fictional',checked_by_user_id='owner',checked_by_name='Owner',checked_at=now,active=True,medicines=[],schedule=[])
+        add('dose_instances',id='dose',patient_id='single',plan_id='plan',plan_version=1,medicine_id='fixture',medicine_name='Fictional',scheduled_at=now,report_state='unconfirmed')
+        add('audio_assets',id='audio',device_id='d1',wav_bytes=wav_bytes(),content_sha256='fixture',duration_ms=400,created_at=now,expires_at=now+timedelta(minutes=2))
+        add('reminder_commands',id='cmd_legacy',event_id='evt_legacy',device_id='d1',dose_instance_id='dose',plan_version=1,context_id='ctx_legacy',audio_asset_id='audio',delivery_state='queued',created_at=now,expires_at=now+timedelta(minutes=2))
+        add('reminder_acks',id='ackrow',ack_id=str(uuid4()),device_id='d1',command_id='cmd_legacy',stage='received',received_at=now)
+        add('checkin_deliveries',id='checkin_legacy',event_id='evt_checkin',device_id='d1',patient_id='single',local_date=now.date(),context_id='ctx_checkin',greeting_text='Fictional greeting',audio_asset_ids=['audio'],delivery_state='playback_completed',due_at=now,created_at=now,expires_at=now+timedelta(minutes=30))
+
+
+def test_populated_delivery_migration_preserves_ids_acks_and_uncertainty(legacy):
+    populate_legacy_delivery(legacy)
+    migrate.upgrade(legacy)
+    with legacy.connect() as c:
+        rows=c.execute(text('SELECT id,occurrence_id,route_generation,audio_accessed_at FROM reminder_commands')).mappings().all()
+        assert len(rows)==1 and rows[0]['id']=='cmd_legacy'
+        assert rows[0]['occurrence_id']=='occ_cmd_legacy' and rows[0]['route_generation']==1
+        assert rows[0]['audio_accessed_at'] is not None  # Old download state was unobservable.
+        assert c.execute(text('SELECT command_id FROM reminder_acks')).scalar_one()=='cmd_legacy'
+        assert c.execute(text('SELECT COUNT(*) FROM reminder_occurrences')).scalar_one()==2
+        assert c.execute(text('SELECT delivery_state FROM checkin_deliveries')).scalar_one()=='playback_completed'
+        assert c.execute(text('SELECT report_state FROM dose_instances')).scalar_one()=='unconfirmed'
+
+
+def test_downgrade_refuses_to_discard_multiple_delivery_attempts(legacy):
+    from sqlalchemy import MetaData
+    populate_legacy_delivery(legacy)
+    migrate.upgrade(legacy)
+    tables=MetaData();tables.reflect(bind=legacy)
+    with legacy.begin() as c:
+        table=tables.tables['reminder_commands']
+        values=dict(c.execute(table.select()).mappings().one())
+        values.update(id='cmd_replacement',event_id='evt_replacement',context_id='ctx_replacement',route_generation=2)
+        c.execute(table.insert().values(**values))
+    with pytest.raises(RuntimeError,match='Routing history exists'):
+        with legacy.begin() as c: command.downgrade(migrate.configuration(c),'0002_phone_identity')
+    with legacy.connect() as c:
+        assert c.execute(text('SELECT COUNT(*) FROM reminder_commands')).scalar_one()==2
+        assert c.execute(text('SELECT command_id FROM reminder_acks')).scalar_one()=='cmd_legacy'

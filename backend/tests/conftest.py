@@ -11,7 +11,7 @@ from sqlalchemy.engine import make_url
 
 from app.config import Settings
 from app.main import create_app
-from app.models import AccessGrant, Device, Patient, User
+from app.models import AccessGrant, CompanionRoute, Device, Patient, User
 from app.security import hash_password, sha256, utcnow
 
 
@@ -73,6 +73,9 @@ def env(tmp_path):
             device = Device(credential_hash=sha256(credential), patient_id=patient.id, claimed_at=utcnow(), capabilities=["wav-16k-mono"])
             unclaimed = Device(credential_hash=sha256("unclaimed-credential"), claim_code_hash=sha256(claim_code), claim_expires_at=utcnow() + timedelta(hours=1))
             db.add_all([owner_grant, caregiver_grant, caregiver_two_grant, outsider_grant, device, unclaimed])
+            db.flush()
+            # Explicit migrated baseline selection; new enrollment never auto-selects.
+            db.add(CompanionRoute(patient_id=patient.id, active_device_id=device.id, generation=1))
             db.commit()
             ids = {"owner": owner.id, "caregiver": caregiver.id, "caregiver_two": caregiver_two.id, "outsider": outsider.id, "patient": patient.id, "other_patient": other_patient.id, "device": device.id, "unclaimed": unclaimed.id, "credential": credential, "claim_code": claim_code}
             db.close()

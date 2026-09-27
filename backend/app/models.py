@@ -288,12 +288,29 @@ class FollowUpResolution(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class ReminderOccurrence(Base):
+    __tablename__ = "reminder_occurrences"
+    __table_args__ = (UniqueConstraint("patient_id", "kind", "local_date", name="uq_checkin_occurrence"),)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: new_id("occ"))
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(20))
+    dose_instance_id: Mapped[Optional[str]] = mapped_column(ForeignKey("dose_instances.id"), unique=True, nullable=True)
+    local_date: Mapped[Optional[datetime]] = mapped_column(Date, nullable=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class ReminderCommand(Base):
     __tablename__ = "reminder_commands"
+    __table_args__ = (UniqueConstraint("occurrence_id", "route_generation", name="uq_reminder_route_attempt"),)
     id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: new_id("cmd"))
     event_id: Mapped[str] = mapped_column(String(64), unique=True, default=lambda: new_id("evt"))
     device_id: Mapped[str] = mapped_column(ForeignKey("devices.id"), index=True)
-    dose_instance_id: Mapped[str] = mapped_column(ForeignKey("dose_instances.id"), unique=True)
+    dose_instance_id: Mapped[str] = mapped_column(ForeignKey("dose_instances.id"), index=True)
+    occurrence_id: Mapped[str] = mapped_column(ForeignKey("reminder_occurrences.id"), index=True)
+    route_generation: Mapped[int] = mapped_column(Integer)
+    audio_accessed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    cancel_reason: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     plan_version: Mapped[int] = mapped_column(Integer)
     context_id: Mapped[str] = mapped_column(String(64), unique=True, default=lambda: new_id("ctx"))
     audio_asset_id: Mapped[str] = mapped_column(ForeignKey("audio_assets.id"))
@@ -319,11 +336,15 @@ class ReminderAck(Base):
 
 class CheckInDelivery(Base):
     __tablename__ = "checkin_deliveries"
-    __table_args__ = (UniqueConstraint("patient_id", "local_date", name="uq_patient_checkin_date"),)
+    __table_args__ = (UniqueConstraint("occurrence_id", "route_generation", name="uq_checkin_route_attempt"),)
     id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: new_id("checkin"))
     event_id: Mapped[str] = mapped_column(String(64), unique=True, default=lambda: new_id("evt"))
     device_id: Mapped[Optional[str]] = mapped_column(ForeignKey("devices.id"), nullable=True, index=True)
     patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
+    occurrence_id: Mapped[str] = mapped_column(ForeignKey("reminder_occurrences.id"), index=True)
+    route_generation: Mapped[int] = mapped_column(Integer)
+    audio_accessed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    cancel_reason: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     local_date: Mapped[datetime] = mapped_column(Date)
     context_id: Mapped[str] = mapped_column(String(64), unique=True, default=lambda: new_id("ctx"))
     greeting_text: Mapped[str] = mapped_column(Text)

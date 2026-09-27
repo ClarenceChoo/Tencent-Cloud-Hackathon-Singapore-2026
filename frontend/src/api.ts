@@ -14,6 +14,7 @@ export type Dashboard = {
   devices: Row[]; medication_plans: Row[]; doses: Row[]; notes: Row[]; measurements: Row[];
   preventive_tasks: Row[]; support_requests: Row[]; followups: Row[]; proposals: Proposal[]; permissions: string[]; access_grants: Row[]; allowed_recipients: Row[]; summaries: Row[];
   device_setup?: DeviceSetupStatus;
+  active_companion?: {device_id:string|null;generation:number;changed_at?:string|null}|null;
 };
 
 let csrfToken = '';
@@ -58,6 +59,7 @@ export const api = {
   resolve: (id: string, outcome: string) => request<void>(`/app/support-requests/${encodeURIComponent(id)}/resolve`, json('POST', { outcome })),
   claimDevice: (code: string, patientId: string) => request<Row>('/app/devices/claim', json('POST', { code, patient_id: patientId })),
   approvePhone: (code: string, patientId: string) => request<Row>('/app/phone-enrollments/approve', json('POST', { code, patient_id: patientId })),
+  selectCompanion: (patientId:string, deviceId:string|null, generation:number, poweredOff:boolean) => request(`/app/patients/${encodeURIComponent(patientId)}/active-companion`, json('PUT', {device_id:deviceId, expected_generation:generation, other_pendants_powered_off:poweredOff})),
   revokeDevice: (id: string) => request<void>(`/app/devices/${encodeURIComponent(id)}/revoke`, json('POST')),
   createSummary: (patientId: string, startDate: string, endDate: string) => request<Row>(`/app/patients/${encodeURIComponent(patientId)}/summaries`, json('POST', { start_date: startDate, end_date: endDate })),
   updateSummary: (id: string, payload: Record<string, unknown>) => request<Row>(`/app/summaries/${encodeURIComponent(id)}`, json('PUT', payload)),

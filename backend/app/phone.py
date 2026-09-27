@@ -16,6 +16,8 @@ from sqlalchemy.exc import IntegrityError
 from . import models as m
 from .security import _bearer, aware, authenticate_device_header, iso, sha256, utcnow
 
+from .routing import lock_patient, pause_phone, route_view
+
 router = APIRouter(prefix="/v1/phone", tags=["phone"])
 
 
@@ -153,9 +155,35 @@ def enrollment_status(request: Request, response: Response,
     return enrollment_view(db, device, enrollment, token)
 
 
+class Quiescence(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    playback_stopped: Literal[True]
+    local_alerts_cleared: Literal[True]
+
+
+@router.post("/quiesce")
+def quiesce(data: Quiescence, response: Response,
+            authorization: str | None = Header(default=None), db=Depends(phone_db)):
+    # A revoked installation may attest only its own local cleanup. It cannot
+    # read care data, activate another device, or recover normal access here.
+    token = installation_token(authorization)
+    device = db.scalar(select(m.Device).where(m.Device.credential_hash == sha256(token),
+                       m.Device.device_type == "phone", m.Device.patient_id.is_not(None)))
+    if not device:
+        raise HTTPException(401, "Paired phone installation not found")
+    pause_phone(db, device)
+    db.commit()
+    response.headers["Cache-Control"] = "private, no-store"
+    return {"status": "paused"}
+
+
 @router.delete("/installation")
 async def revoke_installation(request: Request, authorization: str | None = Header(default=None), db=Depends(phone_db)):
     device = authenticate_phone(db, authorization)
+    lock_patient(db, device.patient_id)
+    db.refresh(device)
+    if route_view(db, device.patient_id)["device_id"] == device.id:
+        raise HTTPException(409, "Stop playback, clear local alerts and pause this phone before unpairing")
     device.revoked_at = utcnow()
     db.add(m.AuditEvent(actor_type="device", actor_id=device.id, patient_id=device.patient_id,
                         action="phone.unpaired", object_type="device", object_id=device.id, details={}))
@@ -237,7 +265,6 @@ def home(request: Request, response: Response, authorization: str | None = Heade
     device = authenticate_phone(db, authorization)
     response.headers['Cache-Control'] = 'private, no-store'
     patient = db.get(m.Patient, device.patient_id)
-    route = db.get(m.CompanionRoute, patient.id)
     plan = db.scalar(select(m.MedicationPlanVersion).where(m.MedicationPlanVersion.patient_id == patient.id, m.MedicationPlanVersion.active.is_(True)))
     proposal = db.scalar(select(m.ConfirmationProposal).join(m.VoiceTurn, m.VoiceTurn.id == m.ConfirmationProposal.source_turn_id).where(
         m.VoiceTurn.device_id == device.id, m.ConfirmationProposal.status == 'pending',
@@ -269,8 +296,7 @@ def home(request: Request, response: Response, authorization: str | None = Heade
                     'daily_check_in_enabled': patient.daily_check_in_enabled,
                     'daily_check_in_local_time': patient.daily_check_in_local_time,
                     'calling_route': patient.calling_route},
-        'active_companion': {'device_id': route.active_device_id if route else None,
-                             'generation': route.generation if route else 0},
+        'active_companion': route_view(db, patient.id),
         'voice': service_readiness(request.app),
         'current_proposal': proposal_dict(proposal) if proposal else None,
         'medication_plan': plan_dict(plan) if plan else None,

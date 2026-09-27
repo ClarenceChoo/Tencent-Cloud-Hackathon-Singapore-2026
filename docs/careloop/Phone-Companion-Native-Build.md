@@ -348,3 +348,23 @@ node tools/android_native_smoke.cjs
 `tools/android_native_clock.cjs` refuses alarms less than one hour away, preserves the fixture's care records, records source/APK hashes and checks actual server-reported schedule revisions. Five new production-hook regressions cover clock changes, time zones, foreground rebuilding, small timing variation and an overlapping foreground refresh. TypeScript and all **114 mobile tests** pass (25 unit + 89 app/hook/HTTP/storage tests). The normal r6 APK also builds, verifies its signature, installs with a matching digest and cold-launches without fixture trust or observed process-scoped errors.
 
 This does not verify iOS or physical-device scheduling, live push, or clock changes while an unreachable/terminated app cannot refresh. Offline notifications remain generic; OS batching and Focus/battery restrictions can still delay delivery.
+
+## Native Android deep Doze
+
+The unchanged r6 verification APK passed a forced deep-Doze notification run on the Android 16 emulator. Its normal configuration had both deep and light idle disabled, so this test explicitly enabled deep idle, waited for actual screen-off/Asleep state, then entered `IDLE`. PowerManager reported `mDeviceIdleMode=true` at the due time and when the OS notification was observed. Parse was not allowlisted. The emulator remained connected to its virtual charger; this is a forced OS-state test, not physical battery consumption or Android Battery Saver evidence.
+
+An owner-created fictional medication plan produced a native notification with the expected dose/route identity. At the due time, the real scheduler queued the associated reminder. While Doze was active, the phone did not fetch its audio or submit a playback acknowledgement. Android then posted **“Open Parse to check your care schedule.”** during deep idle, **78.239 seconds after the due timestamp, or 77.884 seconds after clock adjustment**. No medicine name or instruction appeared in the alert.
+
+After leaving Doze, the test opened that exact OS notification through the native UI. Its `opened` event was recorded; the current reminder then produced `received`, `playback_started` and `playback_completed` acknowledgements through the native fixture-tone player. The medication remained `unconfirmed`, and the care-note count did not change. Actual deep/light idle enablement, force state, screen state and charger state were restored and checked.
+
+[Complete source/APK/state report](evidence/android-doze-2026-09-27.json) · [visible restriction warning](evidence/android-doze-scheduled-2026-09-27.png) · [generic OS notification](evidence/android-doze-notification-2026-09-27.png) · [opened app](evidence/android-doze-opened-2026-09-27.png).
+
+An [earlier harness attempt](evidence/android-doze-screen-attempt-2026-09-27.json) checked the idle controller before Android finished its screen-off transition; it stopped before the due time and restored the original settings. The final harness waits for the actual transition. No production application or backend change was required.
+
+```sh
+PARSE_NATIVE_FIXTURE_DIR="$PWD/runtime/native-care-20260927" \
+PARSE_NATIVE_RESUME_PAIRED=1 PARSE_NATIVE_ALERT_STATE=doze \
+node tools/android_native_smoke.cjs
+```
+
+The harness retains Doze until delivery or two minutes after the due time, then allows a bounded recovery window; this run delivered during Doze, so the deferred-until-wake branch was not exercised. Four checks passed. The source/API/OS-state evidence is specific to this emulator and r6 APK: no physical-phone, audible-speech, live-push, DND, Battery Saver/OEM restriction or iOS acceptance is claimed.

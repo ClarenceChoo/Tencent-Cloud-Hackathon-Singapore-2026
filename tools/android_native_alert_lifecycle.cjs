@@ -8,7 +8,7 @@ const execute = require('node:util').promisify(execFile);
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, screenshot, pass, owner, fixture, directory, appId, report, alertState }) {
-  assert(['locked', 'terminated', 'offline-plan', 'revoked', 'offline-revoked'].includes(alertState));
+  assert(['locked', 'terminated', 'offline-plan', 'revoked', 'offline-revoked', 'doze'].includes(alertState));
   const offlinePlan = alertState === 'offline-plan';
   const offlineRevoked = alertState === 'offline-revoked';
   const offline = offlinePlan || offlineRevoked;
@@ -62,6 +62,7 @@ module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, sc
   report.alert_state = alertState;
   report.original_lock_disabled = originalLockDisabled === 'true';
   report.clocks_before = await clocks();
+  const power = alertState === 'doze' ? await require('./android_native_power.cjs')({ adb, appId, report }) : null;
   try {
     await tap('Settings');
     await tap('Enable alerts');
@@ -116,6 +117,8 @@ module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, sc
         return value.includes('mIsShowing=true') && value.includes('SCREEN_STATE_OFF') ? value : undefined;
       }, 'Android did not enter the actual keyguard/screen-off state');
       report.lock = { showing: true, screen_off: true, secure: /\bsecure=true/.test(locked), type: 'Swipe keyguard; no credential' };
+    } else if (power) {
+      await power.enter();
     } else {
       report.pid_before_termination = await pid();
       assert(report.pid_before_termination);
@@ -132,11 +135,18 @@ module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, sc
     pass('Native alert is scheduled for the exact dose before entering ' + alertState + ' state');
     const postedRecord = dump => dump.split(/(?=NotificationRecord\()/).find(block =>
       block.split('\n')[0].includes(appId) && block.split('\n')[0].includes('tag=' + identity + ' '));
-    let posted, changedPlan, revokedOffline;
+    let posted, changedPlan, revokedOffline, dozeCommand;
     const notesBefore = (await owner.dash()).notes.length;
-    report.observation_window_seconds_after_due = 300;
+    report.observation_window_seconds_after_due = power ? 420 : 300;
     console.log('Waiting for actual OS alert ' + identity + ', due ' + dose.scheduled_at);
-    while (Date.now() < Date.parse(dose.scheduled_at) + 300000) {
+    while (Date.now() < Date.parse(dose.scheduled_at) + report.observation_window_seconds_after_due * 1000) {
+      if (power && !dozeCommand && Date.now() >= Date.parse(dose.scheduled_at)) {
+        await control('tick', 'medication');
+        dozeCommand = (await metadata()).commands.find(c => c.dose_id === dose.id);
+        assert(dozeCommand && dozeCommand.state === 'queued' && !dozeCommand.audio_accessed && dozeCommand.acks.length === 0);
+        report.command_while_idle = dozeCommand;
+        report.power.at_due = await power.observe();
+      }
       if (offlineRevoked && !revokedOffline && Date.now() >= Date.parse(dose.scheduled_at)) {
         await control('tick', 'medication');
         const old = (await metadata()).commands.find(c => c.dose_id === dose.id);
@@ -191,10 +201,26 @@ module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, sc
         pass('A real queued reminder becomes stale while offline; remote route switching requires local phone cleanup');
       }
       posted = postedRecord(await adb('shell', 'dumpsys', 'notification', '--noredact'));
-      if (posted) break;
+      if (posted) {
+        if (power) {
+          report.power.delivery_phase = power.released ? 'after leaving Doze' : 'during deep Doze';
+          report.power.at_notification = await power.observe();
+          const command = (await metadata()).commands.find(c => c.id === dozeCommand?.id);
+          assert(command && !command.audio_accessed && command.acks.length === 0);
+          report.command_before_opening = command;
+          await power.release('generic alert observed');
+        }
+        break;
+      }
+      if (power && !power.released && Date.now() >= Date.parse(dose.scheduled_at) + 120000) {
+        report.power.no_alert_observed_by = new Date().toISOString();
+        report.power.still_scheduled_before_release = (await scheduledIds()).includes(identity);
+        assert(report.power.still_scheduled_before_release);
+        await power.release('two-minute observation after due time elapsed without an OS alert');
+      }
       await sleep(3000);
     }
-    assert(posted, 'Android did not post this exact notification within five minutes of its due time');
+    assert(posted, 'Android did not post this exact notification within the bounded observation window');
     assert(posted.includes('Open Parse to check your care schedule.'));
     assert(!posted.includes('Fictional Private Lifecycle Medicine') && !posted.includes('Fictional private instruction'));
     const postedAt = Number(posted.match(/\bwhen=(\d+)\//)?.[1]);
@@ -288,9 +314,14 @@ module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, sc
     assert.equal((await owner.dash()).doses.find(d => d.id === dose.id).report_state, 'unconfirmed');
     report.opened = true;
     report.medication_report = 'unconfirmed';
+    if (power) {
+      report.command_after_opening = (await metadata()).commands.find(c => c.id === dozeCommand.id);
+      assert.equal((await owner.dash()).notes.length, notesBefore);
+    }
     await screenshot('native-' + alertState + '-opened');
     pass('Actual ' + alertState + ' notification tap opens the native app and remains separate from medication reporting');
   } finally {
+    if (power) await power.restore();
     if (offline) { fault({}); await adb('reverse', 'tcp:8443', 'tcp:8443'); }
     await adb('shell', 'input', 'keyevent', 'KEYCODE_WAKEUP');
     await adb('shell', 'wm', 'dismiss-keyguard');

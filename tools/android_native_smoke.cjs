@@ -16,7 +16,7 @@ const decode = value => value.replace(/&quot;/g, '"').replace(/&apos;/g, "'").re
 
 async function main() {
   const alertState = process.env.PARSE_NATIVE_ALERT_STATE || '';
-  assert(['', 'locked', 'terminated', 'offline-plan', 'revoked', 'offline-revoked'].includes(alertState));
+  assert(['', 'locked', 'terminated', 'offline-plan', 'revoked', 'offline-revoked', 'doze'].includes(alertState));
   const alertLifecycle = !!alertState;
   const connectionOnly = process.env.PARSE_NATIVE_CONNECTION_ONLY === '1';
   const callsOnly = process.env.PARSE_NATIVE_CALLS_ONLY === '1';
@@ -114,7 +114,7 @@ async function main() {
   }
   const report = { at: new Date().toISOString(), liveSpeech: false, physicalPhone: false,
     environment: 'Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and fixture tone replies. No real speech or acoustic audibility evidence.',
-    source_sha256: Object.fromEntries(['mobile/src/App.tsx', 'mobile/src/useVoice.ts', 'mobile/src/api.ts', 'mobile/src/storage.ts', 'tools/android_native_fixture.py', 'tools/android_native_smoke.cjs', 'tools/android_native_care.cjs', ...(lifecycleOnly ? ['tools/android_native_lifecycle.cjs'] : []), ...(remindersOnly ? ['tools/android_native_reminders.cjs', 'tools/android_native_control.py'] : []), ...(alertLifecycle ? ['mobile/src/useReminders.ts', 'mobile/src/alertSchedule.ts', 'tools/android_native_alert_lifecycle.cjs', 'tools/android_native_revocation.cjs', 'tools/android_native_fault_proxy.py', 'tools/android_native_control.py'] : []), ...(recoveryOnly ? ['tools/android_native_recovery.cjs', 'tools/android_native_fault_proxy.py', 'tools/android_native_control.py'] : [])].map(file =>
+    source_sha256: Object.fromEntries(['mobile/src/App.tsx', 'mobile/src/useVoice.ts', 'mobile/src/api.ts', 'mobile/src/storage.ts', 'tools/android_native_fixture.py', 'tools/android_native_smoke.cjs', 'tools/android_native_care.cjs', ...(lifecycleOnly ? ['tools/android_native_lifecycle.cjs'] : []), ...(remindersOnly ? ['tools/android_native_reminders.cjs', 'tools/android_native_control.py'] : []), ...(alertLifecycle ? ['mobile/src/useReminders.ts', 'mobile/src/alertSchedule.ts', 'tools/android_native_alert_lifecycle.cjs', 'tools/android_native_power.cjs', 'tools/android_native_revocation.cjs', 'tools/android_native_fault_proxy.py', 'tools/android_native_control.py'] : []), ...(recoveryOnly ? ['tools/android_native_recovery.cjs', 'tools/android_native_fault_proxy.py', 'tools/android_native_control.py'] : [])].map(file =>
       [file, createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex')])),
     checks: [] };
   if (connectionOnly) {

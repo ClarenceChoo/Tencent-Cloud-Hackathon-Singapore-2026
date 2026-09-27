@@ -19,7 +19,7 @@ sys.path.insert(0, str(ROOT / "backend"))
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("mode", choices=["enqueue", "inspect"])
-    parser.add_argument("--kind", choices=["medication", "checkin"], default="medication")
+    parser.add_argument("--kind", choices=["medication", "checkin", "turns"], default="medication")
     parser.add_argument("--data-dir", type=Path, required=True)
     args = parser.parse_args()
     directory = args.data_dir.resolve()
@@ -46,6 +46,12 @@ def main():
         patient = db.get(m.Patient, metadata["patient_id"])
         if not patient or patient.name != "Fictional Mei Tan":
             raise SystemExit("Unexpected fixture patient.")
+        if args.kind == "turns":
+            if args.mode != "inspect":
+                raise SystemExit("Turn metadata inspection is read-only.")
+            rows = db.scalars(select(m.VoiceTurn).where(m.VoiceTurn.patient_id == patient.id)).all()
+            print(json.dumps({"turns": [{"id": t.id, "status": t.status, "raw_audio_retained": t.raw_audio is not None} for t in rows]}))
+            return
         result = {"kind": args.kind}
         existing_checkins = set(db.scalars(select(m.CheckInDelivery.id).where(m.CheckInDelivery.patient_id == patient.id)).all())
         if args.mode == "enqueue":

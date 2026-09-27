@@ -132,6 +132,32 @@ The isolated [alert run](evidence/android-local-alerts-2026-09-27.json) passed b
 
 The normal r3 preview at `runtime/releases/parse-companion-android-arm64-preview-2026-09-27-r3.apk` includes the cleanup fix (31,318,451 bytes; SHA-256 `5a3299a78222db3e8b653f30bb4b306c03fde2d98dca193bfedd8d30e3614cf7`). Compilation and APK signature verification passed, and it contains no local fixture resources. It uses the standard debug signing key. The normal package installs and cold-launches after force-stop without Metro; the installed APK digest matches, the screen shows “Connect to Parse,” and no process-scoped native/JavaScript errors were observed. [Artifact and launch report](evidence/android-preview-r3-2026-09-27.json), [pairing screen](evidence/android-preview-r3-pairing-2026-09-27.png). The earlier r2 installation evidence remains specific to r2.
 
+## Recovery after a lost upload receipt
+
+Native testing through a separate loopback TLS fault proxy confirmed that an abrupt disconnect after the backend accepts audio survives an offline app restart. Reconnection looks up the same receipt key, does not send another upload to the backend or confirm automatically, and explicit native confirmation creates one shared phone-sourced note. [Disconnect report](evidence/android-receipt-disconnect-2026-09-27.json).
+
+The proxy then reproduced a real client defect: when a gateway replaced the accepted upload's 202 receipt with HTTP 503, the app deleted its protected receipt identifier. After offline restart it could fetch the care view but did not reconcile that accepted turn by its original key. [Before-fix report](evidence/android-receipt-503-before-2026-09-27.json). The voice hook now treats 503 as ambiguous, like other server/gateway errors, and retains only the pending identifiers/context for read-only recovery. Captured audio is still removed immediately. Four hook regressions cover 500/502/503 recovery and a genuinely unaccepted 503 whose receipt remains unknown until explicit discard. TypeScript and all **104 mobile tests** pass (25 unit plus 79 app/hook/HTTP/storage cases).
+
+The rebuilt verification APK passed the actual 503/offline-restart scenario: the same accepted turn was recovered, the upload count and turn count stayed at one new turn, and no note was committed until the native Confirm action. The permitted caregiver received exactly one note; the restricted caregiver did not. A further restart added neither a turn nor a fact, and retained server raw audio was false. [Fixed native report](evidence/android-receipt-503-fixed-2026-09-27.json), [interrupted state](evidence/android-receipt-interrupted-2026-09-27.png), [recovered caregiver note](evidence/android-receipt-recovered-caregiver-2026-09-27.png). Speech remains scripted and the emulator has host audio disabled; this does not establish physical Wi-Fi/cellular or live-provider behavior.
+
+Reproduce against the existing fictional fixture using its default backend port 8443 and the proxy port 8444. Keep the prepared fixture environment and local TLS material from the preceding setup; no certificate is added to the normal preview. Start the proxy in a separate terminal:
+
+```sh
+backend/.venv/bin/python tools/android_native_fault_proxy.py \
+  --data-dir "$PARSE_NATIVE_FIXTURE_DIR" --port 8444
+```
+
+Then run the installed verification app check with Playwright available:
+
+```sh
+PARSE_NATIVE_RESUME_PAIRED=1 PARSE_NATIVE_RECOVERY_ONLY=1 \
+  PARSE_NATIVE_RECEIPT_FAULT=503 node tools/android_native_smoke.cjs
+```
+
+Use `PARSE_NATIVE_RECEIPT_FAULT=disconnect` for an abrupt connection close. The proxy verifies upstream TLS, forwards only phone/device API paths to the fictional loopback service, and never logs credentials, headers, transcripts or audio. It returns neither patient data nor authentication tokens to a different service. The harness restarts the verification app after changing the reverse mapping so an old pooled connection cannot bypass the fault. Its `finally` block clears the fault and restores `tcp:8443` to `tcp:8443`; stop the temporary proxy after the check. If the harness is forcibly killed, restore that mapping explicitly on the disposable emulator before continuing.
+
+The normal r4 preview is `runtime/releases/parse-companion-android-arm64-preview-2026-09-27-r4.apk` (31,318,447 bytes; SHA-256 `dfd18427a243ba9eb7012c14b86fb240f88fa338480e4cf860c01058f2f9329d`). Compilation, signature verification, install, matching installed digest and cold launch without Metro passed. It uses the standard debug signing key and contains no fixture trust resources. The pairing screen appeared without observed process-scoped native/JavaScript errors. [Artifact and launch report](evidence/android-preview-r4-2026-09-27.json), [pairing screen](evidence/android-preview-r4-pairing-2026-09-27.png). Earlier r2/r3 artifact evidence remains specific to those builds.
+
 ## Caption-only native demo
 
 `runtime/native-care-20260927/parse-native-demo-captioned.mp4` is a 90-second, 1440 × 900, 30 fps H.264 recording with no audio track. It shows the actual Android emulator app, note correction and confirmation, then a captured caregiver dashboard showing the saved phone-sourced note. Captions label the emulator, scripted speech and fictional data throughout; the app portion plays at 1.16× speed. This is native app evidence, not a physical-phone/live-speech or hardware-pendant film.

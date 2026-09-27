@@ -703,3 +703,53 @@ it("failed cleanup exposes a retry state and prevents new speech until verified"
   });
   expect(voice.phase).toBe("recording");
 });
+
+it.each([500, 502, 503])(
+  "an HTTP %s upload failure keeps receipt identity and original context for read-only recovery",
+  async (status) => {
+    api.upload.mockRejectedValueOnce(
+      new ApiError(status, "Gateway response unavailable"),
+    );
+    await act(async () => {
+      await voice.begin();
+      await voice.finish();
+    });
+    const sentKey = api.upload.mock.calls[0]![1];
+    expect(native.pending).toMatchObject({
+      key: sentKey,
+      context: "original-context",
+    });
+    expect(native.files.size).toBe(0);
+    expect(voice.phase).toBe("error");
+    expect(voice.message).not.toContain("Saved");
+    const recovering = await start(() => voice.recover());
+    expect(api.receipt).toHaveBeenCalledWith(sentKey, expect.any(AbortSignal));
+    await emit({ didJustFinish: true, playing: false });
+    await act(async () => {
+      await recovering.task;
+    });
+    expect(native.pending).toBeNull();
+    expect(api.upload).toHaveBeenCalledOnce();
+    expect(voice.phase).toBe("idle");
+  },
+);
+
+it("a genuinely unaccepted 503 remains unknown until explicit discard, without replaying audio", async () => {
+  api.upload.mockRejectedValueOnce(new ApiError(503, "Service unavailable"));
+  api.receipt.mockRejectedValue(new ApiError(404, "Receipt not found"));
+  await act(async () => {
+    await voice.begin();
+    await voice.finish();
+    await voice.recover();
+  });
+  expect(native.pending).not.toBeNull();
+  expect(voice.message).toContain("receipt is still unknown");
+  expect(native.files.size).toBe(0);
+  expect(api.upload).toHaveBeenCalledOnce();
+  expect(native.playerFactory).not.toHaveBeenCalled();
+  await act(async () => {
+    await voice.discard();
+  });
+  expect(native.pending).toBeNull();
+  expect(voice.message).toContain("does not undo a recording already received");
+});

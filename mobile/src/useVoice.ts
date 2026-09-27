@@ -568,10 +568,12 @@ export function useVoice(
       await reconcile({ ...pending, turnId: receipt.turn_id }, controller);
     } catch (error) {
       removeAudio(uri);
+      // A server/gateway failure can replace the receipt after acceptance.
+      // Preserve its identity for read-only lookup; never reupload the audio.
       if (
         !accepted &&
         error instanceof ApiError &&
-        [400, 401, 403, 409, 413, 422, 503].includes(error.status)
+        [400, 401, 403, 409, 413, 422].includes(error.status)
       )
         await clearPending(pending.key);
       retryAt.current = Date.now() + 15000;

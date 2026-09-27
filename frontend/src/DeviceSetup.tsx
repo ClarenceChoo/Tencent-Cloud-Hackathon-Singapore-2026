@@ -1,6 +1,6 @@
 import {useState} from 'react';
 import {Check, Wifi, Link2, MessageCircle, Shield} from 'lucide-react';
-import {Dashboard,label,niceDate} from './api';
+import {Dashboard,Row,label,niceDate} from './api';
 
 export default function DeviceSetup({data,canManage,onClaim,onRevoke}:{data:Dashboard;canManage:boolean;onClaim:(code:string,kind?:'phone'|'pendant')=>Promise<void>;onRevoke:(id:string)=>void}) {
   const [code,setCode]=useState('');
@@ -36,9 +36,12 @@ export default function DeviceSetup({data,canManage,onClaim,onRevoke}:{data:Dash
     </form>}
     {!canManage&&<p className="source-note">The care-space owner manages device pairing and access.</p>}
     <div className="paired-devices" aria-live="polite">
-      {data.devices.map(device=>{const status=label(device,'status');const statusName=status==='connected'?'Online':status==='revoked'?'Access revoked':status==='awaiting_connection'?'Paired · waiting for connection':'Offline';return <article className="paired-device" key={device.id}>
+      {data.devices.map(device=>{const presence=(device.phone_presence||{}) as Row;const status=label(device,'status');const statusName=status==='connected'?'Online':status==='revoked'?'Access revoked':status==='awaiting_connection'?'Paired · waiting for connection':'Offline';return <article className="paired-device" key={device.id}>
         <div className="paired-device-title"><h3>{device.device_type==='phone'?`Parse phone · ${label(device,'display_name')||label(device,'platform')}`:'Parse cardholder'}</h3><span className={`pairing-state ${status==='connected'?'is-online':''}`}>{statusName}</span></div>
         <p className="device-identifier">{device.id}</p>
+        {!!device.selected&&<p className="source-note">Selected reminder companion</p>}
+        {device.device_type==='phone'&&<dl className="pairing-facts"><div><dt>Phone app</dt><dd>{device.revoked_at?'Access revoked':presence.foreground_ready?'Foreground ready':presence.microphone_permission==='denied'?'Microphone blocked':presence.last_reported_lifecycle==='background'?'Last reported in background':'Not ready in foreground'}</dd></div><div><dt>Background alerts</dt><dd>{presence.background_alerts_enabled?'Enabled · delivery subject to OS settings':presence.notification_permission==='denied'?'Permission denied':'Not currently scheduled'}</dd></div><div><dt>Schedule coverage</dt><dd>{niceDate(presence.scheduled_until,'No coverage reported')}</dd></div></dl>}
+
         <dl className="pairing-facts"><div><dt>Last connection</dt><dd>{niceDate(device.last_seen,'Not connected yet')}</dd></div><div><dt>Battery</dt><dd>{typeof device.battery_mv==='number'?`${(device.battery_mv/1000).toFixed(2)} V`:'Not reported'}</dd></div><div><dt>Firmware</dt><dd>{label(device,'firmware_version')||'Not reported'}</dd></div></dl>
         {status==='stale'&&<p className="source-note">Check power, Wi-Fi and the service address. This status updates automatically.</p>}
         {canManage&&!device.revoked_at&&<button className="text-link revoke-device" onClick={()=>setRevokeId(String(device.id))}>Revoke device access</button>}

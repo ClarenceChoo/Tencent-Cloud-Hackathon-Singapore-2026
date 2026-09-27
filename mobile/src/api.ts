@@ -7,6 +7,9 @@ import type {
   Receipt,
   TurnEvent,
   TurnStatus,
+  Reminder,
+  ReminderSchedule,
+  PlaybackStage,
 } from "./contracts";
 import { audioPath } from "./validation";
 
@@ -132,6 +135,56 @@ export class PhoneApi {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ context_id: context }),
+      },
+    );
+  }
+  schedule() {
+    return this.request<ReminderSchedule>("/v1/phone/reminder-schedule");
+  }
+  pending() {
+    return this.request<{
+      active_companion: Home["active_companion"];
+      commands: Reminder[];
+      checkins: Reminder[];
+    }>("/v1/device/pending-commands");
+  }
+  currentReminder(id: string) {
+    return this.request<Reminder>(
+      "/v1/phone/reminders/" + encodeURIComponent(id),
+    );
+  }
+  ack(command: string, id: string, stage: PlaybackStage) {
+    return this.request("/v1/device/acks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ command_id: command, ack_id: id, stage }),
+    });
+  }
+  notificationEvent(
+    identity: string,
+    eventId: string,
+    stage: "scheduled" | "opened" | "suppressed" | "cancelled",
+  ) {
+    return this.request("/v1/phone/notification-events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identity, event_id: eventId, stage }),
+    });
+  }
+  presence(body: Record<string, unknown>) {
+    return this.request("/v1/phone/presence", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  }
+  registerPush(token: string | null) {
+    return this.request<{ registered: boolean; push_configured: boolean }>(
+      "/v1/phone/notification-registration",
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
       },
     );
   }

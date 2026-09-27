@@ -264,9 +264,16 @@ async def process_turn(app, turn_id: str) -> None:
             clips = await _synthesise_sequence(provider, spoken)
             lock_patient(db, turn.patient_id)
             require_active_device()
+        guard = None
+        if proposal:
+            guard = {"proposal_id":proposal.id,"status":"pending"}
+        elif status=="committed" and current:
+            guard = {"proposal_id":current["id"],"status":"committed"}
+        elif status=="completed" and interpretation.intent=="explain" and context.get("active_medication_plan"):
+            guard = {"plan_id":context["active_medication_plan"]["id"]}
         audio_paths = []
         for wav, duration_ms in clips:
-            asset = m.AudioAsset(device_id=device.id, wav_bytes=wav, content_sha256=sha_bytes(wav), duration_ms=duration_ms, expires_at=utcnow() + timedelta(minutes=5))
+            asset = m.AudioAsset(device_id=device.id, context_guard=guard, wav_bytes=wav, content_sha256=sha_bytes(wav), duration_ms=duration_ms, expires_at=utcnow() + timedelta(minutes=5))
             db.add(asset)
             db.flush()
             audio_paths.append("/v1/device/audio/%s" % asset.id)

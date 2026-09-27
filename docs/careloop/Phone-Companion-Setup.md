@@ -1,6 +1,6 @@
 # Parse phone companion — development setup
 
-This is an implementation in progress against [the full PRD](Phone-Companion-PRD.md). Read the [verification ledger](Phone-Companion-Verification.md) before using the build in a demonstration. Foreground voice and server-side active reminder routing are implemented. Native reminder delivery, background notifications and real-phone verification are not finished.
+This is an implementation in progress against [the full PRD](Phone-Companion-PRD.md). Read the [verification ledger](Phone-Companion-Verification.md) before using the build in a demonstration. Source now includes foreground voice/reminders, explicit reminder routing, generic local alerts and an Expo push adapter. Native builds, delivery on real phones and the complete acceptance gates remain unverified.
 
 ## Backend and database
 
@@ -71,7 +71,24 @@ One logical occurrence retains all per-device attempts. Only an unplayed, route-
 
 The database upgrade `0003_reminder_routes` preserves old command and acknowledgement identities. Since the previous build did not record downloads, old non-preparing attempts are treated as potentially heard. Downgrading after multiple attempts exist is rejected rather than dropping history; restore a pre-upgrade backup if a full rollback is required.
 
-The native reminder receiver and notification scheduling remain unfinished: selecting this development phone does **not** yet provide automatic reminder delivery. Use this control for development validation only until the ledger's device and notification gates pass.
+While the selected phone is open and idle, it polls for current reminders, rechecks their route and expiry, and records playback state in SecureStore before starting speech. A reserved or started reminder is not replayed after an uncertain interruption. Only actual native playback completion creates a completion acknowledgement; neither notifications nor playback confirm a dose. Automatic reconciliation of lost terminal acknowledgements after restart still needs refinement. Use this for development validation until the ledger's device and notification gates pass.
+
+## Native alerts and push configuration
+
+In the phone's Settings, choose **Enable alerts** to request notification permission. The app schedules generic medication/check-in alerts for the next 24 hours, capped at 60 pending alerts. A shortened coverage window is reported if the cap is reached. Schedules refresh while the app is open; reopening refreshes care state before any spoken reminder. Local alerts do not require an Expo push project. Android channel settings, Focus/Do Not Disturb, battery restrictions and OS scheduling can suppress or delay alerts. Exact delivery time is not guaranteed.
+
+Both local alerts and push hints use only `Parse` and `Open Parse to check your care schedule.` They contain opaque identifiers, never medication names, symptoms or clinical text. Notification scheduling/opening evidence is separate from audio playback and dose reports. Opening a stale alert fetches current state rather than playing cached speech. Permission denial cancels local alerts during synchronization and disables the server's push registration; a disconnected phone cannot instantly learn about a server-side revocation.
+
+For remote push in a native development/release build:
+
+1. Copy `mobile/.env.example` to an ignored local environment file. Set `EXPO_PUBLIC_EAS_PROJECT_ID` to the public UUID of the team's Expo project before building. For Android, set `PARSE_GOOGLE_SERVICES_FILE` to the local Firebase native configuration path. Keep private configuration and signing credentials out of Git.
+2. Configure the project's APNs credentials for iOS and FCM credentials for Android, matching `sg.parse.companion` (or the team's chosen application identifier). Follow the [Expo push setup guide](https://docs.expo.dev/push-notifications/push-notifications-setup/). Native credentials/configuration changes require rebuilding the app.
+3. Enable `CARELOOP_EXPO_PUSH_ENABLED=true` in the backend's secret environment. If the Expo project uses enhanced push security, also set `CARELOOP_EXPO_PUSH_ACCESS_TOKEN`. The server scheduler must be enabled. Compose forwards these variables; the defaults send no push traffic.
+4. Open the paired phone, select it as the reminder companion, and choose **Enable alerts**. Registration is bound to its installation credential. Verify registration and then test actual delivery on each platform; successful registration alone is not delivery evidence.
+
+The server queues generic hints when the selected phone's plan, profile, support or follow-up state changes. It sends through Expo over HTTPS, retries transient failures at most five times with a stable collapse identifier, and checks tickets/receipts. `DeviceNotRegistered` disables the token. A provider-accepted receipt does not prove that the phone displayed an alert. See [Expo send/receipt semantics](https://docs.expo.dev/push-notifications/sending-notifications/).
+
+Migration `0004_phone_notifications` adds private phone presence/registration state, separate notification evidence, a durable push outbox and context guards for newly generated speech. Existing care records and routing history remain intact. Dashboard presence distinguishes a recent foreground report from reported background-alert capability; it does not claim a persistent background connection or guaranteed delivery.
 
 ## Identity, permissions and removal
 
@@ -79,7 +96,7 @@ Unpair stops audio and clears local alerts, completes server quiescence for a bo
 
 SecureStore uses a device-only Keychain accessibility class, and Android backups are disabled. iOS Keychain entries can survive uninstall. An absent local installation marker with an existing secure identity triggers a re-pair warning; the owner should revoke the old installation. Backup/reinstall behavior still needs physical-platform verification.
 
-Microphone permission, OS audio focus, device volume and notification settings are separate. Permission denial must not be presented as a server failure. Native background notifications and push setup instructions will be added with that implementation; they are not proved by installing the notifications package.
+Microphone permission, OS audio focus, device volume and notification settings are separate. Permission denial must not be presented as a server failure. The dashboard shows the last reported permissions and schedule coverage; physical-platform behavior remains part of acceptance testing.
 
 ## Verification commands
 

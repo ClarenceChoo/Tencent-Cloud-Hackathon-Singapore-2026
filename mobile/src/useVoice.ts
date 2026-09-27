@@ -15,7 +15,7 @@ import { ApiError, PhoneApi } from "./api";
 import { loadPending, removeAudio, savePending, sweepAudio } from "./storage";
 import { Operations } from "./operations";
 import { wavDuration } from "./validation";
-import type { PendingTurn, TurnEvent } from "./contracts";
+import type { PendingTurn, TurnEvent, Reminder } from "./contracts";
 
 type Phase =
   | "idle"
@@ -79,14 +79,19 @@ export function useVoice(
     );
   };
 
-  async function play(event: TurnEvent, controller: AbortController) {
+  async function play(
+    event: TurnEvent,
+    controller: AbortController,
+    authorize?: () => Promise<void>,
+    validate?: () => Promise<unknown>,
+  ) {
     if (
       !api ||
       api !== apiRef.current ||
       operations.current.closed ||
       !event.payload.audio_paths?.length
     )
-      return;
+      throw new Error("Playback is paused.");
     if (event.payload.audio_paths.length > 20)
       throw new Error("The spoken reply contains too many parts.");
     let seconds = 0;
@@ -98,7 +103,9 @@ export function useVoice(
       interruptionMode: "doNotMix",
     });
     move("speaking");
+    let authorised = false;
     for (const path of event.payload.audio_paths) {
+      if (validate) await validate();
       if (controller.signal.aborted || !active.current)
         throw new Error(
           "Speech interrupted. Tap Repeat to hear a current reply.",
@@ -117,6 +124,19 @@ export function useVoice(
         "parse-reply-" + Crypto.randomUUID() + ".wav",
       );
       file.write(bytes);
+      if (!authorised && authorize) {
+        try {
+          await authorize();
+          authorised = true;
+        } catch (error) {
+          removeAudio(file.uri);
+          throw error;
+        }
+      }
+      if (controller.signal.aborted || !active.current) {
+        removeAudio(file.uri);
+        throw new Error("Playback was interrupted.");
+      }
       const player = createAudioPlayer(file.uri, { updateInterval: 100 });
       let cleanPlayback = () => {};
       try {
@@ -214,6 +234,19 @@ export function useVoice(
             "Response received. Review the current care details.",
         );
         await onComplete();
+        if (result.event.payload.status === "awaiting_confirmation") {
+          const current = await api.home();
+          if (
+            current.current_proposal?.context_id !==
+            result.event.payload.context_id
+          ) {
+            move("idle");
+            setMessage(
+              "That read-back changed. Review the current details before confirming.",
+            );
+            return;
+          }
+        }
         if (!controller.signal.aborted) await play(result.event, controller);
         return;
       }
@@ -452,6 +485,54 @@ export function useVoice(
           fail(error);
         }
       }),
+    reminder: (
+      event: Reminder,
+      prepare: () => Promise<void>,
+      authorize: () => Promise<void>,
+    ): Promise<"completed" | "busy"> => {
+      if (
+        !api ||
+        api !== apiRef.current ||
+        operations.current.closed ||
+        !active.current ||
+        !["idle", "error"].includes(phaseRef.current)
+      )
+        return Promise.resolve("busy");
+      move("preparing");
+      return operations.current
+        .run(async () => {
+          const controller = new AbortController();
+          job.current = controller;
+          let checking = false;
+          const check = () => api.currentReminder(event.payload.command_id);
+          const monitor = setInterval(() => {
+            if (checking) return;
+            checking = true;
+            void check()
+              .catch(() => controller.abort())
+              .finally(() => {
+                checking = false;
+              });
+          }, 1000);
+          try {
+            await prepare();
+            setMessage(
+              "A scheduled care reminder. Listening does not record a dose taken.",
+            );
+            await play(event, controller, authorize, check);
+            if (controller.signal.aborted)
+              throw new Error("The reminder was interrupted.");
+            setLastReply(event);
+            return "completed" as const;
+          } catch (error) {
+            fail(error);
+            throw error;
+          } finally {
+            clearInterval(monitor);
+          }
+        })
+        .then((result) => result || "busy");
+    },
     discard: async () => {
       job.current?.abort();
       await savePending(null);

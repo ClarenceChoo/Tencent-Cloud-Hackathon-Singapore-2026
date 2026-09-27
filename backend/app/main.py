@@ -215,7 +215,7 @@ def _dashboard(db: Session, patient: m.Patient, scopes: list, viewer_user_id: st
 
     return {
         "patient": {"id": patient.id, "name": patient.name, "preferred_name": patient.preferred_name, "timezone": patient.timezone, "language": patient.language, "daily_check_in_enabled": patient.daily_check_in_enabled, "daily_check_in_local_time": patient.daily_check_in_local_time, "calling_route": patient.calling_route},
-        "devices": [device_status(item, connected_ids) for item in devices],
+        "devices": [device_status(item, connected_ids, db.get(m.PhoneState,item.id), route_view(db,patient.id)["device_id"]==item.id) for item in devices],
         "active_companion": route_view(db, patient.id) if allowed("devices") else None,
         "medication_plans": [plan_dict(item) for item in plans],
         "doses": [{"id": item.id, "plan_version": item.plan_version, "medicine_id": item.medicine_id, "medicine_name": item.medicine_name, "scheduled_at": iso(item.scheduled_at), "delivery_state": command_by_dose[item.id].delivery_state if item.id in command_by_dose else "not_queued", "delivery_attempts": [attempt_view(a) for a in commands if a.dose_instance_id == item.id], "report_state": item.report_state, "report_time": iso(item.report_time), "taken_time_text": item.taken_time_text} for item in doses],
@@ -240,9 +240,16 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
     async def lifespan(app: FastAPI):
         app.state.db.create_all()
         task = None
+        notification_task = None
         if app.state.settings.scheduler_enabled:
             task = asyncio.create_task(scheduler_loop(app))
+            from .notifications import notification_loop
+            notification_task = asyncio.create_task(notification_loop(app))
         yield
+        if notification_task:
+            notification_task.cancel()
+            try: await notification_task
+            except asyncio.CancelledError: pass
         if task:
             task.cancel()
             try:
@@ -256,6 +263,8 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
     app.state.sockets = SocketRegistry()
     app.state.phone_limiter = EnrollmentLimiter()
     app.include_router(phone_router)
+    from .notification_api import router as notification_router
+    app.include_router(notification_router)
     app.state.fixture_transcripts = {} if settings.testing else None
     app.add_middleware(CORSMiddleware, allow_origins=settings.allowed_origins, allow_credentials=True, allow_methods=["GET", "POST", "PUT", "DELETE"], allow_headers=["Content-Type", "X-CSRF-Token", "Idempotency-Key", "X-Context-Id", "Authorization"])
 
@@ -441,6 +450,8 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         require_csrf(request, row)
         lock_patient(db, device.patient_id)
         db.refresh(device)
+        from .notification_api import invalidate_notifications
+        invalidate_notifications(db,device.id)
         device.revoked_at = device.revoked_at or utcnow()
         db.commit()
         await request.app.state.sockets.close_device(device.id)
@@ -690,6 +701,15 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
             raise HTTPException(status_code=404, detail="Audio asset not found")
         if aware(asset.expires_at) <= utcnow():
             raise HTTPException(status_code=410, detail="Audio asset expired")
+        guard=asset.context_guard or {}
+        if guard.get("proposal_id"):
+            proposal=db.get(m.ConfirmationProposal,guard["proposal_id"],populate_existing=True)
+            if not proposal or proposal.patient_id!=device.patient_id or proposal.status!=guard.get("status") or (proposal.status=="pending" and aware(proposal.expires_at)<=utcnow()):
+                raise HTTPException(410,"This read-back is no longer current")
+        if guard.get("plan_id"):
+            plan=db.get(m.MedicationPlanVersion,guard["plan_id"],populate_existing=True)
+            if not plan or not plan.active or plan.patient_id!=device.patient_id:
+                raise HTTPException(410,"This medication explanation is no longer current")
         commands = db.scalars(select(m.ReminderCommand).where(m.ReminderCommand.audio_asset_id == asset.id)).all()
         checkins = db.scalars(select(m.CheckInDelivery).where(m.CheckInDelivery.device_id == device.id)).all()
         related = commands + [item for item in checkins if asset.id in (item.audio_asset_ids or [])]

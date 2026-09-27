@@ -184,6 +184,8 @@ async def revoke_installation(request: Request, authorization: str | None = Head
     db.refresh(device)
     if route_view(db, device.patient_id)["device_id"] == device.id:
         raise HTTPException(409, "Stop playback, clear local alerts and pause this phone before unpairing")
+    from .notification_api import invalidate_notifications
+    invalidate_notifications(db, device.id)
     device.revoked_at = utcnow()
     db.add(m.AuditEvent(actor_type="device", actor_id=device.id, patient_id=device.patient_id,
                         action="phone.unpaired", object_type="device", object_id=device.id, details={}))
@@ -390,7 +392,7 @@ async def proposal_speech(proposal_id: str, data: ProposalAction, request: Reque
         expires = min(expires, aware(proposal.expires_at))
     paths = []
     for wav, duration in clips:
-        asset = m.AudioAsset(device_id=device.id, wav_bytes=wav, content_sha256=sha_bytes(wav), duration_ms=duration, expires_at=expires)
+        asset = m.AudioAsset(device_id=device.id, context_guard={"proposal_id":proposal.id,"status":state}, wav_bytes=wav, content_sha256=sha_bytes(wav), duration_ms=duration, expires_at=expires)
         db.add(asset)
         db.flush()
         paths.append('/v1/device/audio/' + asset.id)

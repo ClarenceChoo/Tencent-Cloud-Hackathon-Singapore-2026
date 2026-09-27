@@ -136,6 +136,7 @@ class AudioAsset(Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: new_id("audio"))
     device_id: Mapped[str] = mapped_column(ForeignKey("devices.id"), index=True)
     wav_bytes: Mapped[bytes] = mapped_column(LargeBinary)
+    context_guard: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     content_sha256: Mapped[str] = mapped_column(String(64))
     duration_ms: Mapped[int] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
@@ -402,3 +403,46 @@ class AuditEvent(Base):
     object_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     details: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
+class PhoneState(Base):
+    __tablename__ = 'phone_states'
+    device_id: Mapped[str] = mapped_column(ForeignKey('devices.id'), primary_key=True)
+    lifecycle: Mapped[str] = mapped_column(String(20), default='unknown')
+    microphone_permission: Mapped[str] = mapped_column(String(20), default='unknown')
+    notification_permission: Mapped[str] = mapped_column(String(20), default='unknown')
+    reported_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    scheduled_until: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    schedule_revision: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    push_token: Mapped[Optional[str]] = mapped_column(String(240), nullable=True, unique=True)
+    push_version: Mapped[int] = mapped_column(Integer, default=0)
+    push_disabled_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    push_snapshot: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+
+
+class NotificationEvidence(Base):
+    __tablename__ = 'notification_evidence'
+    __table_args__ = (UniqueConstraint('device_id', 'event_id', name='uq_notification_evidence'),)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: new_id('notice'))
+    device_id: Mapped[str] = mapped_column(ForeignKey('devices.id'), index=True)
+    event_id: Mapped[str] = mapped_column(String(36))
+    identity: Mapped[str] = mapped_column(String(160))
+    stage: Mapped[str] = mapped_column(String(30))
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class PushHint(Base):
+    __tablename__ = 'push_hints'
+    __table_args__ = (UniqueConstraint('device_id', 'fingerprint', name='uq_push_hint'),)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: new_id('push'))
+    device_id: Mapped[str] = mapped_column(ForeignKey('devices.id'), index=True)
+    fingerprint: Mapped[str] = mapped_column(String(64))
+    route_generation: Mapped[int] = mapped_column(Integer)
+    push_version: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(30), default='pending', index=True)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    ticket_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    error_code: Mapped[Optional[str]] = mapped_column(String(60), nullable=True)
+    next_attempt_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

@@ -132,6 +132,8 @@ def may_deliver(db, occurrence, generation):
 
 def expire_attempts(db, now):
     for model in (m.ReminderCommand, m.CheckInDelivery):
+        db.execute(update(model).where(model.expires_at <= now, model.delivery_state == "playback_started")
+                   .values(delivery_state="playback_unknown").execution_options(synchronize_session=False))
         db.execute(update(model).where(model.expires_at <= now, model.delivery_state.in_(PENDING))
                    .values(delivery_state='expired').execution_options(synchronize_session=False))
 
@@ -140,7 +142,7 @@ def envelope(attempt):
     medication = isinstance(attempt, m.ReminderCommand)
     assets = [attempt.audio_asset_id] if medication else attempt.audio_asset_ids
     paths = ['/v1/device/audio/' + asset for asset in assets]
-    payload = {'command_id': attempt.id, 'context_id': attempt.context_id, 'audio_path': paths[0],
+    payload = {'status': 'reminder', 'command_id': attempt.id, 'context_id': attempt.context_id, 'audio_path': paths[0],
                'audio_paths': paths, 'occurrence_id': attempt.occurrence_id,
                'route_generation': attempt.route_generation}
     if medication:

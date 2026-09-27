@@ -49,6 +49,8 @@ export async function newInstallation(
   return installation;
 }
 export async function clearInstallation() {
+  const { clearPlayback } = await import("./reminderStorage");
+  await clearPlayback();
   await SecureStore.deleteItemAsync("parse.installation", options);
   await SecureStore.deleteItemAsync("parse.pending-turn", options);
   if (marker().exists) marker().delete();

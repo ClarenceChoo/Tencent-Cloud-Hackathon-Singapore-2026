@@ -65,3 +65,48 @@ export type PendingTurn = {
   turnId?: string;
   createdAt: number;
 };
+
+export type Reminder = TurnEvent & {
+  device_id: string;
+  type: "reminder.play" | "checkin.play";
+  payload: TurnEvent["payload"] & {
+    command_id: string;
+    occurrence_id: string;
+    route_generation: number;
+    context_id: string;
+    audio_paths: string[];
+    plan_version?: number;
+    greeting_text?: string;
+  };
+};
+export type ReminderSchedule = {
+  device_id: string;
+  server_time: string;
+  revision: string;
+  valid_until: string;
+  covered_until: string;
+  truncated: boolean;
+  active_companion: Home["active_companion"];
+  title: string;
+  body: string;
+  alerts: {
+    identity: string;
+    occurrence_id: string;
+    route_generation: number;
+    due_at: string;
+    expires_at: string;
+  }[];
+};
+export type PlaybackStage =
+  | "received"
+  | "playback_started"
+  | "playback_completed"
+  | "interrupted"
+  | "failed"
+  | "expired";
+export type LedgerEntry = {
+  command: string;
+  expires: number;
+  stage: "reserved" | "started" | "completed" | "interrupted";
+  ackIds: Partial<Record<PlaybackStage, string>>;
+};

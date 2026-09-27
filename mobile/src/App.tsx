@@ -23,6 +23,7 @@ import {
 } from "./storage";
 import * as Notifications from "expo-notifications";
 import { useVoice } from "./useVoice";
+import { useReminders } from "./useReminders";
 
 const value = (row: CareRow, key: string) =>
   typeof row[key] === "string" ? (row[key] as string) : "";
@@ -54,6 +55,10 @@ function Companion() {
   const [restored, setRestored] = useState(false);
   const [service, setService] = useState("");
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
+  const [reminderContext, setReminderContext] = useState<{
+    id: string;
+    expires: number;
+  } | null>(null);
   const [home, setHome] = useState<Home | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -78,9 +83,32 @@ function Companion() {
   }, [api]);
   const voice = useVoice(
     api,
-    home?.current_proposal?.context_id || null,
+    home?.current_proposal?.context_id ||
+      (reminderContext && reminderContext.expires > Date.now()
+        ? reminderContext.id
+        : null),
     refresh,
   );
+  const reminders = useReminders({
+    api,
+    home,
+    voice,
+    refresh,
+    ready:
+      !busy &&
+      ["idle", "error"].includes(voice.phase) &&
+      (!reminderContext || reminderContext.expires <= Date.now()),
+    onReminder: (event) =>
+      setReminderContext({
+        id: event.payload.context_id,
+        expires: Date.parse(event.expires_at),
+      }),
+  });
+  function startTalking() {
+    const started = voice.begin();
+    setReminderContext(null);
+    return started;
+  }
   useEffect(() => {
     void loadInstallation()
       .then((saved) => {
@@ -158,6 +186,7 @@ function Companion() {
   }
   async function stopLocalReminders(after?: () => Promise<void>) {
     await voice.stop(async () => {
+      await reminders.pause();
       await Notifications.cancelAllScheduledNotificationsAsync();
       await Notifications.dismissAllNotificationsAsync();
       const remaining = await Notifications.getAllScheduledNotificationsAsync();
@@ -177,6 +206,7 @@ function Companion() {
         await api.quiesce();
       });
       await refresh();
+      reminders.resume();
     } catch (err) {
       showError(err);
     } finally {
@@ -404,7 +434,7 @@ function Companion() {
               }}
               disabled={!canTalk}
               onPressIn={() => {
-                if (!tapMode) void voice.begin();
+                if (!tapMode) void startTalking();
               }}
               onPressOut={() => {
                 if (!tapMode) void voice.finish().catch(showError);
@@ -412,7 +442,7 @@ function Companion() {
               onPress={() => {
                 if (tapMode) {
                   if (isRecording) void voice.finish().catch(showError);
-                  else void voice.begin();
+                  else void startTalking();
                 }
               }}
               style={[
@@ -669,9 +699,22 @@ function Companion() {
                     void pauseReminders();
                   }}
                 />
+                <Text style={s.body}>{reminders.status}</Text>
+                <Text style={s.caption}>{reminders.pushStatus}</Text>
                 <Text style={s.body}>
-                  Native reminder alerts are still being implemented. This
-                  development build does not yet replace background reminders.
+                  Alerts contain only a generic prompt to open Parse. Enable
+                  notifications to receive them while the app is closed.
+                </Text>
+                <Button
+                  title="Enable alerts"
+                  secondary
+                  disabled={busy}
+                  onPress={() => {
+                    void reminders.enable();
+                  }}
+                />
+                <Text style={s.caption}>
+                  Reminder playback never means medication was taken.
                 </Text>
                 <Button
                   title="Open phone permission settings"

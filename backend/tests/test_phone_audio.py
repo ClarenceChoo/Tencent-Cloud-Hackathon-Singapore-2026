@@ -104,6 +104,8 @@ def test_phone_turn_recovery_confirmation_and_dashboard_share(phone, m4a):
     assert results[0].json() == results[1].json()
     saved = client.post('/v1/phone/proposals/' + proposal['id'] + '/speech', json={'context_id': proposal['context_id']}, headers=headers)
     assert saved.json()['payload']['spoken_text'] == 'Saved.'
+    assert client.get(audio,headers=headers).status_code == 410
+    assert client.get(saved.json()['payload']['audio_paths'][0],headers=headers).status_code == 200
     home = client.get('/v1/phone/home', headers=headers).json()
     assert home['notes'][0]['source']['type'] == 'phone'
     assert 'access_grants' not in home and 'password' not in str(home)
@@ -116,7 +118,9 @@ def test_phone_turn_recovery_confirmation_and_dashboard_share(phone, m4a):
 
 def test_correction_invalidates_readback_and_phone_scope_is_enforced(phone, m4a):
     client, app, ids, headers = phone
-    _, proposal = proposal_for(client, headers, m4a)
+    receipt, proposal = proposal_for(client, headers, m4a)
+    previous_audio = client.get('/v1/device/turns/'+receipt['turn_id'],headers=headers).json()['event']['payload']['audio_paths'][0]
+    assert client.get(previous_audio,headers=headers).status_code == 200
     created, second = enrollment(client)
     assert approve(client, ids, created.json()['code']).status_code == 200
     url = '/v1/phone/proposals/' + proposal['id']
@@ -125,6 +129,7 @@ def test_correction_invalidates_readback_and_phone_scope_is_enforced(phone, m4a)
     assert client.post('/v1/phone/turns', content=m4a, headers={**second, 'Content-Type': 'audio/mp4', 'X-Context-Id': proposal['context_id']}).status_code == 404
     revised = client.post(url + '/revise', json={'context_id': proposal['context_id'], 'payload': {'wording': 'Left knee yesterday'}}, headers=headers)
     assert revised.status_code == 201, revised.text
+    assert client.get(previous_audio,headers=headers).status_code == 410
     assert client.post(url + '/confirm', json=confirmation, headers=headers).status_code == 409
     corrected = revised.json()
     cancel_url = '/v1/phone/proposals/' + corrected['id'] + '/cancel'

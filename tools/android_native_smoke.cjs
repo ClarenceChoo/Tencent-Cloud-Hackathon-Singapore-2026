@@ -15,7 +15,11 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const decode = value => value.replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
 
 async function main() {
-  const lifecycleOnly = process.env.PARSE_NATIVE_LIFECYCLE_ONLY === '1';
+  const confirmationOnly = process.env.PARSE_NATIVE_CONFIRMATION_ONLY === '1';
+  const lifecycleOnly = process.env.PARSE_NATIVE_LIFECYCLE_ONLY === '1' || confirmationOnly;
+  const alertsOnly = process.env.PARSE_NATIVE_ALERTS_ONLY === '1';
+  const remindersOnly = process.env.PARSE_NATIVE_REMINDERS_ONLY === '1' || alertsOnly;
+  assert(!(lifecycleOnly && remindersOnly), 'Select one native verification mode');
   assert(directory.startsWith(path.join(root, 'runtime') + path.sep));
   assert(/^emulator-\d+$/.test(serial), 'This fixture runs only on a disposable emulator');
   const fixture = JSON.parse(fs.readFileSync(path.join(directory, 'fixture.json')));
@@ -70,6 +74,7 @@ async function main() {
     fs.renameSync(pending + '.tmp', pending);
   }
   async function record(name, interpretation, expectedText = interpretation.payload?.wording) {
+    await find('HELLO, Mei');
     arm(name, interpretation);
     await tap('Tap to start recording');
     let nodes = await ui();
@@ -99,10 +104,10 @@ async function main() {
   }
   const report = { at: new Date().toISOString(), liveSpeech: false, physicalPhone: false,
     environment: 'Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and one-second tone replies. No real speech or acoustic audibility evidence.',
-    source_sha256: Object.fromEntries(['mobile/src/App.tsx', 'mobile/src/useVoice.ts', 'mobile/src/api.ts', 'mobile/src/storage.ts', 'tools/android_native_fixture.py', 'tools/android_native_smoke.cjs', 'tools/android_native_care.cjs', ...(lifecycleOnly ? ['tools/android_native_lifecycle.cjs'] : [])].map(file =>
+    source_sha256: Object.fromEntries(['mobile/src/App.tsx', 'mobile/src/useVoice.ts', 'mobile/src/api.ts', 'mobile/src/storage.ts', 'tools/android_native_fixture.py', 'tools/android_native_smoke.cjs', 'tools/android_native_care.cjs', ...(lifecycleOnly ? ['tools/android_native_lifecycle.cjs'] : []), ...(remindersOnly ? ['tools/android_native_reminders.cjs', 'tools/android_native_control.py'] : [])].map(file =>
       [file, createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex')])),
     checks: [] };
-  const save = () => fs.writeFileSync(path.join(directory, lifecycleOnly ? 'native-lifecycle-evidence.json' : 'native-integration-evidence.json'), JSON.stringify(report, null, 2));
+  const save = () => fs.writeFileSync(path.join(directory, alertsOnly ? 'native-alerts-evidence.json' : confirmationOnly ? 'native-confirmation-evidence.json' : lifecycleOnly ? 'native-lifecycle-evidence.json' : remindersOnly ? 'native-reminders-evidence.json' : 'native-integration-evidence.json'), JSON.stringify(report, null, 2));
   const pass = name => { report.checks.push({ name, passed: true }); save(); console.log('PASS ' + name); };
   const browser = await chromium.launch({ headless: true, channel: 'chrome' });
   async function login(role) {
@@ -133,7 +138,8 @@ async function main() {
     await adb('shell', 'am', 'start', '-W', '-n', appId + '/sg.parse.companion.MainActivity');
     let code;
     const resume = process.env.PARSE_NATIVE_RESUME_PAIRED === '1';
-    assert(!lifecycleOnly || resume, 'Lifecycle checks require an existing fictional verification installation');
+    assert(!(lifecycleOnly || remindersOnly) || resume, 'These checks require an existing fictional verification installation');
+    report.mode = alertsOnly ? 'alerts' : confirmationOnly ? 'confirmation' : lifecycleOnly ? 'lifecycle' : remindersOnly ? 'reminders' : 'care';
     report.enrollmentCreatedInThisRun = !resume;
     if (!resume) {
       await tap('Parse HTTPS service address');
@@ -170,7 +176,12 @@ async function main() {
     const tapSwitch = await find('Use tap instead of hold to record');
     if (tapSwitch.checked !== 'true') await tapNode(tapSwitch);
     if (lifecycleOnly) {
-      await require('./android_native_lifecycle.cjs')({ record, arm, find, tap, tapNode, ui, adb, screenshot, pass, owner, caregiver, restricted, fixture, directory, appId, report });
+      await require('./android_native_lifecycle.cjs')({ record, arm, find, tap, tapNode, ui, adb, screenshot, pass, owner, caregiver, restricted, fixture, directory, appId, report, confirmationOnly });
+      save();
+      return;
+    }
+    if (remindersOnly) {
+      await require('./android_native_reminders.cjs')({ find, tap, tapNode, ui, adb, screenshot, pass, owner, fixture, directory, appId, report, alertsOnly });
       save();
       return;
     }

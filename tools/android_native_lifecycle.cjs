@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-module.exports = async function lifecycle({ record, arm, find, tap, tapNode, ui, adb, screenshot, pass, owner, caregiver, fixture, directory, appId, report }) {
+module.exports = async function lifecycle({ record, arm, find, tap, tapNode, ui, adb, screenshot, pass, owner, caregiver, fixture, directory, appId, report, confirmationOnly = false }) {
   const uploads = () => fs.readFileSync(path.join(directory, 'native-uploads.jsonl'), 'utf8').trim().split('\n').filter(Boolean).length;
   const baselineUploads = uploads();
   const baselineNotes = (await owner.dash()).notes.length;
@@ -29,6 +29,7 @@ module.exports = async function lifecycle({ record, arm, find, tap, tapNode, ui,
     assert.equal((await owner.dash()).notes.length, baselineNotes);
     assert.equal((await cachedAudio()).length, 0, 'Transient recording remains in native cache');
   }
+  if (!confirmationOnly) {
   await start();
   await adb('shell', 'input', 'swipe', '950', '1850', '950', '650', '350');
   await tap('Cancel recording', { scroll: false });
@@ -91,11 +92,15 @@ module.exports = async function lifecycle({ record, arm, find, tap, tapNode, ui,
   assert.equal((await cachedAudio()).length, 0);
   report.duration_ceiling_capture = capped;
   pass('Native recording automatically ends within 20 seconds and uploads one bounded turn');
+  }
   const wording = 'Fictional spoken confirmation ' + Date.now();
   await record('lifecycle-note', { intent: 'proposal', kind: 'health_note', payload: { wording,
     share_with_user_ids: [fixture.caregiver_id] } }, wording);
   assert.equal((await owner.dash()).notes.length, baselineNotes);
-  await record('lifecycle-spoken-confirmation', { intent: 'confirm' }, 'Saved.');
+  await record('lifecycle-ambiguous-confirmation', { intent: 'confirm' }, 'Please clearly confirm');
+  assert.equal((await owner.dash()).notes.length, baselineNotes);
+  pass('Native turn with confirm intent but no affirmative transcript cannot save a note');
+  await record('lifecycle-spoken-confirmation', 'yes, save that', 'Saved.');
   const notes = (await owner.dash()).notes;
   assert.equal(notes.length, baselineNotes + 1);
   assert.equal(notes.filter(n => n.wording === wording).length, 1);
@@ -105,5 +110,7 @@ module.exports = async function lifecycle({ record, arm, find, tap, tapNode, ui,
   await foreground();
   assert.equal((await owner.dash()).notes.length, baselineNotes + 1);
   assert.equal((await cachedAudio()).length, 0);
+  await screenshot('native-spoken-confirmation');
+  await caregiver.page.screenshot({ path: path.join(directory, 'native-spoken-confirmation-caregiver.png'), fullPage: true });
   pass('Native recorded yes-confirmation saves one shared phone-sourced note and does not repeat after restart');
 };

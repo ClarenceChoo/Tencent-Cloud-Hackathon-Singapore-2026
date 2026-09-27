@@ -6,7 +6,7 @@ const { execFile } = require('node:child_process');
 const { promisify } = require('node:util');
 const execute = promisify(execFile);
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-module.exports = async function reminders({ find, tap, tapNode, ui, adb, screenshot, pass, owner, fixture, directory, appId, report }) {
+module.exports = async function reminders({ find, tap, tapNode, ui, adb, screenshot, pass, owner, fixture, directory, appId, report, alertsOnly = false }) {
   const root = path.resolve(__dirname, '..');
   async function control(mode, kind) {
     const { stdout } = await execute(path.join(root, 'backend/.venv/bin/python'),
@@ -18,9 +18,11 @@ module.exports = async function reminders({ find, tap, tapNode, ui, adb, screens
     await find('HELLO, Mei');
   }
   report.reminders = [];
-  for (const kind of ['medication', 'checkin']) {
+  for (const kind of (alertsOnly ? [] : ['medication', 'checkin'])) {
     const queued = await control('enqueue', kind);
     assert(queued.command_id);
+    const enqueued = queued.attempts.find(a => a.id === queued.command_id);
+    assert(enqueued, 'The scheduler must create an observable attempt');
     let completed;
     for (let i = 0; i < 35; i++) {
       const current = (await control('inspect', kind)).attempts.find(a => a.id === queued.command_id);
@@ -31,7 +33,7 @@ module.exports = async function reminders({ find, tap, tapNode, ui, adb, screens
     assert(completed.acks.some(a => a.stage === 'playback_started'));
     assert(completed.acks.some(a => a.stage === 'playback_completed'));
     if (kind === 'medication') assert.equal((await owner.dash()).doses.find(d => d.id === queued.dose_id).report_state, 'unconfirmed');
-    report.reminders.push(completed);
+    report.reminders.push({ kind, ...(queued.dose_id ? { dose_id: queued.dose_id } : {}), ...completed });
     await adb('shell', 'am', 'force-stop', appId);
     await foreground();
     await sleep(5000);
@@ -55,15 +57,17 @@ module.exports = async function reminders({ find, tap, tapNode, ui, adb, screens
   report.reminder_device_id = phone.id;
   const at = new Date(Date.now() + 150000);
   const localTime = at.toLocaleTimeString('en-GB', { timeZone: 'Asia/Singapore', hour: '2-digit', minute: '2-digit', hour12: false });
-  await owner.api('/app/patients/' + fixture.patient_id + '/medication-plans', {
+  const plan = await owner.api('/app/patients/' + fixture.patient_id + '/medication-plans', {
     timezone: 'Asia/Singapore', source: 'Fictional notification test', checked: true,
     medicines: [{ id: 'native_alert', name: 'Fictional Private Alert Medicine', instructions: 'Fictional instruction',
       reviewed_reference: 'Fictional reviewed reference', reference_source: 'Test label' }],
     schedule: [{ medicine_id: 'native_alert', local_time: localTime }],
   });
-  const dose = (await owner.dash()).doses.filter(d => d.medicine_id === 'native_alert')
+  const dose = (await owner.dash()).doses.filter(d => d.medicine_id === 'native_alert' && d.plan_version === plan.version)
     .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))[0];
   assert(dose && Date.parse(dose.scheduled_at) > Date.now());
+  report.notification_plan_version = plan.version;
+  report.notification_dose_id = dose.id;
   await tap('Enable alerts');
   await find('Generic alerts scheduled for up to 24 hours. Focus and battery restrictions may delay them.');
   await screenshot('native-alerts-enabled');
@@ -72,16 +76,24 @@ module.exports = async function reminders({ find, tap, tapNode, ui, adb, screens
   report.notification_due_at = dose.scheduled_at;
   // Check Android's actual posted record. Nothing here fabricates an OS alert.
   let posted;
-  while (Date.now() < Date.parse(dose.scheduled_at) + 90000) {
+  report.notification_observation_window_seconds = 300;
+  while (Date.now() < Date.parse(dose.scheduled_at) + 300000) {
     const dump = await adb('shell', 'dumpsys', 'notification', '--noredact');
-    posted = dump.split(/(?=NotificationRecord\()/).find(block => block.split('\n')[0].includes(appId) && block.includes('Open Parse to check your care schedule.'));
+    posted = dump.split(/(?=NotificationRecord\()/).find(block => {
+      const postedAt = Number(block.match(/\bwhen=(\d+)\//)?.[1]);
+      return block.split('\n')[0].includes(appId) && block.includes('Open Parse to check your care schedule.')
+        && postedAt >= Date.parse(dose.scheduled_at);
+    });
     if (posted) break;
     await sleep(3000);
   }
   assert(posted, 'Android did not post the generic local alert within the observed window');
   assert(!posted.includes('Fictional Private Alert Medicine'));
+  const postedAt = Number(posted.match(/\bwhen=(\d+)\//)[1]);
+  report.notification_posted_at = new Date(postedAt).toISOString();
+  report.notification_delay_ms = postedAt - Date.parse(dose.scheduled_at);
   report.notification = { actual_posted: true, backgrounded: true, generic_body: 'Open Parse to check your care schedule.', live_push: false };
-  fs.writeFileSync(path.join(directory, 'native-notification-record.txt'), posted.slice(0, 10000));
+  fs.writeFileSync(path.join(directory, 'native-notification-record.txt'), posted); // Fictional verification package only.
   await adb('shell', 'cmd', 'statusbar', 'expand-notifications');
   await find('Open Parse to check your care schedule.', { scroll: false });
   await screenshot('native-generic-notification');

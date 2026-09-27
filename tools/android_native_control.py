@@ -47,6 +47,7 @@ def main():
         if not patient or patient.name != "Fictional Mei Tan":
             raise SystemExit("Unexpected fixture patient.")
         result = {"kind": args.kind}
+        existing_checkins = set(db.scalars(select(m.CheckInDelivery.id).where(m.CheckInDelivery.patient_id == patient.id)).all())
         if args.mode == "enqueue":
             if args.kind == "medication":
                 plan = db.scalar(select(m.MedicationPlanVersion).where(m.MedicationPlanVersion.patient_id == patient.id,
@@ -76,8 +77,11 @@ def main():
                               for a in attempts]
         if args.kind == "medication" and result.get("dose_id"):
             result["command_id"] = next(a.id for a in attempts if a.dose_instance_id == result["dose_id"])
-        elif args.kind == "checkin" and attempts:
-            result["command_id"] = max(attempts, key=lambda a: a.created_at).id
+        elif args.kind == "checkin" and args.mode == "enqueue":
+            created = [a for a in attempts if a.id not in existing_checkins]
+            if len(created) != 1:
+                raise SystemExit("This fixture did not create one new daily check-in; do not count an old delivery as a new native test.")
+            result["command_id"] = created[0].id
     print(json.dumps(result))
 
 

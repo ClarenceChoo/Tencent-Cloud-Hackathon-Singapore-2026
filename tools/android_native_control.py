@@ -18,7 +18,7 @@ sys.path.insert(0, str(ROOT / "backend"))
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=["enqueue", "inspect"])
+    parser.add_argument("mode", choices=["enqueue", "inspect", "tick"])
     parser.add_argument("--kind", choices=["medication", "checkin", "turns", "alerts"], default="medication")
     parser.add_argument("--data-dir", type=Path, required=True)
     args = parser.parse_args()
@@ -52,10 +52,15 @@ def main():
             route = db.get(m.CompanionRoute, patient.id)
             occurrences = db.scalars(select(m.ReminderOccurrence).where(m.ReminderOccurrence.patient_id == patient.id)).all()
             events = db.scalars(select(m.NotificationEvidence).join(m.Device).where(m.Device.patient_id == patient.id)).all()
+            commands = db.scalars(select(m.ReminderCommand).join(m.DoseInstance).where(m.DoseInstance.patient_id == patient.id)).all()
             print(json.dumps({
                 "route": {"device_id": route.active_device_id, "generation": route.generation} if route else None,
                 "occurrences": [{"id": row.id, "dose_id": row.dose_instance_id, "kind": row.kind} for row in occurrences],
                 "events": [{"identity": row.identity, "stage": row.stage, "at": row.received_at.isoformat()} for row in events],
+                "commands": [{"id": row.id, "dose_id": row.dose_instance_id, "state": row.delivery_state,
+                              "cancel_reason": row.cancel_reason, "audio_accessed": row.audio_accessed_at is not None,
+                              "acks": [ack.stage for ack in db.scalars(select(m.ReminderAck).where(m.ReminderAck.command_id == row.id)).all()]}
+                             for row in commands],
             }))
             return
         if args.kind == "turns":
@@ -82,7 +87,7 @@ def main():
                 patient.daily_check_in_enabled = True
                 patient.daily_check_in_local_time = utcnow().astimezone(ZoneInfo(patient.timezone)).strftime("%H:%M")
             db.commit()
-    if args.mode == "enqueue":
+    if args.mode in {"enqueue", "tick"}:
         asyncio.run(worker.scheduler_tick(app))
     with app.state.db.SessionLocal() as db:
         query = (select(m.ReminderCommand).join(m.DoseInstance)

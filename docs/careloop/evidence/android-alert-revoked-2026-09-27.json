@@ -1,0 +1,78 @@
+{
+  "at": "2026-09-27T12:42:57.845Z",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "environment": "Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and one-second tone replies. No real speech or acoustic audibility evidence.",
+  "source_sha256": {
+    "mobile/src/App.tsx": "263264c635fda8021de4062ba268a793e3b87f4aff4b8e439b58c74b149504e2",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "mobile/src/api.ts": "c47f9fd49c83ec14df83d1939a941d6a2b48cddd8548807d123941b523b328cf",
+    "mobile/src/storage.ts": "d617df7a010d6cc68f0cd5dc6e3dfac021b1684bc6e10bc5fa50963871f3d99f",
+    "tools/android_native_fixture.py": "02f47605eb96b79595ccfb991cd8c2ecf72808bc3680386853d97b2113b75271",
+    "tools/android_native_smoke.cjs": "1f55e16adb5939b11a842accac78afc364754b35d607a1b1a6964153990866f2",
+    "tools/android_native_care.cjs": "48be6db43584dba70abb17294f000c2e29741f389a531b2ba656b4373bf2897b",
+    "mobile/src/useReminders.ts": "338ba060d56fbd646a3a5f56d4f22a858ec8417ba091f0b94a9563f3deea5f89",
+    "mobile/src/alertSchedule.ts": "1c3f4f23ea35da5981b6fb4642e668444085f6120476238c101c6b1a477c051e",
+    "tools/android_native_alert_lifecycle.cjs": "a8ee57d39b432b978c690992ee9ed78abefbcc06c317076b7d2168eff3ff9976",
+    "tools/android_native_revocation.cjs": "39782720cba062650673382d26ff9888e06606cb26e77490227bf5e2f4533014",
+    "tools/android_native_fault_proxy.py": "b234b01d228e18205e57fbdee631641afbec2b633400f6536b311a29e69eed1a",
+    "tools/android_native_control.py": "1eb84875cdf78321e5ba6cd2f796e6533f2a23bd828ef62208994e8b414f8980"
+  },
+  "checks": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    },
+    {
+      "name": "Owner revocation clears native care controls, posted/scheduled alerts and reminder routing; dashboard reports revoked access",
+      "passed": true
+    },
+    {
+      "name": "The revoked installation remains denied across a native process restart",
+      "passed": true
+    },
+    {
+      "name": "Explicit native re-pairing creates a different device identity, retains revoked history and schedules only for the new selected phone",
+      "passed": true
+    }
+  ],
+  "installed_apk_sha256": "066506741c42aa37a6a805cdcf7ef638afc84539da649ad29765de083eee5e0d",
+  "mode": "alert-revoked",
+  "enrollmentCreatedInThisRun": false,
+  "alert_state": "revoked",
+  "original_lock_disabled": true,
+  "clocks_before": {
+    "host_before_ms": 1790512984360,
+    "host_after_ms": 1790512984376,
+    "android_ms": 1790512984696,
+    "android_minus_host_midpoint_ms": 328,
+    "roundtrip_ms": 16
+  },
+  "reminder_device_id": "dev_5b702870fa704c5bb3ccebad18bb433b",
+  "plan_version": 10,
+  "dose_id": "dose_7b43f6bc8aa34002aaecf351328257bd",
+  "due_at": "2026-09-27T12:46:00Z",
+  "identity": "parse.dev_5b702870fa704c5bb3ccebad18bb433b.occ_c681d580b3de45148bc7d784aa886db7.g5",
+  "native_scheduled_before": [
+    "parse.dev_5b702870fa704c5bb3ccebad18bb433b.occ_771de8a961ab4d5bbaca4ba396121910.g5",
+    "parse.dev_5b702870fa704c5bb3ccebad18bb433b.occ_c681d580b3de45148bc7d784aa886db7.g5"
+  ],
+  "revoked_device": {
+    "id": "dev_5b702870fa704c5bb3ccebad18bb433b",
+    "status": "revoked",
+    "foreground_ready": false,
+    "background_alerts_enabled": false
+  },
+  "native_scheduled_after_revocation": [],
+  "new_device_id": "dev_0a14d5d7f1f346d39aae95f8a7747508",
+  "new_route": {
+    "device_id": "dev_0a14d5d7f1f346d39aae95f8a7747508",
+    "generation": 7,
+    "changed_at": "2026-09-27T12:44:09.634369Z"
+  },
+  "native_scheduled_after_new_pairing": [
+    "parse.dev_0a14d5d7f1f346d39aae95f8a7747508.occ_771de8a961ab4d5bbaca4ba396121910.g7",
+    "parse.dev_0a14d5d7f1f346d39aae95f8a7747508.occ_c681d580b3de45148bc7d784aa886db7.g7"
+  ],
+  "care_note_count_unchanged": 4
+}

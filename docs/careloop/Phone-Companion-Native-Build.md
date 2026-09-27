@@ -179,6 +179,40 @@ PARSE_NATIVE_RESUME_PAIRED=1 PARSE_NATIVE_ALERT_STATE=terminated \
 
 Keep `PARSE_NATIVE_FIXTURE_DIR` and the documented Playwright dependency configured. The termination case uses `am kill` only after backgrounding, checks that the process is absent and the package is not force-stopped, then waits for its real scheduled alarm. Neither mode synthesizes an OS notification. The helper matches the exact device/occurrence/route identity, records clock skew and posting delay, opens the actual alert, and checks that the dose remains unconfirmed. It restores the original keyguard setting in `finally`. These cases concern local medication alerts on the Android emulator; secure-lock behavior, iOS, real push, Focus/power restrictions and physical-device delivery remain separate gates.
 
+## Offline plan changes and reminder handoff
+
+The [offline-plan run](evidence/android-alert-offline-plan-2026-09-27.json) schedules a real local alert, backgrounds the app, routes it through the loopback TLS fault proxy and terminates its process with `am kill`. At the actual due time, the production scheduler queues the original reminder. The owner then replaces the medication plan while the phone is offline. A remote attempt to deselect that phone is rejected until local cleanup can run.
+
+Android still posts the already-scheduled alert with generic text only. Raw posting delay was 88.689 seconds; the clock-adjusted estimate was 88.357 seconds. Opening that actual notification encounters the offline connection, shows no care/recording controls and does not download or play the cancelled reminder. On reconnect, the app fetches the replacement plan; the original command remains cancelled with `plan_changed`, no audio access and no playback acknowledgements. Its dose stays unconfirmed and the care-note count is unchanged. [Generic alert](evidence/android-alert-offline-plan-2026-09-27.png), [offline view](evidence/android-alert-offline-plan-opened-2026-09-27.png), [replacement plan](evidence/android-alert-offline-plan-current-2026-09-27.png).
+
+The offline view currently uses the connection/pairing layout and displays the raw transport error; the passing privacy and recovery assertions do not establish finished offline UX. The connection fault is local and controlled, not physical Wi-Fi/cellular evidence.
+
+Native **Pause reminders** clears both posted alerts and the persistent Expo notification store before the server releases the route. Selecting the same phone again advances the routing generation; every persisted native alarm then belongs to the new generation. The helper reads only notification identifier keys from the disposable emulator's known Expo preferences file; it does not persist credentials or serialized notification bodies.
+
+With the default 8443 fixture and 8444 fault proxy running as documented above:
+
+```sh
+PARSE_NATIVE_RESUME_PAIRED=1 PARSE_NATIVE_ALERT_STATE=offline-plan \
+  node tools/android_native_smoke.cjs
+```
+
+This mode waits for a real due time and actual OS delivery, with a five-minute observation window after the dose is due. It restores the direct emulator reverse mapping and clears the proxy fault in `finally`. Stop the temporary proxy after testing. The evidence contains the source hashes used for the run; the separately dispatched revocation helper was subsequently refined to handle a retained service address and is not executed by this mode.
+
+## Native access revocation and fresh pairing
+
+The [revocation run](evidence/android-alert-revoked-2026-09-27.json) starts with confirmed care notes and actual scheduled native alerts. Revoking the selected phone through the owner's authenticated API causes the foreground native app to hide care and recording controls, clear its persistent scheduled notifications and release its reminder route. The dashboard reports revoked access with foreground readiness and background coverage disabled; no app notification remains posted. A force-stop/reopen still shows the access-denied view and adds no care record. [Denied native view](evidence/android-revoked-access-2026-09-27.png).
+
+The user then explicitly chooses **Start a new pairing** in the app, obtains a new one-use code and receives owner approval. This creates a different device identity while preserving the revoked record. Selecting the new phone and enabling alerts schedules only identities belonging to that new device and routing generation. The four pre-existing care notes remain unchanged. [Reconnected settings](evidence/android-replacement-pairing-2026-09-27.png). This is native unpair/re-enrollment on the same emulator installation, not uninstall/reinstall or physical Keystore validation.
+
+Reproduce with the direct 8443 reverse mapping, the prepared fictional fixture and the installed verification APK:
+
+```sh
+PARSE_NATIVE_RESUME_PAIRED=1 PARSE_NATIVE_ALERT_STATE=revoked \
+  node tools/android_native_smoke.cjs
+```
+
+The fixture keeps the old revoked row and selects the newly approved device for subsequent checks. Owner revocation here is received while online in the foreground; revocation of an offline or terminated phone remains a separate test. Both new modes use the existing r4 verification APK; no production app code or new binary was needed for these checks.
+
 ## Phone-sized visit-summary workflow
 
 A [four-check browser run](evidence/phone-viewport-summary-2026-09-27.json) at 390 × 844 with mobile/touch emulation uses actual previously confirmed phone-sourced notes from this native fixture. The owner prepares a draft, checks its source links, omits one source, saves a review and explicitly shares a read-only copy. The omitted wording is absent, retained wording is present, and the owner/restricted/public pages have no horizontal overflow. The restricted caregiver has no prepare/share controls. A separate share with a 60-second lifetime becomes unavailable after real server-clock expiry; revoking the original link also makes it unavailable. [Read-only phone layout](evidence/phone-viewport-summary-2026-09-27.png), [revoked view](evidence/phone-viewport-summary-revoked-2026-09-27.png). This is desktop Chrome 153 emulation, not Android/iOS browser or physical-phone acceptance.

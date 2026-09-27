@@ -16,7 +16,7 @@ const decode = value => value.replace(/&quot;/g, '"').replace(/&apos;/g, "'").re
 
 async function main() {
   const alertState = process.env.PARSE_NATIVE_ALERT_STATE || '';
-  assert(['', 'locked', 'terminated'].includes(alertState));
+  assert(['', 'locked', 'terminated', 'offline-plan', 'revoked'].includes(alertState));
   const alertLifecycle = !!alertState;
   const recoveryOnly = process.env.PARSE_NATIVE_RECOVERY_ONLY === '1';
   const receiptFault = process.env.PARSE_NATIVE_RECEIPT_FAULT || 'disconnect';
@@ -110,7 +110,7 @@ async function main() {
   }
   const report = { at: new Date().toISOString(), liveSpeech: false, physicalPhone: false,
     environment: 'Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and one-second tone replies. No real speech or acoustic audibility evidence.',
-    source_sha256: Object.fromEntries(['mobile/src/App.tsx', 'mobile/src/useVoice.ts', 'mobile/src/api.ts', 'mobile/src/storage.ts', 'tools/android_native_fixture.py', 'tools/android_native_smoke.cjs', 'tools/android_native_care.cjs', ...(lifecycleOnly ? ['tools/android_native_lifecycle.cjs'] : []), ...(remindersOnly ? ['tools/android_native_reminders.cjs', 'tools/android_native_control.py'] : []), ...(alertLifecycle ? ['mobile/src/useReminders.ts', 'mobile/src/alertSchedule.ts', 'tools/android_native_alert_lifecycle.cjs', 'tools/android_native_control.py'] : []), ...(recoveryOnly ? ['tools/android_native_recovery.cjs', 'tools/android_native_fault_proxy.py', 'tools/android_native_control.py'] : [])].map(file =>
+    source_sha256: Object.fromEntries(['mobile/src/App.tsx', 'mobile/src/useVoice.ts', 'mobile/src/api.ts', 'mobile/src/storage.ts', 'tools/android_native_fixture.py', 'tools/android_native_smoke.cjs', 'tools/android_native_care.cjs', ...(lifecycleOnly ? ['tools/android_native_lifecycle.cjs'] : []), ...(remindersOnly ? ['tools/android_native_reminders.cjs', 'tools/android_native_control.py'] : []), ...(alertLifecycle ? ['mobile/src/useReminders.ts', 'mobile/src/alertSchedule.ts', 'tools/android_native_alert_lifecycle.cjs', 'tools/android_native_revocation.cjs', 'tools/android_native_fault_proxy.py', 'tools/android_native_control.py'] : []), ...(recoveryOnly ? ['tools/android_native_recovery.cjs', 'tools/android_native_fault_proxy.py', 'tools/android_native_control.py'] : [])].map(file =>
       [file, createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex')])),
     checks: [] };
   const save = () => fs.writeFileSync(path.join(directory, alertLifecycle ? `native-alert-${alertState}-evidence.json` : recoveryOnly ? `native-recovery-${receiptFault}-evidence.json` : alertsOnly ? 'native-alerts-evidence.json' : confirmationOnly ? 'native-confirmation-evidence.json' : lifecycleOnly ? 'native-lifecycle-evidence.json' : remindersOnly ? 'native-reminders-evidence.json' : 'native-integration-evidence.json'), JSON.stringify(report, null, 2));
@@ -167,9 +167,9 @@ async function main() {
       await owner.page.getByLabel('One-use device code').fill(code);
       await owner.page.getByRole('button', { name: 'Approve phone', exact: true }).click();
     }
-    await owner.page.getByRole('heading', { name: 'Parse phone · Parse Android', exact: true }).waitFor();
+    await owner.page.getByRole('heading', { name: 'Parse phone · Parse Android', exact: true }).first().waitFor();
     const dashboard = await owner.dash();
-    const device = dashboard.devices.find(d => d.device_type === 'phone');
+    const device = dashboard.devices.find(d => d.device_type === 'phone' && !d.revoked_at);
     assert(device);
     if (dashboard.active_companion.device_id !== device.id) {
       await owner.page.getByLabel('Send reminders to').selectOption(device.id);

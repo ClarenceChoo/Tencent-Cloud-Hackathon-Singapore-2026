@@ -8,8 +8,28 @@ const execute = require('node:util').promisify(execFile);
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, screenshot, pass, owner, fixture, directory, appId, report, alertState }) {
-  assert(['locked', 'terminated'].includes(alertState));
+  assert(['locked', 'terminated', 'offline-plan', 'revoked'].includes(alertState));
+  const offlinePlan = alertState === 'offline-plan';
   const root = path.resolve(__dirname, '..');
+  async function control(mode, kind) {
+    const { stdout } = await execute(path.join(root, 'backend/.venv/bin/python'),
+      [path.join(root, 'tools/android_native_control.py'), mode, '--kind', kind, '--data-dir', directory], { timeout: 30000 });
+    return JSON.parse(stdout);
+  }
+  async function scheduledIds() {
+    assert((await adb('shell', 'id')).includes('uid=0'), 'Read-only native notification-store inspection requires the disposable emulator');
+    const xml = await adb('exec-out', 'cat', '/data/user/0/' + appId + '/shared_prefs/expo.modules.notifications.SharedPreferencesNotificationsStore.xml');
+    return [...xml.matchAll(/<string name="notification_request-([^"]+)"/g)].map(match => match[1]).sort();
+  }
+  function fault(value) {
+    const temporary = path.join(directory, 'fault-mode.alert.tmp');
+    fs.writeFileSync(temporary, JSON.stringify(value), { mode: 0o600 });
+    fs.renameSync(temporary, path.join(directory, 'fault-mode.json'));
+  }
+  function proxyEvents() {
+    const file = path.join(directory, 'fault-events.jsonl');
+    return fs.existsSync(file) ? fs.readFileSync(file, 'utf8').trim().split('\n').filter(Boolean).map(JSON.parse) : [];
+  }
   async function metadata() {
     const { stdout } = await execute(path.join(root, 'backend/.venv/bin/python'),
       [path.join(root, 'tools/android_native_control.py'), 'inspect', '--kind', 'alerts', '--data-dir', directory], { timeout: 20000 });
@@ -73,8 +93,19 @@ module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, sc
       return current.events.some(e => e.identity === id && e.stage === 'scheduled') ? id : undefined;
     }, 'Native scheduling evidence missing for this exact dose');
     report.identity = identity;
+    report.native_scheduled_before = await scheduledIds();
+    assert(report.native_scheduled_before.includes(identity));
+    if (alertState === 'revoked') {
+      await require('./android_native_revocation.cjs')({ find, tap, ui, adb, screenshot, pass, owner, fixture, appId, report, phone, scheduledIds, until });
+      return;
+    }
     await screenshot('native-' + alertState + '-scheduled');
     await adb('shell', 'input', 'keyevent', 'KEYCODE_HOME');
+    if (offlinePlan) {
+      fault({ offline: true });
+      await adb('reverse', 'tcp:8443', 'tcp:8444');
+      report.fault_event_offset = proxyEvents().length;
+    }
     if (alertState === 'locked') {
       await adb('shell', 'locksettings', 'set-disabled', 'false');
       await adb('shell', 'input', 'keyevent', 'KEYCODE_SLEEP');
@@ -99,10 +130,35 @@ module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, sc
     pass('Native alert is scheduled for the exact dose before entering ' + alertState + ' state');
     const postedRecord = dump => dump.split(/(?=NotificationRecord\()/).find(block =>
       block.split('\n')[0].includes(appId) && block.split('\n')[0].includes('tag=' + identity + ' '));
-    let posted;
+    let posted, changedPlan;
+    const notesBefore = (await owner.dash()).notes.length;
     report.observation_window_seconds_after_due = 300;
     console.log('Waiting for actual OS alert ' + identity + ', due ' + dose.scheduled_at);
     while (Date.now() < Date.parse(dose.scheduled_at) + 300000) {
+      if (offlinePlan && !changedPlan && Date.now() >= Date.parse(dose.scheduled_at)) {
+        await control('tick', 'medication');
+        const old = (await metadata()).commands.find(c => c.dose_id === dose.id);
+        assert(old && old.state === 'queued' && !old.audio_accessed && old.acks.length === 0);
+        report.queued_before_change = old;
+        const newTime = new Date(Date.now() + 20 * 60000).toLocaleTimeString('en-GB', { timeZone: 'Asia/Singapore', hour: '2-digit', minute: '2-digit', hour12: false });
+        changedPlan = await owner.api('/app/patients/' + fixture.patient_id + '/medication-plans', {
+          timezone: 'Asia/Singapore', source: 'Fictional replacement while phone is offline', checked: true,
+          medicines: [{ id: 'replacement_alert', name: 'Fictional Current Replacement Medicine', instructions: 'Fictional replacement instruction', reviewed_reference: 'Fictional new reference', reference_source: 'New test label' }],
+          schedule: [{ medicine_id: 'replacement_alert', local_time: newTime }],
+        });
+        report.replacement_plan_version = changedPlan.version;
+        const route = (await owner.dash()).active_companion;
+        const session = await (await owner.context.request.get('/v1/auth/session')).json();
+        const rejected = await owner.context.request.put('/v1/app/patients/' + fixture.patient_id + '/active-companion', {
+          headers: { Origin: fixture.origin, 'X-CSRF-Token': session.csrf_token },
+          data: { device_id: null, expected_generation: route.generation, other_pendants_powered_off: false },
+        });
+        assert.equal(rejected.status(), 409);
+        assert((await rejected.json()).detail.includes('Pause reminders'));
+        assert.equal((await owner.dash()).active_companion.device_id, phone.id);
+        report.offline_route_switch_rejected = true;
+        pass('A real queued reminder becomes stale while offline; remote route switching requires local phone cleanup');
+      }
       posted = postedRecord(await adb('shell', 'dumpsys', 'notification', '--noredact'));
       if (posted) break;
       await sleep(3000);
@@ -140,6 +196,48 @@ module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, sc
       return activity.split('\n').some(line => line.includes('topResumedActivity=') && line.includes(appId))
         && (await ui()).some(node => node.package === appId && (node.text || node['content-desc']));
     }, 'Notification tap did not resume the native app');
+    if (offlinePlan) {
+      assert(changedPlan);
+      await until(() => proxyEvents().slice(report.fault_event_offset).some(e => e.kind === 'offline_connection_closed'), 'Notification tap did not encounter the offline proxy');
+      const offlineUi = await ui();
+      assert(!offlineUi.some(n => n['content-desc'] === 'Tap to start recording' || n.text?.startsWith('HELLO, ')));
+      await screenshot('native-offline-plan-opened-offline');
+      const old = (await metadata()).commands.find(c => c.id === report.queued_before_change.id);
+      assert(old && !old.audio_accessed && !old.acks.includes('playback_started') && !old.acks.includes('playback_completed'));
+      report.stale_command_while_offline = old;
+      pass('The stale alert remains generic and an offline tap offers no recording or old reminder playback');
+      fault({});
+      await adb('shell', 'input', 'keyevent', 'KEYCODE_HOME');
+      await adb('shell', 'am', 'start', '-W', '-n', appId + '/sg.parse.companion.MainActivity');
+      await find('HELLO, Mei');
+      await tap('Medicines');
+      await find('Fictional Current Replacement Medicine');
+      await screenshot('native-offline-plan-current-medicine');
+      await until(async () => !(await scheduledIds()).includes(identity), 'Stale native alarm remains scheduled after current sync');
+      const after = (await metadata()).commands.find(c => c.id === old.id);
+      assert(after && !after.audio_accessed && !after.acks.includes('playback_started') && !after.acks.includes('playback_completed'));
+      assert.equal((await owner.dash()).notes.length, notesBefore);
+      report.stale_command_after_reconnect = after;
+      await tap('Settings');
+      await tap('Pause reminders');
+      await until(async () => (await owner.dash()).active_companion.device_id === null && (await scheduledIds()).length === 0, 'Pause did not clear native schedule and release the route');
+      const paused = (await owner.dash()).active_companion;
+      report.route_after_local_pause = paused;
+      report.native_scheduled_after_pause = await scheduledIds();
+      assert(!(await adb('shell', 'dumpsys', 'notification', '--noredact')).split(/(?=NotificationRecord\()/).some(b => b.split('\n')[0].includes(appId)));
+      await owner.api('/app/patients/' + fixture.patient_id + '/active-companion', { device_id: phone.id, expected_generation: paused.generation, other_pendants_powered_off: false }, 'PUT');
+      const selected = (await owner.dash()).active_companion;
+      assert(selected.generation > paused.generation);
+      await tap('Enable alerts');
+      await until(async () => (await scheduledIds()).some(id => id.endsWith('.g' + selected.generation)), 'New route generation did not rebuild the native schedule');
+      report.route_after_reselection = selected;
+      report.native_scheduled_after_reselection = await scheduledIds();
+      assert(report.native_scheduled_after_reselection.every(id => id.endsWith('.g' + selected.generation)));
+      assert.equal((await owner.dash()).doses.find(d => d.id === dose.id).report_state, 'unconfirmed');
+      report.medication_report = 'unconfirmed';
+      pass('Reconnect shows the replacement plan without stale audio; local Pause clears alerts before a new routing generation is selected');
+      return;
+    }
     await until(async () => (await metadata()).events.some(e => e.identity === identity && e.stage === 'opened'),
       'Native notification tap did not record opened evidence');
     assert.equal((await owner.dash()).doses.find(d => d.id === dose.id).report_state, 'unconfirmed');
@@ -148,6 +246,7 @@ module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, sc
     await screenshot('native-' + alertState + '-opened');
     pass('Actual ' + alertState + ' notification tap opens the native app and remains separate from medication reporting');
   } finally {
+    if (offlinePlan) { fault({}); await adb('reverse', 'tcp:8443', 'tcp:8443'); }
     await adb('shell', 'input', 'keyevent', 'KEYCODE_WAKEUP');
     await adb('shell', 'wm', 'dismiss-keyguard');
     await adb('shell', 'locksettings', 'set-disabled', originalLockDisabled);

@@ -2,6 +2,8 @@
 
 Version 0.4 · 23 September 2026 · Engineering contract and implementation boundary
 
+**27 September scope amendment:** The user has requested a native phone fallback with the pendant's functions. [Phone-Companion-PRD.md](Phone-Companion-PRD.md) supersedes phone-voice exclusions in this document. The physical pendant's Wi-Fi/audio contract remains supported; the new phone is a separately paired alternative endpoint using the same care backend.
+
 This specification accompanies the [PRD](CareLoop-PRD.md). The repository now contains firmware, backend and dashboard implementations; the assembled hardware connection and live cloud operation remain unverified. See [verification status](VERIFICATION.md) and the [implemented API contract](../../backend/API.md). All hostnames ending in `.example` and identifiers below are illustrative.
 
 ## 1. Recommended connection

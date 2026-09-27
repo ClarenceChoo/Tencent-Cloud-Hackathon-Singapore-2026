@@ -445,3 +445,28 @@ node tools/android_native_smoke.cjs
 ```
 
 This is a controlled AOSP emulator check using local HTTPS, scripted interpretation and tone replies with host audio disabled. It does not establish physical-device audibility, manufacturer-specific task dismissal, force-stop recovery, iOS behavior or full E08 acceptance.
+
+## Native Android TalkBack recording and cancellation
+
+The unchanged r6 verification APK passed four checks with an actual TalkBack service and offline English eSpeak voice on the Android 16 emulator. Enabling the screen reader overrides the saved hold preference with tap mode. Virtual touchscreen swipe gestures reach the labelled recording button without recording; a double-tap starts native capture. Further swipes reach **Cancel recording**, and a second double-tap stops capture. The transient audio file is removed and the server upload count stays at **31**. All six original accessibility/TTS settings and the original saved tap preference are restored afterward.
+
+[Four-check report with source/APK hashes and focus sequence](evidence/android-talkback-2026-09-27.json) · [tooling provenance](evidence/android-talkback-tooling-2026-09-27.json) · [record button focused](evidence/android-talkback-control-2026-09-27.png) · [recording](evidence/android-talkback-recording-2026-09-27.png) · [Cancel focused](evidence/android-talkback-cancel-2026-09-27.png) · [cancelled](evidence/android-talkback-cancelled-2026-09-27.png) · [original settings restored](evidence/android-talkback-restored-2026-09-27.png).
+
+The screenshots retain TalkBack's onboarding tip and debug speech overlay; some content is obscured. The service's accessibility-node dump identifies the focused controls, and native cache/server observations establish cancellation. Host audio is disabled, so this run does not verify audible prompts, speech quality, physical touch gestures, proposal review/confirmation with a screen reader, iOS VoiceOver or complete E10 acceptance.
+
+### Tooling and reproduction
+
+Google's TalkBack source is pinned at `229212fdf5842191d0a93fc95d9ca1423b346866`, with no tracked source changes. The debug APK uses Gradle 8.13, AGP 8.11.1, JDK 17 and SDK 36. Its isolated NDK 21 launcher runs the original compiler through the host's installed Rosetta and uses the existing NDK 27 archiver to avoid a host-tool crash. These adaptations affect verification tooling, not Parse. The provenance report records their hashes and the F-Droid eSpeak 1.52.0 APK/signature inspection. Neither third-party APK is committed.
+
+Use only the disposable, rooted `emulator-5580` at 1080 × 2400 with the existing fictional HTTPS fixture under `runtime/native-care-20260927`. Install/initialize the pinned TalkBack and eSpeak builds, select TalkBack's VERBOSE developer logging, then disable TalkBack before the run. Preserve the original six secure settings in `runtime/android-accessibility/original-settings.json` and the original Parse preference in `original-parse-tap-mode.json`; this harness requires the documented baseline of accessibility disabled, no selected service/TTS settings, and saved tap mode enabled. It temporarily changes the saved preference to hold to test the screen-reader override. The tooling provenance file must be present under the same directory.
+
+```sh
+runtime/android-build/sdk/ndk/27.1.12297006/toolchains/llvm/prebuilt/darwin-x86_64/bin/aarch64-linux-android26-clang \
+  -O2 -Wall -Wextra -Werror tools/android_emulator_touch.c \
+  -o runtime/android-accessibility/parse-emulator-touch
+python3 tools/android_native_talkback_probe.py
+```
+
+The touch helper checks the emulator property, input-device name and coordinate range before writing events. It sends fixed touch exploration, swipe and double-tap gestures through the virtual touchscreen. Ordinary `adb shell input swipe` did not move TalkBack focus in the initial attempt. The final probe also verifies Parse owns the foreground window after TalkBack initialization and waits for asynchronous focus/auto-scroll before the next gesture. An earlier 0.2-second snapshot missed the actual Cancel focus event and mistakenly advanced past it; TalkBack logs established that this was a harness timing error. A separate startup attempt encountered TalkBack onboarding, prompting the foreground guard. UIAutomator is used only before enabling and after disabling TalkBack; active focus observations come from TalkBack itself.
+
+The final run passed on the existing APK without changes to production app or backend code. The helper rebuild matches its recorded binary hash, Python syntax validation passes, and the exported source hashes match the committed files.

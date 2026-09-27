@@ -1,0 +1,51 @@
+{
+  "at": "2026-09-27T15:57:14.275187+00:00",
+  "emulator": "emulator-5580",
+  "purpose": "Prepare real screen-reader gesture/focus verification on fictional Parse data; not physical-device, acoustic or live-provider acceptance.",
+  "talkback": {
+    "upstream": "https://github.com/google/talkback",
+    "commit": "229212fdf5842191d0a93fc95d9ca1423b346866",
+    "tracked_source_diff": "",
+    "version": "TfPu_release_16_2-2026_09_27_2354",
+    "apk_sha256": "109061b6d3049b962c32730df9765c2e01070774c499db8704f1d8f076303358",
+    "apk_bytes": 69774678,
+    "gradle_version": "8.13",
+    "gradle_distribution_sha256": "20f1b1176237254a6fc204d8434196fa11a4cfb387567519c61556e8710aed78",
+    "gradle_plugin": "8.11.1",
+    "jdk": "17.0.20.1+1",
+    "compile_sdk": 36,
+    "target_sdk": 30,
+    "build_command": ":assemblePhoneDebug --no-daemon --console=plain --max-workers=2 -Dorg.gradle.jvmargs=-Xmx3g",
+    "build_result": "BUILD SUCCESSFUL in 35s; 316 actionable tasks: 29 executed, 287 up-to-date",
+    "host_adapter": {
+      "tool": "NDK 21.4.7075529 ndk-build launcher",
+      "reason": "Original host detection rejects arm64 on Apple Silicon. Run original build script and x86_64 host compiler through installed Rosetta.",
+      "original_sha256": "65faed9d776508ac7dfea0f7d39e61955c9cdf7d432b173b2d0ae45a3cac945c",
+      "adapted_sha256": "77ebc9843978922a019f14c803745c76ba72daada48eb0ed3a21db40d0954cc6",
+      "archiver_reason": "NDK21 host archiver aborts inside host libc++ on macOS 26.5. Use the already-installed NDK27 LLVM18 archiver for ELF static libraries, retaining NDK21 compilation/linking and unchanged TalkBack source.",
+      "llvm_ar_sha256": "72b0b067de835712ca6a485c166a92db72fd0dbae2ccfd1b2a7852146a032715"
+    },
+    "resolved_dynamic_volley_dependency": "1.0.19",
+    "dependency_report_sha256": "cd395ae400542e64b9987bd35aea017157c3b6b6b0174f53f28db02429de4746",
+    "build_log_sha256": "5255937b9d2a87d99c6063a17b2efe3b0e57ed3ef33c77319f63162bf48e35cf",
+    "signature_report_sha256": "e0d3a4abb720aab04ba2bf84e136667e1dc4a249d63283ebdc9783f371a55f59"
+  },
+  "espeak": {
+    "url": "https://f-droid.org/repo/com.reecedunn.espeak_22.apk",
+    "version": "1.52.0 (22)",
+    "apk_sha256": "0a7822fec54d7f7ae759ffedc9afeaa77f809587b171fb2101998787821ec790",
+    "apk_bytes": 10446659,
+    "target_sdk": 33,
+    "requested_permissions": [],
+    "signature_report_sha256": "0281ca668a2c5027891bae58049a2b7b4a70e717e893a21744cb2d2bf08d7c81",
+    "certificate_sha256": "acdee0a53d94886b9824ad748ceae1d7c8d3e15e1de694dc684dfaae62231ea7"
+  },
+  "original_settings": {
+    "enabled_accessibility_services": "null",
+    "accessibility_enabled": "0",
+    "touch_exploration_enabled": "0",
+    "tts_default_synth": "null",
+    "tts_default_rate": "null",
+    "tts_default_pitch": "null"
+  }
+}

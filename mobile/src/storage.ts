@@ -8,6 +8,26 @@ import { PendingTurnJournal } from "./turnRecovery";
 const options = {
   keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY,
 };
+let preferenceWrite = Promise.resolve();
+export async function loadTapMode(): Promise<boolean | null> {
+  await preferenceWrite;
+  const value = await SecureStore.getItemAsync(
+    "parse.interaction-mode",
+    options,
+  );
+  return value === "tap" ? true : value === "hold" ? false : null;
+}
+export function saveTapMode(tap: boolean): Promise<void> {
+  const next = preferenceWrite.then(() =>
+    SecureStore.setItemAsync(
+      "parse.interaction-mode",
+      tap ? "tap" : "hold",
+      options,
+    ),
+  );
+  preferenceWrite = next.catch(() => {});
+  return next;
+}
 const marker = () => new File(Paths.document, "parse-installation-v1");
 export async function loadInstallation(): Promise<{
   installation: Installation | null;

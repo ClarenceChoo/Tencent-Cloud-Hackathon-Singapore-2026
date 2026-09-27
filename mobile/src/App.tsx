@@ -31,6 +31,7 @@ import * as Notifications from "expo-notifications";
 import { useVoice } from "./useVoice";
 import { useReminders } from "./useReminders";
 import { CareOrigin, CareHistory } from "./CareOrigin";
+import { useTalkMode } from "./useTalkMode";
 
 const value = (row: CareRow, key: string) =>
   typeof row[key] === "string" ? (row[key] as string) : "";
@@ -49,6 +50,7 @@ function Button({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={title}
+      accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
       style={[s.button, secondary && s.secondary, disabled && s.disabled]}
@@ -69,15 +71,36 @@ function Companion() {
   const [home, setHome] = useState<Home | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [busyMessage, setBusyMessage] = useState("");
   const [booting, setBooting] = useState(true);
-  const [tapMode, setTapMode] = useState(false);
+  const interaction = useTalkMode();
+  const { tapMode } = interaction;
   const [section, setSection] = useState("Today");
-  const api = useMemo(
+  const [accessProblem, setAccessProblem] = useState("");
+  const [cleanupNeeded, setCleanupNeeded] = useState(false);
+  const [cleanupBusy, setCleanupBusy] = useState(false);
+  const [cleanupMessage, setCleanupMessage] = useState("");
+  const identityEpoch = useRef(0);
+  const actionBusy = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      identityEpoch.current++;
+    };
+  }, []);
+  const transportApi = useMemo(
     () => (installation && !restored ? new PhoneApi(installation) : null),
     [installation, restored],
   );
+  const api = accessProblem ? null : transportApi;
   const currentApi = useRef(api);
   currentApi.current = api;
+  const denyRef = useRef<(source: PhoneApi, error: unknown) => Promise<void>>(
+    async () => {},
+  );
+  const homeVersion = useRef(0);
   const showError = (err: unknown) =>
     setError(
       err instanceof Error
@@ -86,10 +109,24 @@ function Companion() {
     );
   const refresh = useCallback(async () => {
     if (api) {
-      const next = await api.home();
-      if (api !== currentApi.current) return null;
-      setHome(next);
-      return next;
+      const version = ++homeVersion.current;
+      try {
+        const next = await api.home();
+        if (
+          !mounted.current ||
+          api !== currentApi.current ||
+          version !== homeVersion.current
+        )
+          return null;
+        setHome(next);
+        return next;
+      } catch (err) {
+        // Do not await a stop from inside a voice/recovery operation: stopping
+        // drains that operation. Fence the UI immediately, then drain outside it.
+        if (err instanceof ApiError && [401, 403].includes(err.status))
+          void denyRef.current(api, err);
+        throw err;
+      }
     }
     return null;
   }, [api]);
@@ -118,13 +155,21 @@ function Companion() {
       }),
   });
   function startTalking() {
-    const started = voice.begin();
+    if (
+      !interaction.ready ||
+      !currentApi.current ||
+      actionBusy.current ||
+      cleanupBusy
+    )
+      return;
+    const started = voice.begin().catch(showError);
     setReminderContext(null);
     return started;
   }
   useEffect(() => {
     void loadInstallation()
       .then((saved) => {
+        if (!mounted.current) return;
         setInstallation(saved.installation);
         setRestored(saved.restored);
         setService(saved.installation?.service || "");
@@ -137,7 +182,13 @@ function Companion() {
     let running = false;
     let alive = true;
     async function sync() {
-      if (running || AppState.currentState !== "active") return;
+      if (
+        running ||
+        !alive ||
+        api !== currentApi.current ||
+        AppState.currentState !== "active"
+      )
+        return;
       running = true;
       try {
         let next: Enrollment;
@@ -148,20 +199,15 @@ function Companion() {
             next = await api!.enroll();
           else throw err;
         }
-        if (!alive) return;
+        if (!alive || api !== currentApi.current) return;
         setEnrollment(next);
         if (next.status === "paired") await refresh();
-        setError("");
+        if (alive && api === currentApi.current) setError("");
       } catch (err) {
-        if (alive) {
+        if (alive && api === currentApi.current) {
           if (err instanceof ApiError && [401, 403].includes(err.status)) {
-            await stopLocalReminders(async () => {
-              await api!.quiesce();
-            });
-            setHome(null);
-            setEnrollment(null);
-          }
-          showError(err);
+            await denyRef.current(api!, err);
+          } else showError(err);
         }
       } finally {
         running = false;
@@ -180,22 +226,50 @@ function Companion() {
       listener.remove();
     };
   }, [api, refresh]);
-  async function connect() {
+  async function action(
+    work: (valid: () => boolean) => Promise<void>,
+    message = "Updating Parse…",
+  ) {
+    if (
+      actionBusy.current ||
+      cleanupBusy ||
+      (api && api !== currentApi.current)
+    )
+      return;
+    actionBusy.current = true;
+    const epoch = identityEpoch.current;
+    const source = api;
+    const valid = () => mounted.current && epoch === identityEpoch.current;
     setBusy(true);
+    setBusyMessage(message);
     setError("");
     try {
-      setInstallation(
-        await newInstallation(
-          service,
-          Platform.OS === "ios" ? "ios" : "android",
-        ),
-      );
-      setRestored(false);
+      await work(valid);
     } catch (err) {
-      showError(err);
+      if (valid()) {
+        if (
+          source &&
+          err instanceof ApiError &&
+          [401, 403].includes(err.status)
+        )
+          await denyRef.current(source, err);
+        else showError(err);
+      }
     } finally {
-      setBusy(false);
+      actionBusy.current = false;
+      if (mounted.current) setBusy(false);
     }
+  }
+  async function connect() {
+    await action(async (valid) => {
+      const created = await newInstallation(
+        service,
+        Platform.OS === "ios" ? "ios" : "android",
+      );
+      if (!valid()) return;
+      setInstallation(created);
+      setRestored(false);
+    }, "Connecting to Parse…");
   }
   async function stopLocalReminders(after?: () => Promise<void>) {
     await voice.stop(async () => {
@@ -210,26 +284,73 @@ function Companion() {
       await after?.();
     });
   }
+  const cleaning = useRef<Promise<void> | null>(null);
+  async function cleanupDenied(source = transportApi) {
+    if (cleaning.current) return cleaning.current;
+    setCleanupBusy(true);
+    cleaning.current = (async () => {
+      try {
+        await stopLocalReminders(async () => {
+          if (source) {
+            try {
+              await source.quiesce();
+            } catch (err) {
+              if (!(err instanceof ApiError && err.status === 401)) throw err;
+            }
+          }
+        });
+        if (mounted.current) {
+          setCleanupNeeded(false);
+          setCleanupMessage(
+            "Local audio and alerts are cleared. Start a new pairing to reconnect.",
+          );
+        }
+      } catch (err) {
+        if (mounted.current) {
+          setCleanupNeeded(true);
+          setCleanupMessage(
+            err instanceof Error
+              ? err.message
+              : "Local cleanup needs another attempt.",
+          );
+        }
+      } finally {
+        cleaning.current = null;
+        if (mounted.current) setCleanupBusy(false);
+      }
+    })();
+    return cleaning.current;
+  }
+  denyRef.current = async (source, err) => {
+    if (!mounted.current || source !== currentApi.current) return;
+    // Remove care and block admission before any native/network cleanup await.
+    currentApi.current = null;
+    identityEpoch.current++;
+    setAccessProblem(
+      err instanceof ApiError && err.status === 403
+        ? "This phone's access has been revoked."
+        : "This phone can no longer access the care space.",
+    );
+    setHome(null);
+    setEnrollment(null);
+    setReminderContext(null);
+    setError("");
+    setCleanupNeeded(true);
+    await cleanupDenied(source);
+  };
   async function pauseReminders() {
     if (!api) return;
-    setBusy(true);
-    setError("");
-    try {
+    await action(async (valid) => {
       await stopLocalReminders(async () => {
         await api.quiesce();
       });
+      if (!valid()) return;
       await refresh();
-      reminders.resume();
-    } catch (err) {
-      showError(err);
-    } finally {
-      setBusy(false);
-    }
+      if (valid()) reminders.resume();
+    }, "Stopping audio and clearing this phone's reminders…");
   }
   async function unpair() {
-    setBusy(true);
-    setError("");
-    try {
+    await action(async (valid) => {
       const cleanupApi =
         api || (installation ? new PhoneApi(installation) : null);
       await stopLocalReminders(async () => {
@@ -249,56 +370,82 @@ function Companion() {
           }
         }
       });
+      if (!valid()) return;
       await clearInstallation();
+      if (!valid()) return;
+      identityEpoch.current++;
+      currentApi.current = null;
       setInstallation(null);
       setEnrollment(null);
       setHome(null);
       setRestored(false);
-    } catch (err) {
-      showError(err);
-    } finally {
-      setBusy(false);
-    }
+      setAccessProblem("");
+      setCleanupNeeded(false);
+      setCleanupMessage("");
+      setReminderContext(null);
+    }, "Stopping audio and removing this phone's access…");
   }
   async function confirm() {
     const proposal = home?.current_proposal;
     if (!proposal || !api) return;
-    setBusy(true);
-    setError("");
-    try {
+    await action(async (valid) => {
       await voice.stop();
+      if (!valid()) return;
       await api.confirm(proposal.id, proposal.context_id);
+      if (!valid()) return;
       await refresh();
+      if (!valid()) return;
       try {
-        await voice.speak(await api.speech(proposal.id, proposal.context_id));
-      } catch {
-        setError("Saved. Spoken confirmation is currently unavailable.");
+        const reply = await api.speech(proposal.id, proposal.context_id);
+        if (valid()) await voice.speak(reply);
+      } catch (err) {
+        if (err instanceof ApiError && [401, 403].includes(err.status))
+          throw err;
+        if (valid())
+          setError("Saved. Spoken confirmation is currently unavailable.");
       }
-    } catch (err) {
-      showError(err);
-    } finally {
-      setBusy(false);
-    }
+    }, "Saving your confirmed update…");
   }
   async function cancel() {
     const proposal = home?.current_proposal;
     if (!proposal || !api) return;
-    setBusy(true);
-    setError("");
-    try {
+    await action(async (valid) => {
       await voice.stop();
+      if (!valid()) return;
       await api.cancel(proposal.id, proposal.context_id);
-      await refresh();
-    } catch (err) {
-      showError(err);
-    } finally {
-      setBusy(false);
-    }
+      if (valid()) await refresh();
+    }, "Cancelling this unsaved update…");
+  }
+  async function hearReadback() {
+    const proposal = home?.current_proposal;
+    if (!proposal || !api) return;
+    await action(async (valid) => {
+      await voice.stop();
+      if (!valid()) return;
+      const reply = await api.speech(proposal.id, proposal.context_id);
+      if (valid()) await voice.speak(reply);
+    }, "Checking the current read-back…");
+  }
+  async function openExternal(settings = false) {
+    const address = installation?.service;
+    await action(async (valid) => {
+      await voice.stop();
+      if (!valid()) return;
+      if (settings) await Linking.openSettings();
+      else if (address) await Linking.openURL(address);
+    }, "Stopping audio before opening the next screen…");
   }
   const isRecording =
     voice.phase === "recording" || voice.phase === "preparing";
+  const previousMode = useRef(tapMode);
+  useEffect(() => {
+    if (previousMode.current !== tapMode && isRecording)
+      void voice.stop().catch(showError);
+    previousMode.current = tapMode;
+  }, [tapMode, isRecording]);
   const canTalk =
     !!home &&
+    interaction.ready &&
     ["configured", "simulated"].includes(home.voice.voice_service) &&
     !busy &&
     ["idle", "error", "recording", "preparing"].includes(voice.phase);
@@ -321,7 +468,34 @@ function Companion() {
               Speak about your day, hear a read-back, and choose what to save or
               share.
             </Text>
-            {restored ? (
+            {accessProblem ? (
+              <View style={s.card} accessibilityRole="alert">
+                <Text style={s.heading}>Phone access stopped</Text>
+                <Text style={s.body}>{accessProblem}</Text>
+                <Text style={s.body}>
+                  {cleanupBusy
+                    ? "Stopping local audio and alerts…"
+                    : cleanupMessage}
+                </Text>
+                {cleanupNeeded && (
+                  <Button
+                    title="Retry local cleanup"
+                    secondary
+                    disabled={busy || cleanupBusy}
+                    onPress={() => {
+                      void cleanupDenied();
+                    }}
+                  />
+                )}
+                <Button
+                  title="Start a new pairing"
+                  disabled={busy || cleanupBusy || cleanupNeeded}
+                  onPress={() => {
+                    void unpair();
+                  }}
+                />
+              </View>
+            ) : restored ? (
               <View style={s.card}>
                 <Text style={s.heading}>
                   Pairing from an earlier installation
@@ -333,6 +507,7 @@ function Companion() {
                 </Text>
                 <Button
                   title="Start a new pairing"
+                  disabled={busy}
                   onPress={() => {
                     void unpair();
                   }}
@@ -362,6 +537,7 @@ function Companion() {
                 <Button
                   title="Restart pairing"
                   secondary
+                  disabled={busy}
                   onPress={() => {
                     void unpair();
                   }}
@@ -397,7 +573,10 @@ function Companion() {
                   disabled={busy}
                   onPress={() => {
                     if (installation && api)
-                      void api.enroll().then(setEnrollment).catch(showError);
+                      void action(async (valid) => {
+                        const next = await api.enroll();
+                        if (valid()) setEnrollment(next);
+                      });
                     else void connect();
                   }}
                 />
@@ -405,6 +584,7 @@ function Companion() {
                   <Button
                     title="Start a new pairing"
                     secondary
+                    disabled={busy}
                     onPress={() => {
                       void unpair();
                     }}
@@ -436,7 +616,9 @@ function Companion() {
               accessibilityRole="button"
               accessibilityLabel={
                 isRecording
-                  ? "Recording. Release or tap to stop."
+                  ? tapMode
+                    ? "Recording. Tap to send."
+                    : "Recording. Release to send."
                   : tapMode
                     ? "Tap to start recording"
                     : "Hold to talk"
@@ -445,6 +627,11 @@ function Companion() {
                 disabled: !canTalk,
                 busy: voice.phase === "preparing",
               }}
+              accessibilityHint={
+                tapMode
+                  ? "Activate once to start. Activate again to send, or choose Cancel recording."
+                  : "Hold while speaking, then release to send. You can enable tap mode below."
+              }
               disabled={!canTalk}
               onPressIn={() => {
                 if (!tapMode) void startTalking();
@@ -464,7 +651,9 @@ function Companion() {
                 !canTalk && s.disabled,
               ]}
             >
-              <Text style={s.talkIcon}>{isRecording ? "●" : "◉"}</Text>
+              <Text accessible={false} style={s.talkIcon}>
+                {isRecording ? "●" : "◉"}
+              </Text>
               <Text style={s.talkText}>
                 {voice.phase === "preparing"
                   ? "Getting ready…"
@@ -478,17 +667,38 @@ function Companion() {
               </Text>
             </Pressable>
             <Text accessibilityLiveRegion="polite" style={s.voiceMessage}>
-              {voice.message}
+              {busy && voice.phase !== "speaking"
+                ? busyMessage
+                : tapMode && voice.phase === "recording"
+                  ? "Listening. Tap to send, or choose Cancel recording."
+                  : voice.message}
             </Text>
             <View style={s.setting}>
-              <Text style={s.body}>Tap to start and stop</Text>
+              <Text style={[s.body, s.settingLabel]}>
+                Tap to start and stop
+              </Text>
               <Switch
                 accessibilityLabel="Use tap instead of hold to record"
                 value={tapMode}
-                onValueChange={setTapMode}
-                disabled={isRecording}
+                onValueChange={(enabled) => {
+                  if (!isRecording) void interaction.choose(enabled);
+                }}
+                disabled={
+                  isRecording || !interaction.ready || interaction.screenReader
+                }
+                style={s.switch}
               />
             </View>
+            {interaction.screenReader && (
+              <Text style={s.caption}>
+                Tap mode is enabled while your screen reader is on.
+              </Text>
+            )}
+            {!!interaction.message && (
+              <Text accessibilityLiveRegion="polite" style={s.caption}>
+                {interaction.message}
+              </Text>
+            )}
             {!["idle", "error"].includes(voice.phase) && (
               <Button
                 title={
@@ -541,14 +751,7 @@ function Companion() {
                   secondary
                   disabled={busy || isRecording}
                   onPress={() => {
-                    void voice.stop().catch(showError);
-                    void api!
-                      .speech(
-                        home.current_proposal!.id,
-                        home.current_proposal!.context_id,
-                      )
-                      .then(voice.speak)
-                      .catch(showError);
+                    void hearReadback();
                   }}
                 />
                 <Text style={s.caption}>
@@ -743,9 +946,9 @@ function Companion() {
                 <Button
                   title="Review visit summaries in dashboard"
                   secondary
+                  disabled={busy}
                   onPress={() => {
-                    void voice.stop().catch(showError);
-                    void Linking.openURL(installation!.service);
+                    void openExternal();
                   }}
                 />
               </>
@@ -791,17 +994,17 @@ function Companion() {
                 <Button
                   title="Open phone permission settings"
                   secondary
+                  disabled={busy}
                   onPress={() => {
-                    void voice.stop().catch(showError);
-                    void Linking.openSettings();
+                    void openExternal(true);
                   }}
                 />
                 <Button
                   title="Open care dashboard"
                   secondary
+                  disabled={busy}
                   onPress={() => {
-                    void voice.stop().catch(showError);
-                    void Linking.openURL(installation!.service);
+                    void openExternal();
                   }}
                 />
                 <Button
@@ -851,6 +1054,7 @@ const s = StyleSheet.create({
   page: { padding: 24, paddingBottom: 50, gap: 18 },
   brandRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 16,
@@ -882,7 +1086,7 @@ const s = StyleSheet.create({
     color: "#322C27",
     fontWeight: "600",
   },
-  caption: { fontSize: 16, lineHeight: 24, color: "#756C60" },
+  caption: { fontSize: 18, lineHeight: 26, color: "#756C60" },
   label: { fontSize: 18, color: "#322C27" },
   card: {
     backgroundColor: "#FFFDFA",
@@ -923,7 +1127,8 @@ const s = StyleSheet.create({
   },
   notice: { backgroundColor: "#F0E5D2", padding: 18, borderRadius: 12 },
   talk: {
-    height: 206,
+    minHeight: 206,
+    padding: 24,
     width: "100%",
     borderRadius: 28,
     backgroundColor: "#A24F3D",
@@ -934,7 +1139,13 @@ const s = StyleSheet.create({
   },
   recording: { backgroundColor: "#733327" },
   talkIcon: { fontSize: 44, color: "#FFF" },
-  talkText: { fontSize: 26, fontWeight: "600", color: "#FFF" },
+  talkText: {
+    fontSize: 26,
+    fontWeight: "600",
+    color: "#FFF",
+    textAlign: "center",
+    flexShrink: 1,
+  },
   voiceMessage: {
     fontSize: 18,
     lineHeight: 27,
@@ -943,13 +1154,18 @@ const s = StyleSheet.create({
   },
   setting: {
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
   },
+  settingLabel: { flexShrink: 1 },
+  switch: { minWidth: 48, minHeight: 48 },
   tabs: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 20 },
   tab: {
     minHeight: 48,
+    minWidth: 48,
+    paddingVertical: 12,
     paddingHorizontal: 15,
     justifyContent: "center",
     borderRadius: 30,
@@ -957,7 +1173,7 @@ const s = StyleSheet.create({
     borderColor: "#D6CCBD",
   },
   selectedTab: { backgroundColor: "#E8DDCE" },
-  tabText: { fontSize: 17, color: "#514438" },
+  tabText: { fontSize: 18, color: "#514438" },
   entry: {
     borderLeftWidth: 2,
     borderLeftColor: "#D0B5A1",

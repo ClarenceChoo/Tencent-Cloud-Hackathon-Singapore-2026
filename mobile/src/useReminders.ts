@@ -58,7 +58,9 @@ export function useReminders(options: Options) {
     if (!api) {
       controls.current = {
         enable: async () => {},
-        pause: async () => {},
+        // Losing access does not prove that native cleanup has finished. Keep
+        // the preceding session's drain/retry action available without reads.
+        pause: controls.current.pause,
         resume: () => {},
       };
       return;

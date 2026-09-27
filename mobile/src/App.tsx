@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -69,6 +75,8 @@ function Companion() {
     () => (installation && !restored ? new PhoneApi(installation) : null),
     [installation, restored],
   );
+  const currentApi = useRef(api);
+  currentApi.current = api;
   const showError = (err: unknown) =>
     setError(
       err instanceof Error
@@ -78,8 +86,11 @@ function Companion() {
   const refresh = useCallback(async () => {
     if (api) {
       const next = await api.home();
+      if (api !== currentApi.current) return null;
       setHome(next);
+      return next;
     }
+    return null;
   }, [api]);
   const voice = useVoice(
     api,
@@ -88,6 +99,7 @@ function Companion() {
         ? reminderContext.id
         : null),
     refresh,
+    !!home && !busy,
   );
   const reminders = useReminders({
     api,

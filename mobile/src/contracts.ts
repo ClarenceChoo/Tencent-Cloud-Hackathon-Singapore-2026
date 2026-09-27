@@ -109,4 +109,5 @@ export type LedgerEntry = {
   expires: number;
   stage: "reserved" | "started" | "completed" | "interrupted";
   ackIds: Partial<Record<PlaybackStage, string>>;
+  terminalAck?: "recorded" | "rejected";
 };

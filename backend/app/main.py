@@ -738,12 +738,24 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
                 raise HTTPException(status_code=409, detail="Acknowledgement ID was reused with different content")
             return {"ack_id": existing.ack_id, "status": "recorded", "stage": existing.stage}
         selected = route_view(db, device.patient_id)
-        if selected['device_id'] != device.id or selected['generation'] != item.route_generation:
+        # A phone's durable ledger may outlive the playable command. Reconcile
+        # historical terminal evidence only after this device obtained start
+        # authorization; this never authorizes new audio or confirms a dose.
+        late_phone_terminal = (
+            device.device_type == "phone"
+            and data.stage in {"playback_completed", "interrupted"}
+            and item.delivery_state in {"playback_started", "playback_unknown"}
+            and db.scalar(select(m.ReminderAck.id).where(
+                m.ReminderAck.device_id == device.id,
+                m.ReminderAck.command_id == item.id,
+                m.ReminderAck.stage == "playback_started")) is not None
+        )
+        if not late_phone_terminal and (selected['device_id'] != device.id or selected['generation'] != item.route_generation):
             raise HTTPException(409, detail="Reminder belongs to a previous companion selection")
         if data.stage in {'received', 'playback_started'} and not current_attempt(db, device, item):
             raise HTTPException(409, detail="Playback command is no longer current")
         order = {"queued": 0, "received": 1, "playback_started": 2, "playback_completed": 3, "interrupted": 3, "failed": 3, "expired": 3}
-        if data.stage != "expired" and (item.delivery_state in {"expired", "cancelled"} or aware(item.expires_at) <= utcnow()):
+        if not late_phone_terminal and data.stage != "expired" and (item.delivery_state in {"expired", "cancelled"} or aware(item.expires_at) <= utcnow()):
             raise HTTPException(status_code=409, detail="Playback command is no longer playable")
         if item.delivery_state in {"playback_completed", "interrupted", "failed"} and data.stage != item.delivery_state:
             raise HTTPException(status_code=409, detail="Acknowledgement cannot replace a terminal playback state")

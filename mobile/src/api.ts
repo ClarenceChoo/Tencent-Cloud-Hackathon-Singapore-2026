@@ -12,15 +12,8 @@ import type {
   PlaybackStage,
 } from "./contracts";
 import { audioPath } from "./validation";
-
-export class ApiError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-  ) {
-    super(message);
-  }
-}
+import { ApiError } from "./errors";
+export { ApiError } from "./errors";
 export class PhoneApi {
   constructor(readonly installation: Installation) {}
   async request<T>(
@@ -96,9 +89,11 @@ export class PhoneApi {
       signal,
     );
   }
-  receipt(key: string) {
+  receipt(key: string, signal?: AbortSignal) {
     return this.request<Receipt>(
       "/v1/phone/turn-receipts/" + encodeURIComponent(key),
+      {},
+      signal,
     );
   }
   turn(id: string, signal?: AbortSignal) {

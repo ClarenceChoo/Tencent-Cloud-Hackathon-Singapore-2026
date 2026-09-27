@@ -12,24 +12,33 @@ import * as Crypto from "expo-crypto";
 import * as Haptics from "expo-haptics";
 import { File, Paths } from "expo-file-system";
 import { ApiError, PhoneApi } from "./api";
-import { loadPending, removeAudio, savePending, sweepAudio } from "./storage";
+import {
+  loadPending,
+  removeAudio,
+  savePending,
+  retainPending,
+  clearPending,
+  sweepAudio,
+} from "./storage";
 import { Operations } from "./operations";
 import { wavDuration } from "./validation";
-import type { PendingTurn, TurnEvent, Reminder } from "./contracts";
+import { resolveAcceptedTurn, RecoveryInterrupted } from "./turnRecovery";
+import type { Home, PendingTurn, TurnEvent, Reminder } from "./contracts";
 
 type Phase =
   | "idle"
   | "preparing"
+  | "preparing_reply"
   | "recording"
   | "sending"
   | "waiting"
   | "speaking"
   | "error";
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export function useVoice(
   api: PhoneApi | null,
   context: string | null,
-  onComplete: () => Promise<void>,
+  onComplete: () => Promise<Home | null>,
+  recoveryEnabled = false,
 ) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [message, setMessage] = useState(
@@ -37,6 +46,15 @@ export function useVoice(
   );
   const [lastReply, setLastReply] = useState<TurnEvent | null>(null);
   const operations = useRef(new Operations());
+  const refreshRef = useRef(onComplete);
+  refreshRef.current = onComplete;
+  const recoveryAllowed = useRef(recoveryEnabled);
+  recoveryAllowed.current = recoveryEnabled;
+  const recoveryClaim = useRef(false);
+  const recoverRef = useRef<(automatic?: boolean) => Promise<void>>(
+    async () => {},
+  );
+  const retryAt = useRef(0);
   const apiRef = useRef(api);
   apiRef.current = api;
   const phaseRef = useRef<Phase>("idle");
@@ -95,6 +113,7 @@ export function useVoice(
     if (event.payload.audio_paths.length > 20)
       throw new Error("The spoken reply contains too many parts.");
     let seconds = 0;
+    move("speaking");
     await setIsAudioActiveAsync(true);
     await setAudioModeAsync({
       allowsRecording: false,
@@ -102,7 +121,6 @@ export function useVoice(
       playsInSilentMode: true,
       interruptionMode: "doNotMix",
     });
-    move("speaking");
     let authorised = false;
     for (const path of event.payload.audio_paths) {
       if (validate) await validate();
@@ -137,7 +155,13 @@ export function useVoice(
         removeAudio(file.uri);
         throw new Error("Playback was interrupted.");
       }
-      const player = createAudioPlayer(file.uri, { updateInterval: 100 });
+      let player: ReturnType<typeof createAudioPlayer>;
+      try {
+        player = createAudioPlayer(file.uri, { updateInterval: 100 });
+      } catch (error) {
+        removeAudio(file.uri);
+        throw error;
+      }
       let cleanPlayback = () => {};
       try {
         await new Promise<void>((resolve, reject) => {
@@ -193,102 +217,159 @@ export function useVoice(
           }
         });
       } finally {
-        cleanPlayback();
-        player.pause();
-        player.release();
-        removeAudio(file.uri);
+        try {
+          cleanPlayback();
+        } finally {
+          try {
+            player.pause();
+          } finally {
+            try {
+              player.release();
+            } finally {
+              removeAudio(file.uri);
+            }
+          }
+        }
       }
     }
     move("idle");
   }
 
-  async function reconcile(pending: PendingTurn, controller: AbortController) {
+  async function reconcile(
+    pending: PendingTurn,
+    controller: AbortController,
+    playReply = true,
+  ) {
     if (!api) return;
-    let turnId = pending.turnId;
-    if (!turnId) {
-      const receipt = await api.receipt(pending.key);
-      turnId = receipt.turn_id;
-      await savePending({ ...pending, turnId });
-    }
-    move("waiting");
-    setMessage("Your recording was received. Parse is preparing a response.");
-    for (
-      let count = 0;
-      count < 90 && active.current && !controller.signal.aborted;
-      count++
-    ) {
-      const result = await api.turn(turnId, controller.signal);
-      if (controller.signal.aborted) return;
-      if (result.status === "failed") {
-        await savePending(null);
-        throw new Error(
-          result.error ||
-            "Speech could not be processed. No new confirmation was made.",
-        );
-      }
-      if (result.event) {
-        await savePending(null);
-        setLastReply(result.event);
-        setMessage(
-          result.event.payload.spoken_text ||
-            "Response received. Review the current care details.",
-        );
-        await onComplete();
-        if (result.event.payload.status === "awaiting_confirmation") {
-          const current = await api.home();
-          if (
-            current.current_proposal?.context_id !==
-            result.event.payload.context_id
-          ) {
-            move("idle");
-            setMessage(
-              "That read-back changed. Review the current details before confirming.",
-            );
-            return;
-          }
-        }
-        if (!controller.signal.aborted) await play(result.event, controller);
-        return;
-      }
-      await wait(700);
-    }
-    move("error");
-    setMessage(
-      "The result is still unknown. Tap Recover response to check the same recording.",
+    const result = await resolveAcceptedTurn(
+      pending,
+      {
+        receipt: (key, signal) => api.receipt(key, signal),
+        turn: (id, signal) => api.turn(id, signal),
+        retain: retainPending,
+        clear: clearPending,
+        refresh: () => refreshRef.current(),
+        current: () =>
+          api === apiRef.current &&
+          active.current &&
+          !operations.current.closed,
+        received: () => {
+          move("waiting");
+          setMessage(
+            "Your recording was received. Parse is preparing a response.",
+          );
+        },
+      },
+      controller.signal,
     );
+    if (
+      controller.signal.aborted ||
+      !active.current ||
+      operations.current.closed ||
+      api !== apiRef.current
+    )
+      throw new RecoveryInterrupted();
+    if (result.kind === "receipt_unknown") {
+      retryAt.current = Date.now() + 15000;
+      throw new Error(
+        "The recording's receipt is still unknown. Parse will check again while open. You can also Recover response or discard it; no new recording has been sent.",
+      );
+    }
+    if (result.kind === "processing") {
+      retryAt.current = Date.now() + 15000;
+      throw new Error(
+        "Parse is still processing this recording. It will check again while open; nothing new has been confirmed.",
+      );
+    }
+    if (result.kind === "failed") throw new Error(result.message);
+    setLastReply(result.playable ? result.event : null);
+    if (result.stale) {
+      move("idle");
+      setMessage(
+        "That read-back changed. Review the current details before confirming.",
+      );
+      return;
+    }
+    const text =
+      result.event.payload.spoken_text ||
+      "Response received. Review the current care details.";
+    setMessage(
+      !result.playable
+        ? text + " The audio has expired; check the current details."
+        : playReply
+          ? text
+          : text + " Response recovered. Tap Repeat spoken reply to hear it.",
+    );
+    if (result.playable && playReply) await play(result.event, controller);
+    else move("idle");
   }
 
-  async function recover() {
+  async function recover(automatic = false) {
     if (
       !api ||
       api !== apiRef.current ||
       operations.current.closed ||
       !active.current ||
-      !["idle", "error"].includes(phaseRef.current)
+      recoveryClaim.current ||
+      !["idle", "error"].includes(phaseRef.current) ||
+      (automatic && (!recoveryAllowed.current || Date.now() < retryAt.current))
     )
       return;
-    const pending = await loadPending();
-    if (!pending || operations.current.closed) return;
+    // Claim before SecureStore/HTTP awaits so a talk press or another resume cannot
+    // admit a second operation while recovery is loading its identifiers.
+    recoveryClaim.current = true;
     const controller = new AbortController();
     job.current = controller;
     try {
-      await reconcile(pending, controller);
+      const pending = await loadPending();
+      if (
+        !pending ||
+        controller.signal.aborted ||
+        operations.current.closed ||
+        !active.current
+      )
+        return;
+      move("waiting");
+      setMessage(
+        "Checking the unfinished recording. Nothing is being recorded.",
+      );
+      await reconcile(pending, controller, !automatic);
     } catch (error) {
-      if (error instanceof ApiError && error.status === 404)
-        fail(
-          new Error(
-            "No receipt found yet. Recover again, or discard this unfinished recording before trying a new one.",
-          ),
-        );
-      else fail(error);
+      retryAt.current = Date.now() + 15000;
+      if (api === apiRef.current)
+        fail(controller.signal.aborted ? new RecoveryInterrupted() : error);
+    } finally {
+      recoveryClaim.current = false;
+      if (job.current === controller) job.current = null;
     }
   }
+  recoverRef.current = (automatic) =>
+    operations.current.run(() => recover(automatic)).then(() => {});
+  useEffect(() => {
+    if (!api || !recoveryEnabled) return;
+    const recoverNow = () => {
+      void recoverRef.current(true).catch(fail);
+    };
+    const timer = setInterval(recoverNow, 5000);
+    const listener = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        retryAt.current = 0;
+        recoverNow();
+      }
+    });
+    recoverNow();
+    return () => {
+      clearInterval(timer);
+      listener.remove();
+    };
+  }, [api, recoveryEnabled]);
 
   async function begin() {
     if (
       !api ||
       api !== apiRef.current ||
       operations.current.closed ||
+      recoveryClaim.current ||
       !active.current ||
       !["idle", "error"].includes(phaseRef.current)
     )
@@ -388,6 +469,7 @@ export function useVoice(
       context: capturedContext.current,
       createdAt: Date.now(),
     };
+    let accepted = false;
     const expiry = setTimeout(() => {
       controller.abort();
       removeAudio(uri);
@@ -403,15 +485,19 @@ export function useVoice(
       );
       removeAudio(uri);
       clearTimeout(expiry);
-      await savePending({ ...pending, turnId: receipt.turn_id });
+      accepted = true;
+      if (!(await retainPending({ ...pending, turnId: receipt.turn_id })))
+        throw new RecoveryInterrupted();
       await reconcile({ ...pending, turnId: receipt.turn_id }, controller);
     } catch (error) {
       removeAudio(uri);
       if (
+        !accepted &&
         error instanceof ApiError &&
         [400, 401, 403, 409, 413, 422, 503].includes(error.status)
       )
-        await savePending(null);
+        await clearPending(pending.key);
+      retryAt.current = Date.now() + 15000;
       fail(error);
     } finally {
       clearTimeout(expiry);
@@ -435,13 +521,20 @@ export function useVoice(
       }
     });
     const blur = AppState.addEventListener("blur", () => {
+      active.current = false;
       intent.current = false;
       job.current?.abort();
       void finishRef.current(true).catch(fail);
     });
+    const focus = AppState.addEventListener("focus", () => {
+      active.current = AppState.currentState === "active";
+      retryAt.current = 0;
+      void recoverRef.current(true).catch(fail);
+    });
     return () => {
       change.remove();
       blur.remove();
+      focus.remove();
       intent.current = false;
       job.current?.abort();
       void finishRef.current(true).catch(() => {});
@@ -450,6 +543,7 @@ export function useVoice(
   async function repeat() {
     if (
       operations.current.closed ||
+      recoveryClaim.current ||
       !lastReply ||
       !active.current ||
       !["idle", "error"].includes(phaseRef.current)
@@ -457,12 +551,36 @@ export function useVoice(
       return;
     const controller = new AbortController();
     job.current = controller;
+    move("speaking");
     try {
       await play(lastReply, controller);
     } catch (error) {
       fail(error);
     }
   }
+  const stop = (after?: () => Promise<void>) =>
+    operations.current.stop(
+      async () => {
+        intent.current = false;
+        cancelled.current = true;
+        job.current?.abort();
+        await setIsAudioActiveAsync(false);
+        await finish(true);
+      },
+      async () => {
+        // A permission/prepare call may have been resolving during interruption.
+        // Disable audio again only after every admitted operation has settled.
+        await setIsAudioActiveAsync(false);
+        await setAudioModeAsync({ allowsRecording: false });
+        if (recorder.getStatus().isRecording)
+          throw new Error(
+            "Recording has not stopped. Keep this phone selected and try again.",
+          );
+        sweepAudio();
+        await after?.();
+        move("idle");
+      },
+    );
   return {
     phase,
     message,
@@ -473,7 +591,14 @@ export function useVoice(
     lastReply,
     speak: (event: TurnEvent) =>
       operations.current.run(async () => {
-        if (api !== apiRef.current) return;
+        if (
+          api !== apiRef.current ||
+          recoveryClaim.current ||
+          !active.current ||
+          !["idle", "error"].includes(phaseRef.current)
+        )
+          return;
+        move("speaking");
         const controller = new AbortController();
         job.current?.abort();
         job.current = controller;
@@ -494,11 +619,12 @@ export function useVoice(
         !api ||
         api !== apiRef.current ||
         operations.current.closed ||
+        recoveryClaim.current ||
         !active.current ||
         !["idle", "error"].includes(phaseRef.current)
       )
         return Promise.resolve("busy");
-      move("preparing");
+      move("preparing_reply");
       return operations.current
         .run(async () => {
           const controller = new AbortController();
@@ -534,35 +660,14 @@ export function useVoice(
         .then((result) => result || "busy");
     },
     discard: async () => {
-      job.current?.abort();
-      await savePending(null);
-      move("idle");
+      await stop(async () => {
+        await savePending(null);
+      });
+      setLastReply(null);
       setMessage(
-        "Unfinished recording discarded. Saved care records are unchanged.",
+        "Recovery stopped. This does not undo a recording already received by Parse. Check current care details before recording it again.",
       );
     },
-    stop: (after?: () => Promise<void>) =>
-      operations.current.stop(
-        async () => {
-          intent.current = false;
-          cancelled.current = true;
-          job.current?.abort();
-          await setIsAudioActiveAsync(false);
-          await finish(true);
-        },
-        async () => {
-          // A permission/prepare call may have been resolving during interruption.
-          // Disable audio again only after every admitted operation has settled.
-          await setIsAudioActiveAsync(false);
-          await setAudioModeAsync({ allowsRecording: false });
-          if (recorder.getStatus().isRecording)
-            throw new Error(
-              "Recording has not stopped. Keep this phone selected and try again.",
-            );
-          sweepAudio();
-          await after?.();
-          move("idle");
-        },
-      ),
+    stop,
   };
 }

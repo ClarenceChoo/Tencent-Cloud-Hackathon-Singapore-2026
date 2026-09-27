@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { ReminderDelivery } from "../src/reminderDelivery";
+import { ApiError } from "../src/errors";
 import {
   AlertSerialiser,
   ALERT_BODY,
@@ -144,6 +145,82 @@ test("lost completion acknowledgement retries its original identity without play
   assert.equal(ids.length, 2);
   assert.equal(ids[0], ids[1]);
   assert.equal(h.events.filter((e) => e === "native-finished").length, 1);
+});
+
+test("restart flushes a lost completion ACK without a server pending command or any playback", async () => {
+  const h = harness();
+  const ids: string[] = [];
+  let offline = true;
+  h.ports.ack = async (_command, id, stage) => {
+    if (stage === "playback_completed") {
+      ids.push(id);
+      if (offline) throw new Error("offline");
+    }
+  };
+  await new ReminderDelivery(h.ports).deliver(command);
+  const durable = h.entry()!;
+  const restarted = new ReminderDelivery(h.ports);
+  offline = false;
+  h.ports.play = async () => {
+    throw new Error("Must not replay on recovery");
+  };
+  h.ports.current = async () => {
+    throw new Error("No longer in pending commands");
+  };
+  await restarted.reconcile([durable]);
+  assert.equal(ids.length, 2);
+  assert.equal(ids[0], ids[1]);
+  assert.equal(h.entry()?.terminalAck, "recorded");
+  await restarted.reconcile([h.entry()!]);
+  assert.equal(ids.length, 2);
+});
+
+test("uncertain starts reconcile as interrupted; a rejected historical ACK is retained without replay", async () => {
+  const h = harness();
+  await h.ports.write({
+    command: command.payload.command_id,
+    expires: Date.now() - 1000,
+    stage: "started",
+    ackIds: {},
+  });
+  h.ports.ack = async (_command, _id, stage) => {
+    assert.equal(stage, "interrupted");
+    throw new ApiError(409, "No start evidence");
+  };
+  await new ReminderDelivery(h.ports).reconcile([h.entry()!]);
+  assert.equal(h.entry()?.stage, "interrupted");
+  assert.equal(h.entry()?.terminalAck, "rejected");
+  assert.ok(!h.events.includes("native-finished"));
+});
+
+test("quiescence drains a delayed ACK/storage write and prevents processing another ledger entry", async () => {
+  const h = harness();
+  let release!: () => void;
+  let current = true;
+  h.ports.ack = async () => {
+    await new Promise<void>((resolve) => {
+      release = resolve;
+    });
+  };
+  const delivery = new ReminderDelivery(h.ports);
+  const entries: LedgerEntry[] = [
+    { command: "first", expires: Date.now(), stage: "completed", ackIds: {} },
+    { command: "second", expires: Date.now(), stage: "completed", ackIds: {} },
+  ];
+  const work = delivery.reconcile(entries, () => current);
+  await Promise.resolve();
+  await Promise.resolve();
+  current = false;
+  let idle = false;
+  const drain = delivery.whenIdle().then(() => {
+    idle = true;
+  });
+  assert.equal(idle, false);
+  release();
+  await Promise.all([work, drain]);
+  assert.equal(idle, true);
+  assert.equal(h.entry()?.command, "first");
+  assert.equal(h.entry()?.terminalAck, "recorded");
 });
 
 const schedule: ReminderSchedule = {

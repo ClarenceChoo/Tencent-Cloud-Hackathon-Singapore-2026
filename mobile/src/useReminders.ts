@@ -6,7 +6,7 @@ import { AudioModule } from "expo-audio";
 import { PhoneApi, ApiError } from "./api";
 import type { Home, Reminder, ReminderSchedule } from "./contracts";
 import { ReminderDelivery } from "./reminderDelivery";
-import { readPlayback, writePlayback } from "./reminderStorage";
+import { readPlayback, writePlayback, listPlayback } from "./reminderStorage";
 import { loadPending } from "./storage";
 import {
   AlertSerialiser,
@@ -28,7 +28,7 @@ type Options = {
   home: Home | null;
   voice: Voice;
   ready: boolean;
-  refresh: () => Promise<void>;
+  refresh: () => Promise<Home | null>;
   onReminder: (event: Reminder) => void;
 };
 // Foreground speech owns the audible prompt. Suppress duplicate OS banners/sounds
@@ -71,6 +71,8 @@ export function useReminders(options: Options) {
         );
       coverage.current = null;
     });
+    // Unpair must not clear secure storage while an acknowledgement is writing it.
+    await playback.current?.whenIdle();
   }
   async function permissions(request = false) {
     if (Platform.OS === "android")
@@ -233,6 +235,12 @@ export function useReminders(options: Options) {
         });
         if (!alive || serial.current.suspended) return;
         await sendPresence(api!);
+        if (!alive || serial.current.suspended || !active.current) return;
+        await playback.current!.reconcile(
+          await listPlayback(),
+          () => alive && active.current && !serial.current.suspended,
+        );
+        if (!alive || serial.current.suspended || !active.current) return;
         if (
           latest.current.ready &&
           !latest.current.home?.current_proposal &&

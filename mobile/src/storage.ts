@@ -3,6 +3,7 @@ import * as Crypto from "expo-crypto";
 import { Directory, File, Paths } from "expo-file-system";
 import type { Installation, PendingTurn } from "./contracts";
 import { serviceAddress } from "./validation";
+import { PendingTurnJournal } from "./turnRecovery";
 
 const options = {
   keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY,
@@ -52,21 +53,47 @@ export async function clearInstallation() {
   const { clearPlayback } = await import("./reminderStorage");
   await clearPlayback();
   await SecureStore.deleteItemAsync("parse.installation", options);
-  await SecureStore.deleteItemAsync("parse.pending-turn", options);
+  await savePending(null);
   if (marker().exists) marker().delete();
 }
-export async function savePending(value: PendingTurn | null) {
-  if (value)
-    await SecureStore.setItemAsync(
-      "parse.pending-turn",
-      JSON.stringify(value),
-      options,
-    );
-  else await SecureStore.deleteItemAsync("parse.pending-turn", options);
-}
+const pendingJournal = new PendingTurnJournal({
+  read: async () => {
+    const raw = await SecureStore.getItemAsync("parse.pending-turn", options);
+    if (!raw) return null;
+    try {
+      const value = JSON.parse(raw) as PendingTurn;
+      if (
+        !/^[a-f0-9-]{36}$/i.test(value.key) ||
+        !Number.isFinite(value.createdAt) ||
+        (value.turnId !== undefined &&
+          !/^turn_[a-f0-9]{32}$/.test(value.turnId)) ||
+        !(value.context === null || typeof value.context === "string")
+      )
+        throw new Error();
+      return value;
+    } catch {
+      throw new Error(
+        "The unfinished recording could not be read. Discard it before recording again.",
+      );
+    }
+  },
+  write: async (value) => {
+    if (value)
+      await SecureStore.setItemAsync(
+        "parse.pending-turn",
+        JSON.stringify(value),
+        options,
+      );
+    else await SecureStore.deleteItemAsync("parse.pending-turn", options);
+  },
+});
+export const savePending = (value: PendingTurn | null) =>
+  pendingJournal.write(value);
+export const retainPending = (value: PendingTurn) =>
+  pendingJournal.replace(value.key, value);
+export const clearPending = (key: string) => pendingJournal.replace(key, null);
 export async function loadPending(): Promise<PendingTurn | null> {
-  const value = await SecureStore.getItemAsync("parse.pending-turn", options);
-  return value ? (JSON.parse(value) as PendingTurn) : null;
+  return pendingJournal.read();
 }
 export function removeAudio(uri: string | null) {
   if (!uri || !uri.startsWith(Paths.cache.uri)) return;

@@ -13,7 +13,40 @@ export async function readPlayback(
   if (!/^(cmd|checkin)_[a-f0-9]{32}$/.test(command))
     throw new Error("Invalid reminder identity.");
   const raw = await SecureStore.getItemAsync(entryKey(command), options);
-  return raw ? JSON.parse(raw) : null;
+  if (!raw) return null;
+  const entry = JSON.parse(raw) as LedgerEntry;
+  if (
+    entry.command !== command ||
+    !Number.isFinite(entry.expires) ||
+    !["reserved", "started", "completed", "interrupted"].includes(
+      entry.stage,
+    ) ||
+    !entry.ackIds ||
+    typeof entry.ackIds !== "object" ||
+    (entry.terminalAck !== undefined &&
+      !["recorded", "rejected"].includes(entry.terminalAck))
+  )
+    throw new Error(
+      "Reminder history could not be read. Automatic playback is paused.",
+    );
+  return entry;
+}
+export async function listPlayback(): Promise<LedgerEntry[]> {
+  const entries: LedgerEntry[] = [];
+  for (let b = 0; b < bucketCount; b++) {
+    const raw = await SecureStore.getItemAsync(
+      "parse.playback-index." + b,
+      options,
+    );
+    const index: (readonly [string, number])[] = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(index) || index.length > 24)
+      throw new Error("Invalid reminder history index.");
+    for (const [id] of index) {
+      const entry = await readPlayback(id);
+      if (entry) entries.push(entry);
+    }
+  }
+  return entries;
 }
 export async function writePlayback(entry: LedgerEntry) {
   await readPlayback(entry.command);

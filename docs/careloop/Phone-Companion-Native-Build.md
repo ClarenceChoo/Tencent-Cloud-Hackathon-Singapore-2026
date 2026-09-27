@@ -388,3 +388,21 @@ node tools/android_native_smoke.cjs
 ```
 
 This is a scheduled local-alert and Android interruption-policy check. It does not establish physical audibility, actual APNs/FCM, iOS Focus behavior, Battery Saver/OEM restrictions or full E08 acceptance.
+
+## Native Android Battery Saver
+
+The unchanged r6 verification APK passed four native checks with Android 16 Battery Saver enabled. The guarded disposable-emulator harness simulated an unplugged 15% battery, enabled low-power mode and verified the real PowerManager full-Saver state and AlarmManager's `Force all apps standby: true`. The active full policy included background checks and the firewall; Parse had no permanent power exemption. The device remained awake and deep Doze was not forced, separating this case from the earlier Doze test.
+
+A checked fictional medication plan produced the exact route/occurrence-matched native alert. The actual scheduler queued its reminder at the due time. Before opening, that command had no audio access or playback acknowledgements. Android posted **“Open Parse to check your care schedule.”** while Battery Saver remained active, **80.918 seconds late, or 80.585 seconds after clock adjustment**. The alert contained no medicine name or instruction. This is an observed delivery time, not a measurement of how much delay Battery Saver caused.
+
+The harness tapped the actual notification while Saver was still active. Parse resumed, fetched the current reminder and reported native fixture-tone playback callbacks. Medication remained `unconfirmed`; the same five notes remained. The final cleanup disabled Saver, reset the simulated battery to the emulator's hardware values, restored the original sticky setting (absent), and compared the full original/restored policy and battery state. No application/backend change or new APK was required.
+
+[Complete source/APK/power-state report](evidence/android-battery-saver-2026-09-27.json) · [visible restriction warning](evidence/android-battery-saver-scheduled-2026-09-27.png) · [generic notification at simulated 15% charge](evidence/android-battery-saver-notification-2026-09-27.png) · [opened app with Saver still active](evidence/android-battery-saver-opened-2026-09-27.png).
+
+```sh
+PARSE_NATIVE_FIXTURE_DIR="$PWD/runtime/native-care-20260927" \
+PARSE_NATIVE_RESUME_PAIRED=1 PARSE_NATIVE_ALERT_STATE=battery-saver \
+node tools/android_native_smoke.cjs
+```
+
+The bounded harness keeps Saver active until delivery or two minutes after the due time, then allows recovery after releasing the restriction. This run delivered before release, so the deferred-until-release branch was not exercised. The check establishes AOSP emulator policy behavior with local HTTPS, scripted interpretation and tone replies. It does not establish battery life/consumption, physical sound, manufacturer-specific restrictions, live push, iOS behavior or full E08 acceptance.

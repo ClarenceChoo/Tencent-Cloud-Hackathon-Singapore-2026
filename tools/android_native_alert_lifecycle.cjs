@@ -8,7 +8,9 @@ const execute = require('node:util').promisify(execFile);
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, screenshot, pass, owner, fixture, directory, appId, report, alertState }) {
-  assert(['locked', 'terminated', 'offline-plan', 'revoked', 'offline-revoked', 'doze', 'dnd'].includes(alertState));
+  assert(['locked', 'terminated', 'offline-plan', 'revoked', 'offline-revoked', 'doze', 'dnd', 'battery-saver'].includes(alertState));
+  const batterySaver = alertState === 'battery-saver';
+  const powerName = batterySaver ? 'Battery Saver' : 'deep Doze';
   const offlinePlan = alertState === 'offline-plan';
   const offlineRevoked = alertState === 'offline-revoked';
   const offline = offlinePlan || offlineRevoked;
@@ -62,7 +64,8 @@ module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, sc
   report.alert_state = alertState;
   report.original_lock_disabled = originalLockDisabled === 'true';
   report.clocks_before = await clocks();
-  const power = alertState === 'doze' ? await require('./android_native_power.cjs')({ adb, appId, report }) : null;
+  const power = alertState === 'doze' ? await require('./android_native_power.cjs')({ adb, appId, report }) :
+    batterySaver ? await require('./android_native_battery.cjs')({ adb, appId, report }) : null;
   const dnd = alertState === 'dnd' ? await require('./android_native_dnd.cjs')({ adb, report }) : null;
   try {
     await tap('Settings');
@@ -140,6 +143,7 @@ module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, sc
       block.split('\n')[0].includes(appId) && block.split('\n')[0].includes('tag=' + identity + ' '));
     let posted, changedPlan, revokedOffline, restrictedCommand;
     const notesBefore = (await owner.dash()).notes.length;
+    report.notes_before = notesBefore;
     report.observation_window_seconds_after_due = power ? 420 : 300;
     console.log('Waiting for actual OS alert ' + identity + ', due ' + dose.scheduled_at);
     while (Date.now() < Date.parse(dose.scheduled_at) + report.observation_window_seconds_after_due * 1000) {
@@ -148,7 +152,7 @@ module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, sc
         restrictedCommand = (await metadata()).commands.find(c => c.dose_id === dose.id);
         assert(restrictedCommand && restrictedCommand.state === 'queued' && !restrictedCommand.audio_accessed && restrictedCommand.acks.length === 0);
         if (power) {
-          report.command_while_idle = restrictedCommand;
+          report[batterySaver ? 'command_while_battery_saver' : 'command_while_idle'] = restrictedCommand;
           report.power.at_due = await power.observe();
         } else {
           report.command_while_dnd = restrictedCommand;
@@ -211,12 +215,12 @@ module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, sc
       posted = postedRecord(await adb('shell', 'dumpsys', 'notification', '--noredact'));
       if (posted) {
         if (power) {
-          report.power.delivery_phase = power.released ? 'after leaving Doze' : 'during deep Doze';
+          report.power.delivery_phase = power.released ? 'after leaving ' + powerName : 'during ' + powerName;
           report.power.at_notification = await power.observe();
           const command = (await metadata()).commands.find(c => c.id === restrictedCommand?.id);
           assert(command && !command.audio_accessed && command.acks.length === 0);
           report.command_before_opening = command;
-          await power.release('generic alert observed');
+          if (!batterySaver) await power.release('generic alert observed');
         }
         if (dnd) {
           await dnd.inspect(posted);
@@ -330,8 +334,10 @@ module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, sc
     report.medication_report = 'unconfirmed';
     if (power || dnd) {
       report.command_after_opening = (await metadata()).commands.find(c => c.id === restrictedCommand.id);
-      assert.equal((await owner.dash()).notes.length, notesBefore);
+      report.notes_after = (await owner.dash()).notes.length;
+      assert.equal(report.notes_after, notesBefore);
     }
+    if (batterySaver) report.power.after_opening = await power.observe();
     if (dnd) report.dnd.after_opening = await dnd.observe();
     await screenshot('native-' + alertState + '-opened');
     pass('Actual ' + alertState + ' notification tap opens the native app and remains separate from medication reporting');

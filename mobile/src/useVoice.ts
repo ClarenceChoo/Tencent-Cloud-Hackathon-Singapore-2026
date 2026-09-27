@@ -424,6 +424,13 @@ export function useVoice(
       active.current &&
       api === apiRef.current &&
       !operations.current.closed;
+    const preparationCancelled = () => {
+      move("idle");
+      if (api === apiRef.current && !operations.current.closed)
+        setMessage(
+          "Recording did not start. Choose the talk button again when you are ready.",
+        );
+    };
     try {
       if (await loadPending()) {
         move("idle");
@@ -432,17 +439,23 @@ export function useVoice(
         return;
       }
       if (!stillWanted()) {
-        move("idle");
+        preparationCancelled();
         return;
       }
       setMessage("Parse uses the microphone only for this recording.");
-      const permission = await AudioModule.requestRecordingPermissionsAsync();
+      let permission = await AudioModule.getRecordingPermissionsAsync();
+      if (!stillWanted()) {
+        preparationCancelled();
+        return;
+      }
+      if (!permission.granted)
+        permission = await AudioModule.requestRecordingPermissionsAsync();
       if (!permission.granted)
         throw new Error(
           "Microphone access is off. Enable it in your phone settings to speak to Parse.",
         );
       if (!stillWanted()) {
-        move("idle");
+        preparationCancelled();
         return;
       }
       await setIsAudioActiveAsync(true);
@@ -454,7 +467,7 @@ export function useVoice(
       });
       if (!stillWanted()) {
         await setAudioModeAsync({ allowsRecording: false });
-        move("idle");
+        preparationCancelled();
         return;
       }
       await recorder.prepareToRecordAsync();
@@ -462,7 +475,7 @@ export function useVoice(
         await recorder.stop();
         removeAudio(recorder.uri);
         await setAudioModeAsync({ allowsRecording: false });
-        move("idle");
+        preparationCancelled();
         return;
       }
       recorder.record({ forDuration: 19.5 });

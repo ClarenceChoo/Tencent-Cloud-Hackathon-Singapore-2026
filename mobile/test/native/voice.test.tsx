@@ -286,6 +286,7 @@ afterEach(async () => {
 
 it("releasing while microphone permission is pending never starts capture", async () => {
   const gate = deferred<{ granted: boolean }>();
+  native.checkPermission.mockResolvedValueOnce({ granted: false });
   native.permission.mockReturnValue(gate.promise);
   const running = await start(() => voice.begin());
   expect(voice.phase).toBe("preparing");
@@ -296,6 +297,57 @@ it("releasing while microphone permission is pending never starts capture", asyn
   });
   expect(native.recorder.record).not.toHaveBeenCalled();
   expect(api.upload).not.toHaveBeenCalled();
+});
+it("permission-dialog blur explains the cancelled start and requires a fresh deliberate press", async () => {
+  const gate = deferred<{ granted: boolean }>();
+  native.checkPermission.mockResolvedValueOnce({ granted: false });
+  native.permission.mockReturnValueOnce(gate.promise);
+  const running = await start(() => voice.begin());
+  await background("blur");
+  await act(async () => {
+    gate.resolve({ granted: true });
+    await running.task;
+  });
+  expect(voice.phase).toBe("idle");
+  expect(voice.message).toContain("Recording did not start");
+  expect(native.recorder.record).not.toHaveBeenCalled();
+  expect(api.upload).not.toHaveBeenCalled();
+  await act(async () => {
+    native.listeners.get("focus")?.forEach((listener) => listener());
+    await drain();
+  });
+  expect(native.recorder.record).not.toHaveBeenCalled();
+  await act(async () => {
+    await voice.begin();
+  });
+  expect(native.recorder.record).toHaveBeenCalledOnce();
+  expect(voice.phase).toBe("recording");
+});
+it("an existing microphone grant starts capture without relaunching Android permission UI", async () => {
+  native.permission.mockImplementation(async () => {
+    native.listeners.get("blur")?.forEach((listener) => listener());
+    return { granted: true };
+  });
+  await act(async () => {
+    await voice.begin();
+  });
+  expect(native.permission).not.toHaveBeenCalled();
+  expect(native.recorder.record).toHaveBeenCalledOnce();
+  expect(voice.phase).toBe("recording");
+});
+it("release during permission lookup cannot open a later permission request", async () => {
+  const gate = deferred<{ granted: boolean }>();
+  native.checkPermission.mockReturnValueOnce(gate.promise);
+  const running = await start(() => voice.begin());
+  await act(async () => {
+    await voice.finish();
+    gate.resolve({ granted: false });
+    await running.task;
+  });
+  expect(native.permission).not.toHaveBeenCalled();
+  expect(native.recorder.record).not.toHaveBeenCalled();
+  expect(api.upload).not.toHaveBeenCalled();
+  expect(voice.message).toContain("Recording did not start");
 });
 it("cancel and handoff wait for a pending native preparation and delete its file", async () => {
   const gate = deferred<void>();
@@ -468,6 +520,7 @@ it("loss of native playback focus stops the sequence and never plays its next pa
   expect(voice.phase).toBe("error");
 });
 it("microphone denial and sub-300ms accidental presses never send a turn", async () => {
+  native.checkPermission.mockResolvedValueOnce({ granted: false });
   native.permission.mockResolvedValueOnce({ granted: false });
   await act(async () => {
     await voice.begin();

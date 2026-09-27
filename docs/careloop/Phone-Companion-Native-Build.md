@@ -80,6 +80,36 @@ The install commands are run from the repository root. A first launch should sho
 
 An optional disposable Android 16 ARM64 emulator uses `emulator` and `system-images;android-36;default;arm64-v8a`. Keep its AVD directory under `runtime/android-build/` as well. This AOSP image is suitable for startup and local UI checks; it does not establish FCM delivery. Emulator startup is not evidence of physical audibility, microphone behavior, battery behavior or either platform's full acceptance checklist.
 
+## Local native integration fixture (in progress)
+
+`tools/android_native_fixture.py` prepares a private loopback TLS fixture and a separate `sg.parse.companion.verification` build. Its test-only network configuration trusts the generated CA only for `127.0.0.1`; the normal release source set does not include that CA. The fixture uses fictional accounts, scripted interpretations and a one-second tone. It cannot establish live speech recognition or audible replies.
+
+The 27 September integration attempt paired the native verification installation through owner approval in the real dashboard. It exposed an Android permission lifecycle defect: requesting microphone permission again after it was already granted reopened the permission activity, causing focus-loss cancellation. The voice hook now checks the existing grant before requesting permission. If a permission dialog interrupts preparation, the app explains that recording did not start and requires a fresh deliberate press. Three regression tests cover those cases; TypeScript and all 25 unit plus 67 app/hook/HTTP-adapter tests pass.
+
+The verification APK rebuilt and reached the native recording phase after this change. **The full native smoke test still fails at audio upload**, before the scripted provider receives a recording. The app displays `Use PCM WAV or an AAC recording in an M4A container with its matching Content-Type`. The underlying transport/format cause is still under investigation. No successful native playback, correction, confirmation or caregiver update is claimed by this attempt. The [failed-run report](evidence/android-native-integration-incomplete-2026-09-27.json) records source hashes and the reused pairing; enrollment was not repeated in that run. The earlier preview APK above predates this permission fix.
+
+To reproduce with a fresh ignored directory, from the repository root:
+
+```sh
+backend/.venv/bin/python tools/android_native_fixture.py prepare \
+  --data-dir runtime/native-integration-local
+export PARSE_NATIVE_FIXTURE_DIR="$PWD/runtime/native-integration-local"
+# Keep this running in a separate terminal; frontend/dist must already be built.
+backend/.venv/bin/python tools/android_native_fixture.py serve \
+  --data-dir "$PARSE_NATIVE_FIXTURE_DIR"
+```
+
+Using the toolchain environment from above, build from `mobile/android/`:
+
+```sh
+CI=1 NODE_ENV=production EXPO_NO_TELEMETRY=1 \
+  ./gradlew -I "$PARSE_NATIVE_FIXTURE_DIR/native-verification.init.gradle" \
+  :app:assembleNativeVerification -PreactNativeArchitectures=arm64-v8a \
+  --no-daemon --console=plain --max-workers=2
+```
+
+Install `app/build/outputs/apk/nativeVerification/app-nativeVerification.apk` on a disposable emulator using its explicit serial. From the repository root, run `PARSE_ANDROID_SERIAL=emulator-5580 node tools/android_native_smoke.cjs` with the fixture environment still set. The harness needs Playwright and Chrome; `PLAYWRIGHT_MODULE` can point to an existing Playwright installation. It controls only an emulator and the separate verification package, and writes screenshots and results under the ignored fixture directory. It currently reproduces the upload failure described above. `PARSE_NATIVE_RESUME_PAIRED=1` is only for debugging an existing fixture pairing and reports that enrollment was reused. Use a fresh verification installation for a fresh fixture database; the fixture refuses to overwrite or reuse an existing database.
+
 ## iOS build route
 
 Install full Xcode and its simulator runtime, then select that Xcode developer directory. Command Line Tools alone cannot compile or run the iOS application. From `mobile/`, use `npm run prebuild -- --platform ios` and `npm run ios` with the chosen simulator or development device. Physical-device installation requires the team's signing arrangement. The host used for the Android checkpoint has no full Xcode, so no iOS compile or installation is claimed.

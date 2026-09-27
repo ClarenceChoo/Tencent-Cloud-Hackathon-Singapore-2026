@@ -549,6 +549,7 @@ it("hides revoked care immediately even when notification cleanup fails", async 
 it("waits for a pending microphone dialog before attesting reminder cleanup", async () => {
   await mount();
   const permission = deferred<{ granted: boolean }>();
+  ports.checkPermission.mockResolvedValueOnce({ granted: false });
   ports.permission.mockReturnValue(permission.promise);
   await press("Hold to talk", "onPressIn");
   await tab("Settings");

@@ -1,0 +1,71 @@
+{
+  "name": "Parse product demo",
+  "phase": "complete",
+  "format": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 30
+  },
+  "style": "Ivory and terracotta editorial",
+  "audio": "Silent; captions only, as requested",
+  "recording": {
+    "origin": "http://127.0.0.1:5174",
+    "data": "Isolated fictional care profile",
+    "implementation": "Real React/FastAPI application"
+  },
+  "scenes": [
+    {
+      "id": "timeline",
+      "status": "asset-present",
+      "asset": "public/demos/timeline.mp4"
+    },
+    {
+      "id": "medication",
+      "status": "asset-present",
+      "asset": "public/demos/medication.mp4"
+    },
+    {
+      "id": "notes",
+      "status": "asset-present",
+      "asset": "public/demos/notes.mp4"
+    },
+    {
+      "id": "care-plan",
+      "status": "asset-present",
+      "asset": "public/demos/care-plan.mp4"
+    },
+    {
+      "id": "support",
+      "status": "asset-present",
+      "asset": "public/demos/support.mp4"
+    },
+    {
+      "id": "summary",
+      "status": "asset-present",
+      "asset": "public/demos/summary.mp4"
+    },
+    {
+      "id": "mobile",
+      "status": "asset-present",
+      "asset": "public/demos/mobile.mp4"
+    }
+  ],
+  "sessions": [
+    {
+      "date": "2026-09-23",
+      "summary": "Recorded real software workflows with synthetic examples; assembled a captions-only Remotion edit."
+    }
+  ],
+  "durationSeconds": 93.8,
+  "durationInFrames": 2814,
+  "output": "out/parse-product-demo.mp4",
+  "verification": {
+    "dimensions": "1920x1080",
+    "fps": 30,
+    "frames": 2814,
+    "durationSeconds": 93.8,
+    "audioStreams": 0,
+    "decodeCheck": "passed",
+    "visualCheck": "Final exported contact sheet and scene frames reviewed"
+  }
+}

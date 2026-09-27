@@ -1,0 +1,3 @@
+import {useCurrentFrame} from 'remotion';
+import {Base,Photo,Foot,Label,Heading,Wave,rise,theme} from './Shared';
+export const RoutinesScene=()=>{const f=useCurrentFrame();return <Base><Photo src="pendant-detail.png"/><div style={{position:'absolute',left:100,top:135,width:760,...rise(f)}}><Label>06 / The next routine</Label><Heading size={84}>A reminder she can hear.</Heading><div style={{marginTop:44,fontFamily:'Georgia',fontSize:48,lineHeight:1.3}}>“Mei, it’s time for your evening medication.”</div><div style={{marginTop:32}}><Wave/></div><p style={{fontSize:26,lineHeight:1.5,width:645,marginTop:28,color:theme.muted}}>Based on her checked medication schedule.<br/>A reminder remains separate from a confirmed dose.</p></div><Foot/></Base>};

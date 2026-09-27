@@ -1,0 +1,115 @@
+[
+  {
+    "id": "timeline",
+    "title": "See the day clearly",
+    "duration": 10,
+    "events": [
+      {
+        "at": 0.0,
+        "text": "Medication reports, notes and readings. One timeline."
+      },
+      {
+        "at": 2.799,
+        "text": "Filter to the details you need."
+      }
+    ]
+  },
+  {
+    "id": "medication",
+    "title": "Keep track of medication",
+    "duration": 14,
+    "events": [
+      {
+        "at": 0.0,
+        "text": "Keep the checked instructions and schedule together."
+      },
+      {
+        "at": 3.096,
+        "text": "Record the reported dose, then review and confirm."
+      },
+      {
+        "at": 11.061,
+        "text": "A reminder alone never counts as a taken dose."
+      }
+    ]
+  },
+  {
+    "id": "notes",
+    "title": "Keep the details that matter",
+    "duration": 19,
+    "events": [
+      {
+        "at": 0.0,
+        "text": "Capture a care note in their own words."
+      },
+      {
+        "at": 5.166,
+        "text": "Nothing is saved until you review and confirm."
+      },
+      {
+        "at": 12.005,
+        "text": "Choose exactly who can see the note."
+      }
+    ]
+  },
+  {
+    "id": "care-plan",
+    "title": "Stay on top of follow-ups",
+    "duration": 11,
+    "events": [
+      {
+        "at": 0.0,
+        "text": "Keep the next steps from the care plan in view."
+      },
+      {
+        "at": 2.792,
+        "text": "Record an arranged visit and its appointment date."
+      }
+    ]
+  },
+  {
+    "id": "support",
+    "title": "Ask for a little help",
+    "duration": 12,
+    "events": [
+      {
+        "at": 0.0,
+        "text": "Ask someone in your care circle for practical help."
+      },
+      {
+        "at": 5.564,
+        "text": "Review the request and recipient before sending."
+      }
+    ]
+  },
+  {
+    "id": "summary",
+    "title": "Prepare for the next visit",
+    "duration": 15,
+    "events": [
+      {
+        "at": 0.0,
+        "text": "Bring the relevant care history to the next appointment."
+      },
+      {
+        "at": 4.21,
+        "text": "Review the draft. Every item keeps its source."
+      },
+      {
+        "at": 10.26,
+        "text": "Share a read-only copy after your review."
+      }
+    ]
+  },
+  {
+    "id": "mobile",
+    "title": "Care, within reach",
+    "duration": 8,
+    "events": [
+      {
+        "at": 0.0,
+        "text": "The same care record, ready on your phone."
+      }
+    ]
+  }
+]

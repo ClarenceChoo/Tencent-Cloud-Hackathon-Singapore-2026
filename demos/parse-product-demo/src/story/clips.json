@@ -1,0 +1,80 @@
+[
+  {
+    "id": "phone-arrival",
+    "duration": 10,
+    "events": [
+      {
+        "at": 0.0,
+        "text": "Mei\u2019s phone is already open."
+      },
+      {
+        "at": 4.155,
+        "text": "Her confirmed note appears automatically."
+      }
+    ]
+  },
+  {
+    "id": "caregiver-arrival",
+    "duration": 11,
+    "events": [
+      {
+        "at": 0.0,
+        "text": "Jamie\u2019s caregiver account is already open."
+      },
+      {
+        "at": 4.45,
+        "text": "The shared note arrives without refreshing the page."
+      },
+      {
+        "at": 7.662,
+        "text": "Her own words and when it happened stay together."
+      }
+    ]
+  },
+  {
+    "id": "caregiver-support",
+    "duration": 14,
+    "events": [
+      {
+        "at": 0.0,
+        "text": "Mei can ask Jamie for practical help."
+      },
+      {
+        "at": 4.954,
+        "text": "Jamie acknowledges the request. Mei knows it has been seen."
+      },
+      {
+        "at": 11.378,
+        "text": "After the call, Jamie records what they agreed."
+      }
+    ]
+  },
+  {
+    "id": "plan",
+    "duration": 5,
+    "events": [
+      {
+        "at": 0.0,
+        "text": "Checked medication instructions and schedules stay together."
+      }
+    ]
+  },
+  {
+    "id": "summary",
+    "duration": 12,
+    "events": [
+      {
+        "at": 0.0,
+        "text": "Bring the relevant care history to the next appointment."
+      },
+      {
+        "at": 3.37,
+        "text": "Review the draft. Every item keeps its source."
+      },
+      {
+        "at": 8.194,
+        "text": "Share a read-only copy after your review."
+      }
+    ]
+  }
+]

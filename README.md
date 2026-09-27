@@ -6,6 +6,10 @@ The current delivery milestone is **software first**: a working dashboard, backe
 
 The dashboard opens on a dated care timeline, with medication, note and reading filters, expandable records, and a side panel for upcoming doses, arranged visits and permitted care members. Its ivory and terracotta interface adapts to desktop and mobile. Scheduled doses remain separate from reported medication history; adding or correcting a care record still requires review and confirmation.
 
+## Product videos
+
+Watch the [caption-only Parse films](demos/parse-product-demo/README.md): a 102-second simulated cardholder-to-caregiver story and a 93.8-second software walkthrough. Finished MP4s, captions, captured assets, and editable Remotion source are included. The story labels its generated people and simulated hardware/speech connection.
+
 ## Start the software demo
 
 Install dependencies once with `uv sync --frozen --extra test` inside `backend/` and `npm ci` inside `frontend/`. Then run this from the repository root:

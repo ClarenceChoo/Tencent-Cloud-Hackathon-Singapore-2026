@@ -15,6 +15,6 @@ class Database:
         self.SessionLocal = sessionmaker(bind=self.engine, expire_on_commit=False)
 
     def create_all(self) -> None:
-        from . import models  # noqa: F401
-
-        Base.metadata.create_all(self.engine)
+        # Kept as the bootstrap entry point for existing CLI callers.
+        from .migrate import upgrade
+        upgrade(self.engine)

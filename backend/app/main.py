@@ -18,6 +18,7 @@ from . import models as m
 from .config import Settings, get_settings
 from .database import Database
 from .device_setup import device_status, service_readiness, PROTOCOL
+from .phone import EnrollmentLimiter, router as phone_router
 from .schemas import (
     DeviceAck,
     DeviceClaim,
@@ -233,6 +234,8 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
     app.state.settings = settings
     app.state.db = Database(settings.database_url)
     app.state.sockets = SocketRegistry()
+    app.state.phone_limiter = EnrollmentLimiter()
+    app.include_router(phone_router)
     app.state.fixture_transcripts = {} if settings.testing else None
     app.add_middleware(CORSMiddleware, allow_origins=settings.allowed_origins, allow_credentials=True, allow_methods=["GET", "POST", "PUT", "DELETE"], allow_headers=["Content-Type", "X-CSRF-Token", "Idempotency-Key", "X-Context-Id", "Authorization"])
 
@@ -377,6 +380,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         db.commit()
         return {"id": item.id, "status": item.status, "resolved_at": iso(item.resolved_at), "outcome": item.outcome}
 
+    @app.post("/v1/app/phone-enrollments/approve")
     @app.post("/v1/app/devices/claim")
     def device_claim(data: DeviceClaim, request: Request, db: Session = Depends(get_db)):
         user, row, grant, scopes = _patient_access(request, db, data.patient_id, "manage:devices")
@@ -386,7 +390,8 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         if attempts >= 5:
             raise HTTPException(status_code=429, detail="Too many claim attempts; try again later")
         device = db.scalar(select(m.Device).where(m.Device.claim_code_hash == sha256(data.code.strip().upper())))
-        if not device or device.patient_id or device.claimed_at or device.revoked_at or not device.claim_expires_at or aware(device.claim_expires_at) <= utcnow():
+        expected_type = "phone" if request.url.path.endswith("/phone-enrollments/approve") else "pendant"
+        if not device or device.device_type != expected_type or device.patient_id or device.claimed_at or device.revoked_at or not device.claim_expires_at or aware(device.claim_expires_at) <= utcnow():
             db.add(m.AuditEvent(actor_type="user", actor_id=user.id, patient_id=data.patient_id, action="device.claim_failed", details={}))
             db.commit()
             raise HTTPException(status_code=400, detail="Claim code is invalid, expired, or already used")
@@ -621,46 +626,8 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
             validate_wav(body)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc))
-        digest = sha_bytes(body)
-        existing = db.scalar(select(m.VoiceTurn).where(m.VoiceTurn.device_id == device.id, m.VoiceTurn.idempotency_key == idempotency_key))
-        if existing:
-            if existing.content_sha256 != digest or existing.context_id != context_id:
-                raise HTTPException(status_code=409, detail="Idempotency key was already used for different turn content")
-            return {"turn_id": existing.id, "status": existing.status, "received_at": iso(existing.received_at)}
-        if context_id:
-            proposal = db.scalar(select(m.ConfirmationProposal).where(m.ConfirmationProposal.context_id == context_id, m.ConfirmationProposal.patient_id == device.patient_id))
-            command = db.scalar(select(m.ReminderCommand).where(m.ReminderCommand.context_id == context_id, m.ReminderCommand.device_id == device.id))
-            checkin = db.scalar(select(m.CheckInDelivery).where(m.CheckInDelivery.context_id == context_id, m.CheckInDelivery.device_id == device.id))
-            if not proposal and not command and not checkin:
-                raise HTTPException(status_code=400, detail="Conversation context is unknown")
-            if proposal and (proposal.status != "pending" or aware(proposal.expires_at) <= utcnow()):
-                raise HTTPException(status_code=409, detail="Conversation context is no longer current")
-            if command:
-                active_plan = db.scalar(select(m.MedicationPlanVersion).where(m.MedicationPlanVersion.patient_id == device.patient_id, m.MedicationPlanVersion.active.is_(True)))
-                if command.cancelled_at or aware(command.expires_at) <= utcnow() or not active_plan or command.plan_version != active_plan.version:
-                    raise HTTPException(status_code=409, detail="Reminder context is no longer current")
-            if checkin and (checkin.delivery_state in {"expired", "failed", "cancelled"} or aware(checkin.expires_at) <= utcnow()):
-                raise HTTPException(status_code=409, detail="Check-in context is no longer current")
-        try:
-            from .providers import UnconfiguredProvider, get_provider
-            provider = get_provider(fixture_transcripts=getattr(request.app.state, "fixture_transcripts", None))
-            if isinstance(provider, UnconfiguredProvider):
-                raise RuntimeError("unconfigured")
-        except Exception:
-            raise HTTPException(status_code=503, detail="Speech provider is not configured or unavailable")
-        turn = m.VoiceTurn(device_id=device.id, patient_id=device.patient_id, idempotency_key=idempotency_key, content_sha256=digest, context_id=context_id, raw_audio=body)
-        db.add(turn)
-        device.last_seen = utcnow()
-        try:
-            db.commit()
-        except IntegrityError:
-            db.rollback()
-            existing = db.scalar(select(m.VoiceTurn).where(m.VoiceTurn.device_id == device.id, m.VoiceTurn.idempotency_key == idempotency_key))
-            if not existing or existing.content_sha256 != digest or existing.context_id != context_id:
-                raise HTTPException(status_code=409, detail="Idempotency key was already used for different turn content")
-            return {"turn_id": existing.id, "status": existing.status, "received_at": iso(existing.received_at)}
-        background.add_task(process_turn, request.app, turn.id)
-        return {"turn_id": turn.id, "status": "accepted", "received_at": iso(turn.received_at)}
+        from .turns import accept_turn
+        return accept_turn(request.app, db, device, body, sha_bytes(body), idempotency_key, context_id, background)
 
     @app.get("/v1/device/turns/{turn_id}")
     def device_turn_status(turn_id: str, authorization: Optional[str] = Header(default=None), db: Session = Depends(get_db)):

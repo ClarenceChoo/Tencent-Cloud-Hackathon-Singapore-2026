@@ -57,6 +57,7 @@ export const api = {
   acknowledge: (id: string) => request<void>(`/app/support-requests/${encodeURIComponent(id)}/acknowledge`, json('POST')),
   resolve: (id: string, outcome: string) => request<void>(`/app/support-requests/${encodeURIComponent(id)}/resolve`, json('POST', { outcome })),
   claimDevice: (code: string, patientId: string) => request<Row>('/app/devices/claim', json('POST', { code, patient_id: patientId })),
+  approvePhone: (code: string, patientId: string) => request<Row>('/app/phone-enrollments/approve', json('POST', { code, patient_id: patientId })),
   revokeDevice: (id: string) => request<void>(`/app/devices/${encodeURIComponent(id)}/revoke`, json('POST')),
   createSummary: (patientId: string, startDate: string, endDate: string) => request<Row>(`/app/patients/${encodeURIComponent(patientId)}/summaries`, json('POST', { start_date: startDate, end_date: endDate })),
   updateSummary: (id: string, payload: Record<string, unknown>) => request<Row>(`/app/summaries/${encodeURIComponent(id)}`, json('PUT', payload)),

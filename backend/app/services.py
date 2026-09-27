@@ -361,8 +361,13 @@ def create_proposal(
 ) -> m.ConfirmationProposal:
     clean, plan_version = validate_payload(db, patient_id, kind, payload, acting_user_id=user_id)
     if replaces:
-        if replaces.status != "pending":
-            raise HTTPException(status_code=409, detail="Only a pending proposal can be revised")
+        changed = db.execute(update(m.ConfirmationProposal).where(
+            m.ConfirmationProposal.id == replaces.id,
+            m.ConfirmationProposal.status == "pending",
+            m.ConfirmationProposal.expires_at > utcnow(),
+        ).values(status="invalidated", invalidated_reason="revised").execution_options(synchronize_session=False))
+        if changed.rowcount != 1:
+            raise HTTPException(status_code=409, detail="Only a current pending proposal can be revised")
         replaces.status = "invalidated"
         replaces.invalidated_reason = "revised"
     proposal = m.ConfirmationProposal(
@@ -436,7 +441,7 @@ def summary_sources_current(db: Session, summary: m.VisitSummary) -> bool:
 
 
 def commit_proposal(db: Session, proposal_id: str, patient_id: Optional[str] = None) -> m.ConfirmationProposal:
-    proposal = db.scalar(select(m.ConfirmationProposal).where(m.ConfirmationProposal.id == proposal_id).with_for_update())
+    proposal = db.scalar(select(m.ConfirmationProposal).where(m.ConfirmationProposal.id == proposal_id).with_for_update().execution_options(populate_existing=True))
     if not proposal or (patient_id and proposal.patient_id != patient_id):
         raise HTTPException(status_code=404, detail="Proposal not found")
     if proposal.status == "committed":
@@ -447,6 +452,18 @@ def commit_proposal(db: Session, proposal_id: str, patient_id: Optional[str] = N
         proposal.status = "expired"
         db.flush()
         raise HTTPException(status_code=409, detail="Proposal has expired; review it again")
+
+    # SQLite ignores FOR UPDATE. A compare-and-set takes its write lock and also
+    # serializes confirmation against cancellation/correction on both databases.
+    claimed = db.execute(update(m.ConfirmationProposal).where(
+        m.ConfirmationProposal.id == proposal.id, m.ConfirmationProposal.status == "pending"
+    ).values(status="committing").execution_options(synchronize_session=False))
+    if claimed.rowcount != 1:
+        db.refresh(proposal)
+        if proposal.status == "committed":
+            return proposal
+        raise HTTPException(status_code=409, detail="Proposal is no longer current")
+    proposal.status = "committing"
 
     payload = proposal.payload
     record = None

@@ -161,7 +161,14 @@ async def process_turn(app, turn_id: str) -> None:
         db.close()
         return
     device = db.get(m.Device, turn.device_id)
+    def require_active_device():
+        if not device:
+            raise ValueError("Device unavailable")
+        db.refresh(device)
+        if device.revoked_at or device.patient_id != turn.patient_id:
+            raise ValueError("Device access changed")
     try:
+        require_active_device()
         provider = _provider(app)
         if turn.status == "accepted":
             claimed = db.execute(update(m.VoiceTurn).where(m.VoiceTurn.id == turn_id, m.VoiceTurn.status == "accepted").values(status="transcribing", processing_started_at=utcnow()))
@@ -188,6 +195,7 @@ async def process_turn(app, turn_id: str) -> None:
         turn = db.get(m.VoiceTurn, turn_id)
         context = _context(db, device, turn.context_id)
         raw = await provider.interpret_turn(turn.transcript, context)
+        require_active_device()
         interpretation = Interpretation.model_validate(raw)
         if interpretation.intent not in {"proposal", "confirm", "correct", "clarify", "explain", "chat"}:
             raise ValueError("Provider returned an unsupported intent")
@@ -235,6 +243,7 @@ async def process_turn(app, turn_id: str) -> None:
             status = "completed"
 
         clips = await _synthesise_sequence(provider, spoken)
+        require_active_device()
         audio_paths = []
         for wav, duration_ms in clips:
             asset = m.AudioAsset(device_id=device.id, wav_bytes=wav, content_sha256=sha_bytes(wav), duration_ms=duration_ms, expires_at=utcnow() + timedelta(minutes=5))

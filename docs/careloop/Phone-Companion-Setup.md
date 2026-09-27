@@ -1,0 +1,84 @@
+# Parse phone companion — development setup
+
+This is an implementation in progress against [the full PRD](Phone-Companion-PRD.md). Read the [verification ledger](Phone-Companion-Verification.md) before using the build in a demonstration. Foreground voice source is implemented; active routing and native background reminders are not finished.
+
+## Backend and database
+
+From `backend/`:
+
+```sh
+uv sync --frozen --extra test
+uv run python -m app.migrate
+uv run python -m pytest
+```
+
+`CARELOOP_DATABASE_URL` selects the same existing care database used by the dashboard. On startup, the API also runs the versioned upgrade under a database lock. Existing databases are adopted only after their legacy tables/columns pass the schema manifest check. There is no reset/reseed step. Back up an existing deployment first and rehearse the upgrade against its copy. Restore the backup if an operator requires a complete rollback; Alembic downgrade deliberately revokes phone credentials while preserving care records.
+
+Install FFmpeg and FFprobe on a local backend. The container installs them from its Debian repository and includes the migrations directory. The phone adapter accepts AAC in M4A with `Content-Type: audio/mp4`, or canonical WAV. The pendant endpoint still accepts only canonical WAV. The proxy permits up to 2 MiB only on `/v1/phone/turns`; other requests retain their prior cap. Decoder subprocesses use format/protocol allowlists, disabled external data references, CPU/time/file/memory limits and a two-conversion concurrency bound.
+
+Use the existing HTTPS deployment and provider configuration in [the deployment guide](../../deploy/README.md) and [PROVIDERS.md](PROVIDERS.md). A phone cannot reach a laptop using `127.0.0.1`. The native service field requires an HTTPS origin. It never accepts credentials, query strings or paths in the service address. Enrollment rejects HTTP outside automated testing.
+
+The enrollment limiter is bounded and local to the API process. The supported deployment currently uses one worker. A scaled deployment needs a shared limiter before increasing worker count.
+
+## Native development builds
+
+From `mobile/`:
+
+```sh
+npm ci
+npm run typecheck
+npm test
+EXPO_NO_TELEMETRY=1 npx expo install --check
+EXPO_NO_TELEMETRY=1 npm run prebuild
+npm run ios
+# Or, with Android SDK/platform tools and a configured emulator/device:
+npm run android
+```
+
+iOS requires full Xcode and the appropriate simulator/device signing setup. Android requires an SDK/toolchain compatible with the generated React Native Gradle configuration. Java alone is insufficient. No paid cloud build account is required by these commands. Expo Go is not the release verification environment.
+
+`app.config.ts` and the locked dependencies generate `ios/` and `android/`; those generated directories are ignored. Keep native changes in config plugins/configuration so regeneration remains reproducible. The application identifiers are currently `sg.parse.companion` and may be changed before signing if the team needs a different namespace.
+
+For a build-independent bundle check:
+
+```sh
+EXPO_NO_TELEMETRY=1 CI=1 npx expo export --platform all --max-workers 2
+```
+
+This produces Hermes JavaScript bundles, not an installable application. Use `npm start` for the development client after installing a native development build.
+
+## Pair and exercise the foreground flow
+
+1. Open the native app and enter the Parse HTTPS origin. It generates a random 32-byte installation credential and keeps it in SecureStore. The screen shows a different ten-minute possession code.
+2. Sign into the existing owner dashboard, open Settings, select **Parse phone app**, and approve that code for the intended patient. A device token cannot sign into the owner dashboard.
+3. Return to the native app. It polls the enrollment using its own credential and loads the same care record. Choose the microphone permission only when starting a recording.
+4. Hold the talk control, speak, and release. The accessible tap switch provides start/stop taps. The recorder is capped below the server's 20-second limit. It does not request background recording or continuous listening.
+5. Listen to the read-back and sharing choice. Speak a correction or use **Confirm and save**. The spoken Saved message is fetched only after a server commitment. Observe the existing caregiver dashboard under the appropriate account.
+6. If acknowledgement is lost, use **Recover response** to query the original installation/idempotency key. The app retains identifiers in protected storage, not a durable voice queue. Captured files are removed on receipt/cancellation/failure or the 60-second unsent limit, with an orphan sweep at launch.
+7. Use the medicine, care and recent-activity sections to inspect the checked plan and recorded outcomes. Visit summaries and plan administration open the existing dashboard and require its normal login.
+
+Only one deliberate voice interaction should run at a time. Until the routing and notifications gates are completed, this development checkpoint does not replace the pendant's background reminders.
+
+## Identity, permissions and removal
+
+Unpair sends revocation before clearing the local identity. If the phone is offline, revocation cannot be claimed; the care-space owner can revoke it from the dashboard. Uninstall alone does not revoke server access.
+
+SecureStore uses a device-only Keychain accessibility class, and Android backups are disabled. iOS Keychain entries can survive uninstall. An absent local installation marker with an existing secure identity triggers a re-pair warning; the owner should revoke the old installation. Backup/reinstall behavior still needs physical-platform verification.
+
+Microphone permission, OS audio focus, device volume and notification settings are separate. Permission denial must not be presented as a server failure. Native background notifications and push setup instructions will be added with that implementation; they are not proved by installing the notifications package.
+
+## Verification commands
+
+```sh
+# Repository root; creates and removes an isolated PostgreSQL test cluster:
+python3 tools/postgres_test.py
+# Dashboard:
+cd frontend
+npm ci
+npm test
+npm run build
+```
+
+Use only fictional profiles for automated fixtures. Provider fixtures are not a substitute for the final real-microphone → live-provider → confirmation → caregiver demo.
+
+The supplied Compose stack exposes only Caddy on host ports 80/443. Its private backend sets `FORWARDED_ALLOW_IPS=*` so Uvicorn correctly sees HTTPS and the client address forwarded by that trusted proxy. If changing the network layout or exposing the backend directly, replace that wildcard with the trusted proxy address/range; never trust forwarded headers from arbitrary public clients.

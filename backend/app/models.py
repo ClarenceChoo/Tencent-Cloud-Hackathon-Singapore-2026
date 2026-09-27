@@ -78,6 +78,25 @@ class Device(Base):
     rssi: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     firmware_version: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     capabilities: Mapped[list] = mapped_column(JSON, default=list)
+    device_type: Mapped[str] = mapped_column(String(20), default="pendant", server_default="pendant")
+    platform: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    display_name: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
+
+
+class PhoneEnrollment(Base):
+    __tablename__ = "phone_enrollments"
+    device_id: Mapped[str] = mapped_column(ForeignKey("devices.id"), primary_key=True)
+    idempotency_key: Mapped[str] = mapped_column(String(36), unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class CompanionRoute(Base):
+    __tablename__ = "companion_routes"
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), primary_key=True)
+    active_device_id: Mapped[Optional[str]] = mapped_column(ForeignKey("devices.id"), nullable=True)
+    generation: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    changed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class MedicationPlanVersion(Base):

@@ -37,6 +37,8 @@ def device_status(device, connected_ids: set[str]) -> dict:
              else 'stale' if device.last_seen else 'awaiting_connection')
     return {
         'id': device.id, 'status': state, 'claimed_at': iso(device.claimed_at),
+        'device_type': device.device_type, 'platform': device.platform,
+        'display_name': device.display_name,
         'last_seen': iso(device.last_seen), 'battery_mv': device.battery_mv,
         'rssi': device.rssi, 'firmware_version': device.firmware_version,
         'revoked_at': iso(device.revoked_at),

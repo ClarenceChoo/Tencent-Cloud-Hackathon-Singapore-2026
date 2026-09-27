@@ -51,3 +51,14 @@ it('requires explicit revocation and hides device controls for caregivers',async
   expect(screen.queryByLabelText('One-use device code')).toBeNull();
   expect(screen.queryByRole('button',{name:'Revoke device access'})).toBeNull();
 });
+
+it('approves an expiring phone code through the phone flow and labels phone identity', async()=>{
+  const user=userEvent.setup();const claim=vi.fn(async()=>{});
+  render(<DeviceSetup data={{...data,devices:[{id:'phone1',device_type:'phone',platform:'ios',display_name:'Mei iPhone',status:'awaiting_connection'}]}} canManage onClaim={claim} onRevoke={vi.fn()}/>);
+  await user.selectOptions(screen.getByLabelText('Companion type'),'phone');
+  await user.type(screen.getByLabelText('One-use device code'),'p-abcde-12345');
+  await user.click(screen.getByRole('button',{name:'Approve phone'}));
+  expect(claim).toHaveBeenCalledExactlyOnceWith('P-ABCDE-12345','phone');
+  expect(screen.getByText('Parse phone · Mei iPhone')).toBeTruthy();
+  expect(screen.getByText(/code expires after ten minutes/)).toBeTruthy();
+});

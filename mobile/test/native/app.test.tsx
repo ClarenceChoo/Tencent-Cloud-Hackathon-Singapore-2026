@@ -5,7 +5,12 @@ import React from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { Pressable, Switch, Text } from "react-native";
-import type { Home, Installation, TurnEvent } from "../../src/contracts";
+import type {
+  Enrollment,
+  Home,
+  Installation,
+  TurnEvent,
+} from "../../src/contracts";
 import { ApiError } from "../../src/errors";
 
 const ports = vi.hoisted(() => ({
@@ -455,6 +460,103 @@ it("loads paired care without requesting microphone permission or creating care 
   expect(ports.permission).not.toHaveBeenCalled();
   expect(ports.api.confirm).not.toHaveBeenCalled();
   expect(ports.recorder.record).not.toHaveBeenCalled();
+});
+
+it.each(["enrollment", "home"])(
+  "recovers a cold %s failure with the saved identity and no new enrollment",
+  async (endpoint) => {
+    const saved = ports.secure.get("parse.installation");
+    ports.api[endpoint].mockRejectedValueOnce(
+      new Error("java.io.IOException: secret transport details"),
+    );
+    await mount();
+    expect(text()).toContain("Cannot reach Parse");
+    expect(text()).not.toContain("java.io");
+    expect(button("Hold to talk")).toBeUndefined();
+    expect(button("Retry pairing")).toBeUndefined();
+    expect(button("Get pairing code")).toBeUndefined();
+    expect(ports.secure.get("parse.installation")).toBe(saved);
+    expect(ports.api.enroll).not.toHaveBeenCalled();
+    await press("Retry connection");
+    expect(text()).toContain("HELLO, Mei");
+    expect(text()).not.toContain("Cannot reach Parse");
+    expect(ports.secure.get("parse.installation")).toBe(saved);
+    expect(ports.api.enroll).not.toHaveBeenCalled();
+    expect(ports.permission).not.toHaveBeenCalled();
+    expect(ports.api.upload).not.toHaveBeenCalled();
+    expect(ports.api.confirm).not.toHaveBeenCalled();
+  },
+);
+
+it("shares the foreground polling operation with manual retry and applies revocation before exposing care", async () => {
+  ports.api.enrollment.mockRejectedValueOnce(new Error("Network unavailable"));
+  await mount();
+  const gate = deferred<Enrollment>();
+  ports.api.enrollment.mockReturnValueOnce(gate.promise);
+  await press("Retry connection");
+  expect(button("Checking connection…")?.props.disabled).toBe(true);
+  await advance(10000);
+  expect(ports.api.enrollment).toHaveBeenCalledTimes(2);
+  expect(button("Hold to talk")).toBeUndefined();
+  await act(async () => {
+    gate.reject(new ApiError(403, "Revoked"));
+    await drain();
+  });
+  expect(text()).toContain("Phone access stopped");
+  expect(button("Retry connection")).toBeUndefined();
+  expect(ports.api.home).not.toHaveBeenCalled();
+  expect(ports.api.enroll).not.toHaveBeenCalled();
+  expect(ports.api.quiesce).toHaveBeenCalledOnce();
+});
+
+it("labels previously loaded care during a failed refresh and clears the warning on automatic recovery", async () => {
+  home.notes = [
+    {
+      id: "old",
+      wording: "Earlier confirmed note",
+      created_at: new Date().toISOString(),
+    },
+  ];
+  await mount();
+  ports.api.home.mockRejectedValueOnce(
+    new ApiError(503, "Internal server details"),
+  );
+  await advance(5000);
+  expect(text()).toContain("Earlier confirmed note");
+  expect(text()).toContain("Showing previously loaded care details");
+  expect(text()).not.toContain("Internal server details");
+  home.notes = [
+    {
+      id: "new",
+      wording: "Fresh confirmed note",
+      created_at: new Date().toISOString(),
+    },
+  ];
+  await advance(5000);
+  expect(text()).toContain("Fresh confirmed note");
+  expect(text()).not.toContain("Cannot refresh Parse");
+  expect(ports.api.enroll).not.toHaveBeenCalled();
+});
+
+it("retries a not-yet-registered installation only after current enrollment returns unauthorized", async () => {
+  const saved = ports.secure.get("parse.installation");
+  ports.api.enrollment.mockRejectedValueOnce(new Error("Network unavailable"));
+  await mount();
+  ports.api.enrollment.mockRejectedValueOnce(
+    new ApiError(401, "No enrollment yet"),
+  );
+  ports.api.enroll.mockResolvedValueOnce({
+    status: "awaiting_approval",
+    device_id: "new_phone",
+    code: "123456",
+  });
+  await press("Retry connection");
+  expect(text()).toContain("Connect this phone");
+  expect(text()).toContain("123456");
+  expect(ports.api.enroll).toHaveBeenCalledOnce();
+  expect(ports.api.home).not.toHaveBeenCalled();
+  expect(ports.secure.get("parse.installation")).toBe(saved);
+  expect(button("Hold to talk")).toBeUndefined();
 });
 
 it("runs tap capture through an unsaved proposal and explicit confirmation with both production hooks mounted", async () => {

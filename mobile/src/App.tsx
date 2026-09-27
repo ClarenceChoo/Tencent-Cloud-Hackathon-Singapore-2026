@@ -71,6 +71,9 @@ function Companion() {
   } | null>(null);
   const [home, setHome] = useState<Home | null>(null);
   const [error, setError] = useState("");
+  const [connectionProblem, setConnectionProblem] = useState(false);
+  const [checkingConnection, setCheckingConnection] = useState(false);
+  const retryConnection = useRef<(() => Promise<void>) | null>(null);
   const [busy, setBusy] = useState(false);
   const [busyMessage, setBusyMessage] = useState("");
   const [booting, setBooting] = useState(true);
@@ -179,7 +182,11 @@ function Companion() {
       .finally(() => setBooting(false));
   }, []);
   useEffect(() => {
-    if (!api) return;
+    if (!api) {
+      retryConnection.current = null;
+      setCheckingConnection(false);
+      return;
+    }
     let running = false;
     let alive = true;
     async function sync() {
@@ -191,6 +198,7 @@ function Companion() {
       )
         return;
       running = true;
+      setCheckingConnection(true);
       try {
         let next: Enrollment;
         try {
@@ -203,17 +211,19 @@ function Companion() {
         if (!alive || api !== currentApi.current) return;
         setEnrollment(next);
         if (next.status === "paired") await refresh();
-        if (alive && api === currentApi.current) setError("");
+        if (alive && api === currentApi.current) setConnectionProblem(false);
       } catch (err) {
         if (alive && api === currentApi.current) {
           if (err instanceof ApiError && [401, 403].includes(err.status)) {
             await denyRef.current(api!, err);
-          } else showError(err);
+          } else setConnectionProblem(true);
         }
       } finally {
         running = false;
+        if (alive && api === currentApi.current) setCheckingConnection(false);
       }
     }
+    retryConnection.current = sync;
     void sync();
     const timer = setInterval(() => {
       void sync();
@@ -223,6 +233,7 @@ function Companion() {
     });
     return () => {
       alive = false;
+      if (retryConnection.current === sync) retryConnection.current = null;
       clearInterval(timer);
       listener.remove();
     };
@@ -384,6 +395,7 @@ function Companion() {
       setCleanupNeeded(false);
       setCleanupMessage("");
       setReminderContext(null);
+      setConnectionProblem(false);
     }, "Stopping audio and removing this phone's access…");
   }
   async function confirm() {
@@ -460,6 +472,32 @@ function Companion() {
           <Text style={s.brand}>parse</Text>
           <Text style={s.small}>YOUR CARE COMPANION</Text>
         </View>
+        {connectionProblem &&
+          !accessProblem &&
+          !restored &&
+          (home || enrollment?.status === "awaiting_approval") && (
+            <View accessibilityRole="alert" style={s.notice}>
+              <Text style={s.heading}>Cannot refresh Parse</Text>
+              <Text style={s.body}>
+                {home
+                  ? "Showing previously loaded care details. Recent changes may be missing."
+                  : "Parse cannot check the owner's approval right now."}{" "}
+                Check your internet connection. Parse will try again while this
+                screen is open.
+              </Text>
+              <Button
+                title={
+                  checkingConnection
+                    ? "Checking connection…"
+                    : "Retry connection"
+                }
+                disabled={busy || checkingConnection}
+                onPress={() => {
+                  void retryConnection.current?.();
+                }}
+              />
+            </View>
+          )}
         {booting ? (
           <ActivityIndicator accessibilityLabel="Loading your pairing" />
         ) : !home ? (
@@ -544,6 +582,44 @@ function Companion() {
                   }}
                 />
               </View>
+            ) : installation ? (
+              <View style={s.card} accessibilityLiveRegion="polite">
+                <Text style={s.heading}>
+                  {connectionProblem
+                    ? "Cannot reach Parse"
+                    : "Connecting to Parse"}
+                </Text>
+                <Text style={s.body}>
+                  {connectionProblem
+                    ? "Your saved connection is still on this phone. Parse cannot check your access or load your care details right now."
+                    : "Checking this phone's access and loading your care details…"}
+                </Text>
+                {connectionProblem && (
+                  <Text style={s.body}>
+                    Check your internet connection. Parse will try again while
+                    this screen is open, or you can retry below.
+                  </Text>
+                )}
+                <Button
+                  title={
+                    checkingConnection
+                      ? "Checking connection…"
+                      : "Retry connection"
+                  }
+                  disabled={busy || checkingConnection}
+                  onPress={() => {
+                    void retryConnection.current?.();
+                  }}
+                />
+                <Button
+                  title="Start a new pairing"
+                  secondary
+                  disabled={busy || checkingConnection}
+                  onPress={() => {
+                    void unpair();
+                  }}
+                />
+              </View>
             ) : (
               <View style={s.card}>
                 <Text style={s.heading}>Connect to Parse</Text>
@@ -561,36 +637,14 @@ function Companion() {
                   autoCapitalize="none"
                   autoCorrect={false}
                   keyboardType="url"
-                  editable={!installation}
                 />
                 <Button
-                  title={
-                    busy
-                      ? "Connecting…"
-                      : installation
-                        ? "Retry pairing"
-                        : "Get pairing code"
-                  }
+                  title={busy ? "Connecting…" : "Get pairing code"}
                   disabled={busy}
                   onPress={() => {
-                    if (installation && api)
-                      void action(async (valid) => {
-                        const next = await api.enroll();
-                        if (valid()) setEnrollment(next);
-                      });
-                    else void connect();
+                    void connect();
                   }}
                 />
-                {installation && (
-                  <Button
-                    title="Start a new pairing"
-                    secondary
-                    disabled={busy}
-                    onPress={() => {
-                      void unpair();
-                    }}
-                  />
-                )}
               </View>
             )}
           </>
@@ -667,7 +721,11 @@ function Companion() {
                       : "Hold to talk"}
               </Text>
             </Pressable>
-            <Text testID="voice-feedback" accessibilityLiveRegion="polite" style={s.voiceMessage}>
+            <Text
+              testID="voice-feedback"
+              accessibilityLiveRegion="polite"
+              style={s.voiceMessage}
+            >
               {busy && voice.phase !== "speaking"
                 ? busyMessage
                 : tapMode && voice.phase === "recording"

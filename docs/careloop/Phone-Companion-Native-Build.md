@@ -185,7 +185,7 @@ The [offline-plan run](evidence/android-alert-offline-plan-2026-09-27.json) sche
 
 Android still posts the already-scheduled alert with generic text only. Raw posting delay was 88.689 seconds; the clock-adjusted estimate was 88.357 seconds. Opening that actual notification encounters the offline connection, shows no care/recording controls and does not download or play the cancelled reminder. On reconnect, the app fetches the replacement plan; the original command remains cancelled with `plan_changed`, no audio access and no playback acknowledgements. Its dose stays unconfirmed and the care-note count is unchanged. [Generic alert](evidence/android-alert-offline-plan-2026-09-27.png), [offline view](evidence/android-alert-offline-plan-opened-2026-09-27.png), [replacement plan](evidence/android-alert-offline-plan-current-2026-09-27.png).
 
-The offline view currently uses the connection/pairing layout and displays the raw transport error; the passing privacy and recovery assertions do not establish finished offline UX. The connection fault is local and controlled, not physical Wi-Fi/cellular evidence.
+That r4 run exposed an unfinished offline view: pairing wording and a raw transport error. The later connection-recovery checkpoint below corrects this UI and retains the earlier screenshot as the reproduced problem. The connection fault is local and controlled, not physical Wi-Fi/cellular evidence.
 
 Native **Pause reminders** clears both posted alerts and the persistent Expo notification store before the server releases the route. Selecting the same phone again advances the routing generation; every persisted native alarm then belongs to the new generation. The helper reads only notification identifier keys from the disposable emulator's known Expo preferences file; it does not persist credentials or serialized notification bodies.
 
@@ -212,6 +212,27 @@ PARSE_NATIVE_RESUME_PAIRED=1 PARSE_NATIVE_ALERT_STATE=revoked \
 ```
 
 The fixture keeps the old revoked row and selects the newly approved device for subsequent checks. Owner revocation here is received while online in the foreground; revocation of an offline or terminated phone remains a separate test. Both new modes use the existing r4 verification APK; no production app code or new binary was needed for these checks.
+
+## Native connection recovery UI
+
+A saved installation now has a distinct **Cannot reach Parse** state at cold startup. **Retry connection** invokes the same serialized foreground sync used by periodic polling; it checks current enrollment and loads current care before exposing recording. It preserves the protected identity. A new enrollment request is made only when the enrollment endpoint reports that no authorized enrollment exists, using the same installation credential and idempotency key. Access denial retains its separate care-clearing and cleanup behavior.
+
+If a refresh fails after care has loaded, the warning appears at the top and explicitly labels the retained care details as previously loaded. Raw native/network errors from connection synchronization are replaced with actionable connection wording. Successful synchronization clears the connection warning; unrelated operation failures retain their own state.
+
+Five new full-app regressions cover cold enrollment/home failures, no replacement enrollment or automatic care commitment on retry, a pending retry shared with periodic polling, revocation during reconnect, warm automatic recovery and a not-yet-registered installation. TypeScript and all **109 mobile tests** pass: 25 unit and 84 app/hook/HTTP/storage tests. An intermediate JSX placement error was caught by Metro, corrected, and followed by a fresh typecheck, complete mobile test run and successful builds.
+
+The [rebuilt native run](evidence/android-connection-recovery-2026-09-27.json) uses the existing paired Android emulator through the isolated TLS fault proxy. It passes cold disconnected startup, an actual tap on Retry connection, warm disconnected refresh and automatic foreground recovery. The selected device, routing generation, existing note IDs and all dose report states remain unchanged. [Cold disconnected screen](evidence/android-connection-offline-2026-09-27.png), [recovered phone](evidence/android-connection-recovered-2026-09-27.png), [warm warning](evidence/android-connection-warm-offline-2026-09-27.png). The report verifies the installed APK digest and source hashes. This is native Android emulator/controlled-network evidence; physical networks, live speech and iOS remain separate gates.
+
+Reproduce with the default fictional fixture and fault proxy running:
+
+```sh
+PARSE_NATIVE_RESUME_PAIRED=1 PARSE_NATIVE_CONNECTION_ONLY=1 \
+  node tools/android_native_smoke.cjs
+```
+
+The helper restores direct routing and clears the fault in `finally`; stop the proxy after the check. It reuses the existing care records and paired identity.
+
+The normal r5 preview is `runtime/releases/parse-companion-android-arm64-preview-2026-09-27-r5.apk` (31,319,647 bytes; SHA-256 `f144dba7c46e6ce18e9cddd4dbb14625af0edc74d4a6c0eedbc7152e966b0c82`). It builds, verifies its signature, installs and cold-launches without Metro, with a matching installed digest and no observed process-scoped native/JavaScript errors. It uses the standard debug key and excludes the verification fixture resources. [Artifact and launch report](evidence/android-preview-r5-2026-09-27.json), [normal pairing screen](evidence/android-preview-r5-pairing-2026-09-27.png). Earlier alert and recovery results remain tied to their recorded APKs; the r5 binary is not claimed to have rerun every previous native scenario.
 
 ## Phone-sized visit-summary workflow
 

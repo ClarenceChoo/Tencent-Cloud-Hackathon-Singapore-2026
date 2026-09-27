@@ -70,17 +70,32 @@ export class PhoneApi {
   home() {
     return this.request<Home>("/v1/phone/home");
   }
-  upload(
+  async upload(
     uri: string,
     key: string,
     context: string | null,
     signal: AbortSignal,
   ) {
+    if (signal.aborted) throw new Error("Recording upload was interrupted.");
+    const file = new File(uri);
+    const max = 2 * 1024 * 1024;
+    if (!Number.isFinite(file.size) || file.size < 12 || file.size > max)
+      throw new Error(
+        "The recording is missing or exceeds the upload size limit.",
+      );
+    // Expo derives a File body's Content-Type from the OS, overriding our header.
+    // Android can label M4A as audio/mpeg. Raw bytes preserve the AAC container MIME.
+    const body = await file.arrayBuffer();
+    if (signal.aborted) throw new Error("Recording upload was interrupted.");
+    if (body.byteLength < 12 || body.byteLength > max)
+      throw new Error(
+        "The recording is missing or exceeds the upload size limit.",
+      );
     return this.request<Receipt>(
       "/v1/phone/turns",
       {
         method: "POST",
-        body: new File(uri),
+        body,
         headers: {
           "Content-Type": "audio/mp4",
           "Idempotency-Key": key,

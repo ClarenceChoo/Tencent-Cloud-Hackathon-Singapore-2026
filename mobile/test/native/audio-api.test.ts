@@ -1,7 +1,29 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-const transport = vi.hoisted(() => ({ fetch: vi.fn() }));
+const transport = vi.hoisted(() => ({
+  fetch: vi.fn(),
+  read: vi.fn(),
+  size: 16,
+  type: "audio/x-m4a",
+}));
 vi.mock("expo/fetch", () => ({ fetch: transport.fetch }));
-vi.mock("expo-file-system", () => ({ File: class {} }));
+vi.mock("expo-file-system", () => ({
+  File: class {
+    get size() {
+      return transport.size;
+    }
+    get type() {
+      return transport.type;
+    }
+    arrayBuffer() {
+      return transport.read();
+    }
+  },
+}));
+// Load the actual pinned implementation without importing Expo's internal web
+// FormData declarations into the native application's TypeScript program.
+const expoRequestUtils = "../../node_modules/expo/src/winter/fetch/RequestUtils.ts";
+const { normalizeBodyInitAsync, normalizeHeadersInit, overrideHeaders } =
+  await import(expoRequestUtils);
 import { PhoneApi } from "../../src/api";
 const path = "/v1/device/audio/audio_" + "a".repeat(32);
 const api = new PhoneApi({
@@ -16,6 +38,78 @@ const signal = () => new AbortController().signal;
 beforeEach(() => {
   vi.useFakeTimers();
   vi.resetAllMocks();
+  transport.size = 16;
+  transport.type = "audio/x-m4a";
+  transport.read.mockResolvedValue(
+    new Uint8Array([
+      0, 0, 0, 16, 102, 116, 121, 112, 77, 52, 65, 32, 0, 0, 0, 0,
+    ]).buffer,
+  );
+});
+it.each(["audio/mpeg", "audio/x-m4a", ""])(
+  "upload keeps the AAC container MIME when the filesystem reports %s",
+  async (mime) => {
+    transport.type = mime;
+    let wireHeaders: [string, string][] = [];
+    transport.fetch.mockImplementation(async (_url, options) => {
+      // Exercise the pinned Expo normalizer that overrides headers for File bodies.
+      const normalized = await normalizeBodyInitAsync(options.body);
+      wireHeaders = overrideHeaders(
+        normalizeHeadersInit(options.headers),
+        normalized.overriddenHeaders ?? [],
+      );
+      expect(normalized.body?.slice(4, 8)).toEqual(
+        new Uint8Array([102, 116, 121, 112]),
+      );
+      return Response.json({ turn_id: "native-turn", status: "received" });
+    });
+    await api.upload(
+      "file:///private/cache/recording.m4a",
+      "upload-key",
+      "context",
+      signal(),
+    );
+    expect(Object.fromEntries(wireHeaders)).toMatchObject({
+      "Content-Type": "audio/mp4",
+      "Idempotency-Key": "upload-key",
+      "X-Context-Id": "context",
+      Authorization: "Bearer private-fixture",
+    });
+  },
+);
+it("an oversized recording is refused before loading its bytes", async () => {
+  transport.size = 2 * 1024 * 1024 + 1;
+  await expect(
+    api.upload("file:///cache/recording.m4a", "key", null, signal()),
+  ).rejects.toThrow("size limit");
+  expect(transport.read).not.toHaveBeenCalled();
+  expect(transport.fetch).not.toHaveBeenCalled();
+});
+it("a recording that changes while reading is checked again before upload", async () => {
+  transport.read.mockResolvedValue(new ArrayBuffer(2 * 1024 * 1024 + 1));
+  await expect(
+    api.upload("file:///cache/recording.m4a", "key", null, signal()),
+  ).rejects.toThrow("size limit");
+  expect(transport.fetch).not.toHaveBeenCalled();
+});
+it("cancellation during file read never admits a later upload", async () => {
+  const controller = new AbortController();
+  let finish!: (buffer: ArrayBuffer) => void;
+  transport.read.mockReturnValue(
+    new Promise((resolve) => {
+      finish = resolve;
+    }),
+  );
+  const upload = api.upload(
+    "file:///cache/recording.m4a",
+    "key",
+    null,
+    controller.signal,
+  );
+  controller.abort();
+  finish(new ArrayBuffer(16));
+  await expect(upload).rejects.toThrow("interrupted");
+  expect(transport.fetch).not.toHaveBeenCalled();
 });
 afterEach(() => {
   vi.useRealTimers();

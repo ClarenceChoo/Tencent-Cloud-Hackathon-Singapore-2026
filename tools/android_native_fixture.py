@@ -104,7 +104,8 @@ def serve(directory: Path, port: int):
     from app.provisioning import private_file
     from app.providers import FixtureProvider, ProviderUnavailable, validate_speech_wav
     from app.security import hash_password
-    from app import worker
+    from app import phone_audio, worker
+    from fastapi import HTTPException
     from starlette.staticfiles import StaticFiles
     import uvicorn
 
@@ -141,6 +142,25 @@ def serve(directory: Path, port: int):
                         expo_push_enabled=False, allowed_origins=[origin], public_base_url=origin)
     app = create_app(settings)
     app.state.db.create_all()
+    normalize = phone_audio.normalize_phone_audio
+
+    def observed_normalize(body, mime):
+        # Only this fictional loopback process records transport diagnostics.
+        # Do not retain recordings, tokens, headers or transcript content.
+        metadata = {"mime": mime, "bytes": len(body), "sha256": hashlib.sha256(body).hexdigest(),
+                    "container_prefix_hex": body[:12].hex()}
+        try:
+            canonical = normalize(body, mime)
+            metadata["normalized_bytes"] = len(canonical)
+            return canonical
+        except HTTPException as error:
+            metadata.update(status=error.status_code, error=error.detail)
+            raise
+        finally:
+            with (directory / "native-uploads.jsonl").open("a") as log:
+                log.write(json.dumps(metadata) + "\n")
+
+    phone_audio.normalize_phone_audio = observed_normalize
     provider = ArmedNativeProvider({}, str(directory / "reply.wav"))
     # Scoped to this test-only process; production provider selection is unchanged.
     worker._provider = lambda _app: provider
@@ -153,7 +173,7 @@ def serve(directory: Path, port: int):
         db.add_all([patient, *users])
         db.flush()
         db.add_all([AccessGrant(user_id=user.id, patient_id=patient.id, relationship=user.role,
-                               scopes=["*"] if user.role == "owner" else ["read:dashboard"]) for user in users])
+                               scopes=["*"] if user.role == "owner" else ["read:dashboard", "ack:support", "resolve:support"]) for user in users])
         db.commit()
         metadata = {"patient_id": patient.id, "caregiver_id": users[1].id, "origin": origin}
     private_file(directory / "fixture.json", json.dumps(metadata))

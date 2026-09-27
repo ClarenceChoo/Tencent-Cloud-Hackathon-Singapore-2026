@@ -68,7 +68,7 @@ async function main() {
     fs.writeFileSync(pending + '.tmp', JSON.stringify({ name, transcript }), { mode: 0o600 });
     fs.renameSync(pending + '.tmp', pending);
   }
-  async function record(name, interpretation) {
+  async function record(name, interpretation, expectedText = interpretation.payload?.wording) {
     arm(name, interpretation);
     await tap('Tap to start recording');
     let nodes = await ui();
@@ -87,11 +87,18 @@ async function main() {
     await sleep(1000);
     await tap('Recording. Tap to send.', { scroll: false, attempts: 2 });
     await find('Tap to start recording', { attempts: 10 });
+    const settled = await ui();
+    assert(!settled.some(n => n['content-desc'] === 'Recover response' || n.text === 'Recover response'),
+      'Native voice returned an error: ' + settled.map(n => n.text).filter(Boolean).join(' | '));
     assert(!fs.existsSync(path.join(directory, 'next-utterance.json')), 'Native audio did not reach scripted provider');
+    const feedback = settled.find(n => n['resource-id']?.endsWith('voice-feedback'))?.text;
+    assert(feedback, 'Native response feedback must be visible after playback');
+    assert(expectedText && feedback.toLowerCase().includes(expectedText.toLowerCase()), `Unexpected native feedback for ${name}: ${feedback}`);
+    return feedback;
   }
   const report = { at: new Date().toISOString(), liveSpeech: false, physicalPhone: false,
     environment: 'Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and one-second tone replies. No real speech or acoustic audibility evidence.',
-    source_sha256: Object.fromEntries(['mobile/src/App.tsx', 'mobile/src/useVoice.ts', 'mobile/src/api.ts', 'tools/android_native_fixture.py', 'tools/android_native_smoke.cjs'].map(file =>
+    source_sha256: Object.fromEntries(['mobile/src/App.tsx', 'mobile/src/useVoice.ts', 'mobile/src/api.ts', 'tools/android_native_fixture.py', 'tools/android_native_smoke.cjs', 'tools/android_native_care.cjs'].map(file =>
       [file, createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex')])),
     checks: [] };
   const save = () => fs.writeFileSync(path.join(directory, 'native-integration-evidence.json'), JSON.stringify(report, null, 2));
@@ -184,6 +191,9 @@ async function main() {
     assert.equal((await owner.dash()).notes.length, 1);
     await screenshot('native-paired-restart');
     pass('Native protected pairing survives process termination without repeating the confirmed record');
+    if (process.env.PARSE_NATIVE_FULL_CARE === '1') {
+      await require('./android_native_care.cjs')({ record, find, tap, screenshot, pass, owner, caregiver, restricted, fixture });
+    }
     report.captures = fs.readFileSync(path.join(directory, 'native-captures.jsonl'), 'utf8').trim().split('\n').map(JSON.parse);
     save();
   } catch (error) {

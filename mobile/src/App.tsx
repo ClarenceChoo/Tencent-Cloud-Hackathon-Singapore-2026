@@ -667,7 +667,7 @@ function Companion() {
                       : "Hold to talk"}
               </Text>
             </Pressable>
-            <Text accessibilityLiveRegion="polite" style={s.voiceMessage}>
+            <Text testID="voice-feedback" accessibilityLiveRegion="polite" style={s.voiceMessage}>
               {busy && voice.phase !== "speaking"
                 ? busyMessage
                 : tapMode && voice.phase === "recording"

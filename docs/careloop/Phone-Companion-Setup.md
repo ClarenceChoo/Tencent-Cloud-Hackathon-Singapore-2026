@@ -1,6 +1,6 @@
 # Parse phone companion — development setup
 
-This is an implementation in progress against [the full PRD](Phone-Companion-PRD.md). Read the [verification ledger](Phone-Companion-Verification.md) before using the build in a demonstration. Source now includes foreground voice/reminders, explicit reminder routing, generic local alerts and an Expo push adapter. Native builds, delivery on real phones and the complete acceptance gates remain unverified.
+This is an implementation in progress against [the full PRD](Phone-Companion-PRD.md). Read the [verification ledger](Phone-Companion-Verification.md) before using the build in a demonstration. Source now includes foreground voice/reminders, explicit reminder routing, generic local alerts and an Expo push adapter. An ARM64 Android preview APK compiles, installs and opens in an Android 16 emulator. iOS compilation, delivery on real phones and the complete acceptance gates remain unverified.
 
 ## Backend and database
 
@@ -35,7 +35,7 @@ npm run ios
 npm run android
 ```
 
-iOS requires full Xcode and the appropriate simulator/device signing setup. Android requires an SDK/toolchain compatible with the generated React Native Gradle configuration. Java alone is insufficient. No paid cloud build account is required by these commands. Expo Go is not the release verification environment.
+iOS requires full Xcode and the appropriate simulator/device signing setup. Android requires an SDK/toolchain compatible with the generated React Native Gradle configuration. Java alone is insufficient. The verified Android toolchain uses **JDK 17**; the host's Java 25 failed native Prefab/CMake generation. See [the native build guide](Phone-Companion-Native-Build.md) for the isolated SDK setup, bundled preview APK and installation commands. No paid cloud build account is required by these commands. Expo Go is not the release verification environment.
 
 `app.config.ts` and the locked dependencies generate `ios/` and `android/`; those generated directories are ignored. Keep native changes in config plugins/configuration so regeneration remains reproducible. The application identifiers are currently `sg.parse.companion` and may be changed before signing if the team needs a different namespace.
 

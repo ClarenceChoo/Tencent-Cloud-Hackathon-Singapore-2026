@@ -13,6 +13,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Switch,
   Text,
@@ -1045,6 +1046,7 @@ function Companion() {
 export default function App() {
   return (
     <SafeAreaProvider>
+      <StatusBar barStyle="dark-content" />
       <Companion />
     </SafeAreaProvider>
   );

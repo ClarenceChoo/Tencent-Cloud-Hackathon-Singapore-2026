@@ -47,6 +47,7 @@ const listen = (name: string, callback: (value: any) => void) => {
 };
 vi.mock("react-native", () => ({
   ActivityIndicator: "ActivityIndicator",
+  StatusBar: "StatusBar",
   Pressable: "Pressable",
   ScrollView: "ScrollView",
   Switch: "Switch",

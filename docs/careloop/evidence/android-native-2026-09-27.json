@@ -1,0 +1,105 @@
+{
+  "at": "2026-09-27T09:53:19.925184+00:00",
+  "commit": "adce874bea4b5d525d0380bb9aa80c3f47ef2cd4",
+  "workingTreeDirty": true,
+  "source_sha256": {
+    "mobile/app.config.ts": "c58c0d2aa7065a6955898c255c9c6b539f633a920d60b1f62849acc92b73c10c",
+    "mobile/index.ts": "e7a30a7d0ca6f8f397b430bca465368a0e55e5ce7265025875af60be28e67deb",
+    "mobile/package-lock.json": "ff3a2b51b22f99531ee2c8a2b66c0773e42cf608511197228da2d3fcbc862c3d",
+    "mobile/package.json": "4a5c5d22e7e91e66ac28f01e02f21c449a6f9d4c656b576a340f8a70c32862fc",
+    "mobile/src/App.tsx": "ce94ad4cc0e61e502abb0751db1485a3503618dbba869218bd865bf221ef8dd3",
+    "mobile/src/CareOrigin.tsx": "ee159a5cb59aee0c506d03d1db23f1df4246f3e241ab9982750c18d326ceee3b",
+    "mobile/src/alertSchedule.ts": "1c3f4f23ea35da5981b6fb4642e668444085f6120476238c101c6b1a477c051e",
+    "mobile/src/api.ts": "430b8e0a7f4c276446076bdf2131243b5c091d439be700ef71101113e63d0815",
+    "mobile/src/contracts.ts": "6fe565b9a2b1019d9bdb4031ba50c284154f7f6457eff125fe9080b8925c84c8",
+    "mobile/src/errors.ts": "948d25647472001eb7a971fb23f2fbb99400ab0835eaf77108bdf5ae6468da5c",
+    "mobile/src/operations.ts": "6bcf607f734d36bbfb2a3ea2a415287fe6adee14108cede3a4f3ad68c3089940",
+    "mobile/src/pushRegistration.ts": "128ffe5ee2a4d03b155c00b68b640d1b1da77c112693aaaa5203a65d53e75e0d",
+    "mobile/src/reminderDelivery.ts": "40da7c0b80ea1979e350bdfd15082164c5b53d0c4c1017dff81c28547f49c568",
+    "mobile/src/reminderStorage.ts": "f626e41797569f2f59216248c87d5e3313ec371f3013c29d2c14e9db3c70928b",
+    "mobile/src/storage.ts": "60cccf256d87cad9280b156d39b938235a31d2f4dc23452377d925cabd999ff8",
+    "mobile/src/turnRecovery.ts": "b9f407aa9b2f6f0ddfceb6e0c2555035585f24950d014f4279ea2d708d33958e",
+    "mobile/src/useReminders.ts": "338ba060d56fbd646a3a5f56d4f22a858ec8417ba091f0b94a9563f3deea5f89",
+    "mobile/src/useTalkMode.ts": "c159dcedbad3b79d5a76b7238391bf7a4cc9d310b2b02bfae4aabef7ab1cc941",
+    "mobile/src/useVoice.ts": "df589e723d4f9a29edcb23032923d118b678092599c8943c625569aa8ca70a08",
+    "mobile/src/validation.ts": "2cbfce96cf047203923895af73e11ce214d3eb4ac275272e85c5522c5c7162b5"
+  },
+  "environment": "macOS ARM64 native build; disposable Android 16 ARM64 AOSP emulator; no paired service, microphone, physical phone, live speech or remote push.",
+  "toolchain": {
+    "java": "Temurin 17.0.20.1+1",
+    "gradle": "9.3.1",
+    "node": "25.2.1",
+    "expo": "57.0.25",
+    "reactNative": "0.86.3",
+    "androidSdk": 36,
+    "androidBuildTools": [
+      "36.0.0",
+      "35.0.0"
+    ],
+    "ndk": "27.1.12297006",
+    "cmake": "3.22.1",
+    "emulator": "37.1.11",
+    "imageFingerprint": "Android/sdk_phone64_arm64/emu64a:16/BE2A.250530.026.D1/13818094:userdebug/test-keys"
+  },
+  "build": {
+    "command": "./gradlew :app:assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon --console=plain --max-workers=2",
+    "result": "BUILD SUCCESSFUL",
+    "finalIncrementalSeconds": 18,
+    "tasks": 542,
+    "artifact": "runtime/releases/parse-companion-android-arm64-preview-2026-09-27.apk",
+    "sizeBytes": 31316823,
+    "sha256": "51bcb7a7bb8d0e316b34bbfd85b4fb9fe6de61371e42b44895f0a63c93fac221",
+    "embeddedHermesBundleSha256": "521d66f33ac7806998520cbcd1293205f2796c5d8b97b8745f211eca630da92e",
+    "nativeAbis": [
+      "arm64-v8a"
+    ],
+    "applicationId": "sg.parse.companion",
+    "versionName": "0.1.0",
+    "versionCode": 1,
+    "minSdk": 24,
+    "targetSdk": 36,
+    "signing": "Standard Android debug certificate; APK v2 signature verified; preview only",
+    "certificateSha256": "fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c",
+    "firstSuccessfulBuildSeconds": 153
+  },
+  "priorFailure": {
+    "java": "Zulu 25.0.4",
+    "stage": "GeneratePrefabPackages / configureCMakeRelWithDebInfo",
+    "message": "WARNING: A restricted method in java.lang.System has been called",
+    "resolution": "Selected project-local JDK 17; no dependency patch"
+  },
+  "sourceChecks": {
+    "typecheck": "passed",
+    "unitTests": 25,
+    "appHookHttpAdapterTests": 64
+  },
+  "nativeSmoke": {
+    "normal_launch": "passed",
+    "no_automatic_microphone_or_notification_permission": "passed",
+    "non_https_origin_rejection": "passed",
+    "font_scale_2_pairing_controls": "passed",
+    "force_stop_and_reopen_unpaired": "passed",
+    "process_scoped_errors": "",
+    "font_scale_2_pairing_button_bounds": "[123,1619][957,1804]",
+    "launch": "Starting: Intent { cmp=sg.parse.companion/.MainActivity }\nStatus: ok\nLaunchState: COLD\nActivity: sg.parse.companion/.MainActivity\nTotalTime: 373\nWaitTime: 377\nComplete\n"
+  },
+  "screenshotsAndUiTreesSha256": {
+    "android-pairing-2026-09-27.png": "1c9dc88561a18d1d5233e762b53b6cc585ed4873c28673452124f9cf33573ce0",
+    "android-pairing-2026-09-27.xml": "018bdac34d35dbd6cdb904cce1fc07df1c4f4e5eb5bfc3040edf16009691e81c",
+    "android-pairing-font200-top-2026-09-27.png": "cf48d7d7f39cb64029de4fa83783bdc850215e8948e85c3c5a09ecc04d03261b",
+    "android-pairing-font200-top-2026-09-27.xml": "248e50cb6111f0eaa353a94b0393474eb93bf139f0e34e883fef030a82bdc00f",
+    "android-pairing-font200-bottom-2026-09-27.png": "046ff8403c7ed3252925fd2a9ce7f832249f21e55ec075ca313516b9da716579",
+    "android-pairing-font200-bottom-2026-09-27.xml": "4cbf51d4235e2d35af3f39996e08d2433f6f5153719f96ca4e6689b69e165981",
+    "android-pairing-http-rejected-2026-09-27.png": "f176ca6fded6c836702b9b805379542c6a2ee6f5a7386c456150f2ddbfccb824",
+    "android-pairing-http-rejected-2026-09-27.xml": "28558d6582b8924bedb5812f4e14cd4828ae17fc0d4b564ad8248f45cddd5368"
+  },
+  "notVerified": [
+    "iOS native compilation or installation",
+    "Physical-phone installation, microphone, speaker, interruptions or battery behavior",
+    "Paired native care journeys or real Keychain/Keystore identity lifecycle",
+    "Live ASR/interpreter/TTS, APNs or FCM",
+    "TalkBack or VoiceOver; paired-screen accessibility",
+    "One-hour soak and target-device latency",
+    "Production signing or store distribution"
+  ]
+}

@@ -2,9 +2,15 @@
 
 The phone source lives in `mobile/`. Generate its Android and iOS projects from the checked-in Expo configuration; the generated directories, SDK downloads, signing files and application binaries stay out of Git. [Acceptance status](Phone-Companion-Verification.md) distinguishes compilation, emulator checks and physical-phone evidence.
 
-## Verified Android preview
+## Current Android preview
 
-On 27 September 2026, the ARM64 APK compiled, passed APK signature verification, installed and cold-launched on the Android 16 AOSP emulator without Metro. The final binary is 31,316,823 bytes, SHA-256 `51bcb7a7bb8d0e316b34bbfd85b4fb9fe6de61371e42b44895f0a63c93fac221`. A local copy is retained at `runtime/releases/parse-companion-android-arm64-preview-2026-09-27.apk`, with an adjacent checksum file. Binaries and toolchains are not committed or published as a release.
+The current local ARM64 preview is **r5**: `runtime/releases/parse-companion-android-arm64-preview-2026-09-27-r5.apk` (31,319,647 bytes; SHA-256 `f144dba7c46e6ce18e9cddd4dbb14625af0edc74d4a6c0eedbc7152e966b0c82`). It includes the native recording, receipt-recovery and saved-connection fixes described below. Its [artifact/install report](evidence/android-preview-r5-2026-09-27.json) records successful build, signature verification, installation and cold launch. It is a debug-key-signed preview without fixture trust, not a distribution release. The call-interruption and paired large-text checks use the separate r5 verification APK against the fictional local service.
+
+The sections below retain the earlier checkpoints and their matching evidence; their older APK filenames are historical artifacts.
+
+## Initial verified Android preview
+
+On 27 September 2026, the first ARM64 APK compiled, passed APK signature verification, installed and cold-launched on the Android 16 AOSP emulator without Metro. That binary is 31,316,823 bytes, SHA-256 `51bcb7a7bb8d0e316b34bbfd85b4fb9fe6de61371e42b44895f0a63c93fac221`. A local copy is retained at `runtime/releases/parse-companion-android-arm64-preview-2026-09-27.apk`, with an adjacent checksum file. Binaries and toolchains are not committed or published as a release.
 
 The native checks verified the unpaired screen, no automatic microphone/notification grant, rejection of a non-HTTPS service address, reachable pairing controls at font scale 2.0 and reopening after force-stop. No process-scoped `AndroidRuntime` or `ReactNativeJS` errors were recorded at the end. Visual review corrected the status icons to dark content on the light background. Source TypeScript checking and 25 unit plus 64 app/hook/HTTP-adapter tests also pass; these remain separate from the emulator observations.
 
@@ -211,7 +217,28 @@ PARSE_NATIVE_RESUME_PAIRED=1 PARSE_NATIVE_ALERT_STATE=revoked \
   node tools/android_native_smoke.cjs
 ```
 
-The fixture keeps the old revoked row and selects the newly approved device for subsequent checks. Owner revocation here is received while online in the foreground; revocation of an offline or terminated phone remains a separate test. Both new modes use the existing r4 verification APK; no production app code or new binary was needed for these checks.
+The fixture keeps the old revoked row and selects the newly approved device for subsequent checks. Owner revocation here is received while online in the foreground; the offline/terminated scenario has separate evidence below. Both original modes use the existing r4 verification APK; no production app code or new binary was needed for those checks.
+
+## Offline revocation and retained native alerts
+
+The [complete nine-check run](evidence/android-offline-revocation-2026-09-27.json) uses the unchanged r5 verification APK and the fictional loopback TLS fault proxy. It schedules an exact dose alert, disconnects the phone, confirms normal background-process termination without force-stop, queues the due reminder, and revokes the phone through the owner's API.
+
+Revocation marks access and reported readiness as denied immediately. It deliberately retains the selected-phone route until that phone attests local cleanup; an attempted remote handoff is rejected with 409. This preserves the existing rule that an offline phone's local alerts and downloaded speech must be stopped before another companion is selected. The pending command has no audio access or playback acknowledgement. The phone still retains its previously scheduled local alert because it has not received the revocation.
+
+Android posts that exact alert with generic text, without medicine or dose instructions. Raw delay is 86.591 seconds, approximately 86.323 seconds after clock adjustment. Tapping while offline opens **Cannot reach Parse**, without care details, recording controls or old reminder playback. Reconnecting automatically shows **Phone access stopped**, clears posted and scheduled local alerts and releases the route. Denial survives force-stop/reopen. [OS alert](evidence/android-offline-revocation-alert-2026-09-27.png), [offline opening](evidence/android-offline-revocation-offline-2026-09-27.png), [revoked view](evidence/android-offline-revocation-denied-2026-09-27.png).
+
+Deliberate native re-pairing and owner approval then create a different device identity. Only the new phone's generation-15 alarms remain scheduled; the old revoked identity and all five care notes are retained. The stale command is cancelled during route cleanup without audio access, and its dose remains unconfirmed. [Re-paired Settings](evidence/android-offline-revocation-repaired-2026-09-27.png). Direct routing and the original lock setting are restored, transient native audio is absent, and the temporary proxy is stopped after testing.
+
+With the documented fictional fixture and loopback fault proxy running, reproduce using:
+
+```sh
+PARSE_NATIVE_RESUME_PAIRED=1 PARSE_NATIVE_ALERT_STATE=offline-revoked \
+  node tools/android_native_smoke.cjs
+```
+
+Earlier attempts remain separate: [an incorrect immediate-route-release expectation](evidence/android-offline-revocation-routing-attempt-2026-09-27.json), [a redundant Retry tap that raced automatic reconnection](evidence/android-offline-revocation-retry-attempt-2026-09-27.json), and [a proxy failure during native unpairing](evidence/android-offline-revocation-delete-attempt-2026-09-27.json). The fault proxy lacked DELETE forwarding and returned 501; it now forwards DELETE through the same bounded, loopback-only handler. An [unauthenticated probe](evidence/android-fault-proxy-delete-2026-09-27.json) receives the backend's normal 401 response, and the final complete native run passes re-pairing through that proxy. No production app or backend change was required.
+
+These are Android emulator, controlled-network and local-notification results. They do not establish physical radio failures, iOS behavior, live push, physical-device alert timing or complete E08/E09 acceptance.
 
 ## Native connection recovery UI
 

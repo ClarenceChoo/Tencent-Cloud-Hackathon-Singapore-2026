@@ -16,7 +16,7 @@ const decode = value => value.replace(/&quot;/g, '"').replace(/&apos;/g, "'").re
 
 async function main() {
   const alertState = process.env.PARSE_NATIVE_ALERT_STATE || '';
-  assert(['', 'locked', 'terminated', 'offline-plan', 'revoked'].includes(alertState));
+  assert(['', 'locked', 'terminated', 'offline-plan', 'revoked', 'offline-revoked'].includes(alertState));
   const alertLifecycle = !!alertState;
   const connectionOnly = process.env.PARSE_NATIVE_CONNECTION_ONLY === '1';
   const callsOnly = process.env.PARSE_NATIVE_CALLS_ONLY === '1';

@@ -1,0 +1,69 @@
+{
+  "at": "2026-09-27T13:36:35.787Z",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "environment": "Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and fixture tone replies. No real speech or acoustic audibility evidence.",
+  "source_sha256": {
+    "mobile/src/App.tsx": "040650c4ba7d61a35e2c5926c616a0f09a051f03da778766a3241dcd2ccdb275",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "mobile/src/api.ts": "c47f9fd49c83ec14df83d1939a941d6a2b48cddd8548807d123941b523b328cf",
+    "mobile/src/storage.ts": "d617df7a010d6cc68f0cd5dc6e3dfac021b1684bc6e10bc5fa50963871f3d99f",
+    "tools/android_native_fixture.py": "02f47605eb96b79595ccfb991cd8c2ecf72808bc3680386853d97b2113b75271",
+    "tools/android_native_smoke.cjs": "0eb8bfd8838b14e8ac872d33e8b27b6c8749b556deb8f15018f0981214188f6a",
+    "tools/android_native_care.cjs": "48be6db43584dba70abb17294f000c2e29741f389a531b2ba656b4373bf2897b",
+    "mobile/src/useReminders.ts": "338ba060d56fbd646a3a5f56d4f22a858ec8417ba091f0b94a9563f3deea5f89",
+    "mobile/src/alertSchedule.ts": "1c3f4f23ea35da5981b6fb4642e668444085f6120476238c101c6b1a477c051e",
+    "tools/android_native_alert_lifecycle.cjs": "04e174f9b0fbb73664cf55e55ca2174d94a35931590946ae2f7e91a54447749d",
+    "tools/android_native_revocation.cjs": "635bcd81c0f108720e78f95117035c96dbb77bf28534b81b8cf25a9a74ef1435",
+    "tools/android_native_fault_proxy.py": "b234b01d228e18205e57fbdee631641afbec2b633400f6536b311a29e69eed1a",
+    "tools/android_native_control.py": "1eb84875cdf78321e5ba6cd2f796e6533f2a23bd828ef62208994e8b414f8980"
+  },
+  "checks": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    },
+    {
+      "name": "Native alert is scheduled for the exact dose before entering offline-revoked state",
+      "passed": true
+    }
+  ],
+  "installed_apk_sha256": "6b774f9ae08a14e32a0c089ae469c6d649bae2f06f1f82d54360c1b7702a2c0f",
+  "mode": "alert-offline-revoked",
+  "enrollmentCreatedInThisRun": false,
+  "alert_state": "offline-revoked",
+  "original_lock_disabled": true,
+  "clocks_before": {
+    "host_before_ms": 1790516202741,
+    "host_after_ms": 1790516202760,
+    "android_ms": 1790516203031,
+    "android_minus_host_midpoint_ms": 280.5,
+    "roundtrip_ms": 19
+  },
+  "reminder_device_id": "dev_0a14d5d7f1f346d39aae95f8a7747508",
+  "plan_version": 11,
+  "dose_id": "dose_af80eb9ae1914f6fa3bf2e1bcd2ef7a9",
+  "due_at": "2026-09-27T13:39:00Z",
+  "identity": "parse.dev_0a14d5d7f1f346d39aae95f8a7747508.occ_0f17bf94a37b4d40a814632d27242ff9.g7",
+  "native_scheduled_before": [
+    "parse.dev_0a14d5d7f1f346d39aae95f8a7747508.occ_0f17bf94a37b4d40a814632d27242ff9.g7",
+    "parse.dev_0a14d5d7f1f346d39aae95f8a7747508.occ_771de8a961ab4d5bbaca4ba396121910.g7"
+  ],
+  "fault_event_offset": 39,
+  "pid_before_termination": "5852",
+  "termination": {
+    "command": "am kill of the background package",
+    "process_absent": true,
+    "package_stopped": false
+  },
+  "observation_window_seconds_after_due": 300,
+  "queued_before_revocation": {
+    "id": "cmd_2ff9c9232ff646b2a33516076286a5b5",
+    "dose_id": "dose_af80eb9ae1914f6fa3bf2e1bcd2ef7a9",
+    "state": "queued",
+    "cancel_reason": null,
+    "audio_accessed": false,
+    "acks": []
+  },
+  "failure": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert(revokedOffline.revoked_at && dashboard.active_companion.device_id === null)\n"
+}

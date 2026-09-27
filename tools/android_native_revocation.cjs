@@ -1,9 +1,11 @@
 /* Native access revocation and fresh enrollment in the isolated fictional fixture. */
 const assert = require('node:assert/strict');
-module.exports = async function revoke({ find, tap, ui, adb, screenshot, pass, owner, fixture, appId, report, phone, scheduledIds, until }) {
+module.exports = async function revoke({ find, tap, ui, adb, screenshot, pass, owner, fixture, appId, report, phone, scheduledIds, until, alreadyRevoked = false }) {
   const before = await owner.dash();
   assert(before.notes.length > 0 && report.native_scheduled_before.length > 0);
-  await owner.api('/app/devices/' + phone.id + '/revoke', {});
+  const imagePrefix = alreadyRevoked ? 'native-offline' : 'native';
+  if (alreadyRevoked) assert(before.devices.find(d => d.id === phone.id)?.revoked_at);
+  else await owner.api('/app/devices/' + phone.id + '/revoke', {});
   await find('Phone access stopped');
   await find("This phone's access has been revoked.");
   await until(async () => (await scheduledIds()).length === 0 && (await owner.dash()).active_companion.device_id === null,
@@ -16,7 +18,7 @@ module.exports = async function revoke({ find, tap, ui, adb, screenshot, pass, o
   assert(stopped.revoked_at && stopped.status === 'revoked' && !stopped.phone_presence.background_alerts_enabled && !stopped.phone_presence.foreground_ready);
   report.revoked_device = { id: stopped.id, status: stopped.status, foreground_ready: stopped.phone_presence.foreground_ready, background_alerts_enabled: stopped.phone_presence.background_alerts_enabled };
   report.native_scheduled_after_revocation = await scheduledIds();
-  await screenshot('native-revoked-access');
+  await screenshot(imagePrefix + '-revoked-access');
   pass('Owner revocation clears native care controls, posted/scheduled alerts and reminder routing; dashboard reports revoked access');
   await adb('shell', 'am', 'force-stop', appId);
   await adb('shell', 'am', 'start', '-W', '-n', appId + '/sg.parse.companion.MainActivity');
@@ -58,6 +60,6 @@ module.exports = async function revoke({ find, tap, ui, adb, screenshot, pass, o
   report.new_route = after.active_companion;
   report.native_scheduled_after_new_pairing = ids;
   report.care_note_count_unchanged = before.notes.length;
-  await screenshot('native-replacement-pairing');
+  await screenshot(imagePrefix + '-replacement-pairing');
   pass('Explicit native re-pairing creates a different device identity, retains revoked history and schedules only for the new selected phone');
 };

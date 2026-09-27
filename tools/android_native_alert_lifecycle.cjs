@@ -8,8 +8,10 @@ const execute = require('node:util').promisify(execFile);
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, screenshot, pass, owner, fixture, directory, appId, report, alertState }) {
-  assert(['locked', 'terminated', 'offline-plan', 'revoked'].includes(alertState));
+  assert(['locked', 'terminated', 'offline-plan', 'revoked', 'offline-revoked'].includes(alertState));
   const offlinePlan = alertState === 'offline-plan';
+  const offlineRevoked = alertState === 'offline-revoked';
+  const offline = offlinePlan || offlineRevoked;
   const root = path.resolve(__dirname, '..');
   async function control(mode, kind) {
     const { stdout } = await execute(path.join(root, 'backend/.venv/bin/python'),
@@ -101,7 +103,7 @@ module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, sc
     }
     await screenshot('native-' + alertState + '-scheduled');
     await adb('shell', 'input', 'keyevent', 'KEYCODE_HOME');
-    if (offlinePlan) {
+    if (offline) {
       fault({ offline: true });
       await adb('reverse', 'tcp:8443', 'tcp:8444');
       report.fault_event_offset = proxyEvents().length;
@@ -130,11 +132,40 @@ module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, sc
     pass('Native alert is scheduled for the exact dose before entering ' + alertState + ' state');
     const postedRecord = dump => dump.split(/(?=NotificationRecord\()/).find(block =>
       block.split('\n')[0].includes(appId) && block.split('\n')[0].includes('tag=' + identity + ' '));
-    let posted, changedPlan;
+    let posted, changedPlan, revokedOffline;
     const notesBefore = (await owner.dash()).notes.length;
     report.observation_window_seconds_after_due = 300;
     console.log('Waiting for actual OS alert ' + identity + ', due ' + dose.scheduled_at);
     while (Date.now() < Date.parse(dose.scheduled_at) + 300000) {
+      if (offlineRevoked && !revokedOffline && Date.now() >= Date.parse(dose.scheduled_at)) {
+        await control('tick', 'medication');
+        const old = (await metadata()).commands.find(c => c.dose_id === dose.id);
+        assert(old && old.state === 'queued' && !old.audio_accessed && old.acks.length === 0);
+        report.queued_before_revocation = old;
+        await owner.api('/app/devices/' + phone.id + '/revoke', {});
+        const dashboard = await owner.dash();
+        revokedOffline = dashboard.devices.find(d => d.id === phone.id);
+        // Revocation denies access immediately, but a selected phone must still
+        // attest local cleanup before the route can move to another companion.
+        assert(revokedOffline.revoked_at && dashboard.active_companion.device_id === phone.id);
+        assert(!revokedOffline.phone_presence.foreground_ready && !revokedOffline.phone_presence.background_alerts_enabled);
+        report.revoked_while_offline_at = revokedOffline.revoked_at;
+        report.route_waiting_for_cleanup = dashboard.active_companion;
+        report.native_scheduled_while_revoked_offline = await scheduledIds();
+        assert(report.native_scheduled_while_revoked_offline.includes(identity));
+        const pending = (await metadata()).commands.find(c => c.id === old.id);
+        assert(pending && !pending.audio_accessed && pending.acks.length === 0);
+        report.command_after_offline_revocation = pending;
+        const session = await (await owner.context.request.get('/v1/auth/session')).json();
+        const rejected = await owner.context.request.put('/v1/app/patients/' + fixture.patient_id + '/active-companion', {
+          headers: { Origin: fixture.origin, 'X-CSRF-Token': session.csrf_token },
+          data: { device_id: null, expected_generation: dashboard.active_companion.generation, other_pendants_powered_off: false },
+        });
+        assert.equal(rejected.status(), 409);
+        assert((await rejected.json()).detail.includes('Pause reminders'));
+        report.offline_revoked_route_switch_rejected = true;
+        pass('Owner revocation marks the offline phone denied; reminder handoff remains blocked until local cleanup and the retained alert stays generic');
+      }
       if (offlinePlan && !changedPlan && Date.now() >= Date.parse(dose.scheduled_at)) {
         await control('tick', 'medication');
         const old = (await metadata()).commands.find(c => c.dose_id === dose.id);
@@ -196,17 +227,31 @@ module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, sc
       return activity.split('\n').some(line => line.includes('topResumedActivity=') && line.includes(appId))
         && (await ui()).some(node => node.package === appId && (node.text || node['content-desc']));
     }, 'Notification tap did not resume the native app');
-    if (offlinePlan) {
-      assert(changedPlan);
+    if (offline) {
+      assert(changedPlan || revokedOffline);
       await until(() => proxyEvents().slice(report.fault_event_offset).some(e => e.kind === 'offline_connection_closed'), 'Notification tap did not encounter the offline proxy');
       const offlineUi = await ui();
       assert(!offlineUi.some(n => n['content-desc'] === 'Tap to start recording' || n.text?.startsWith('HELLO, ')));
-      await screenshot('native-offline-plan-opened-offline');
-      const old = (await metadata()).commands.find(c => c.id === report.queued_before_change.id);
+      await find('Cannot reach Parse', { scroll: false });
+      await screenshot('native-' + alertState + '-opened-offline');
+      const old = (await metadata()).commands.find(c => c.id === (report.queued_before_change || report.queued_before_revocation).id);
       assert(old && !old.audio_accessed && !old.acks.includes('playback_started') && !old.acks.includes('playback_completed'));
       report.stale_command_while_offline = old;
       pass('The stale alert remains generic and an offline tap offers no recording or old reminder playback');
       fault({});
+      if (offlineRevoked) {
+        // Foreground sync retries the saved identity automatically. A manual
+        // Retry button may already be gone by the next UI dump after reconnect.
+        await require('./android_native_revocation.cjs')({ find, tap, ui, adb, screenshot, pass, owner, fixture, appId, report, phone, scheduledIds, until, alreadyRevoked: true });
+        const after = (await metadata()).commands.find(c => c.id === old.id);
+        assert(after && !after.audio_accessed && !after.acks.includes('playback_started') && !after.acks.includes('playback_completed'));
+        assert.equal((await owner.dash()).notes.length, notesBefore);
+        assert.equal((await owner.dash()).doses.find(d => d.id === dose.id).report_state, 'unconfirmed');
+        report.stale_command_after_reconnect = after;
+        report.medication_report = 'unconfirmed';
+        pass('Offline revocation is enforced on reconnect and after restart; deliberate fresh pairing retains history without stale playback or a dose report');
+        return;
+      }
       await adb('shell', 'input', 'keyevent', 'KEYCODE_HOME');
       await adb('shell', 'am', 'start', '-W', '-n', appId + '/sg.parse.companion.MainActivity');
       await find('HELLO, Mei');
@@ -246,7 +291,7 @@ module.exports = async function alertLifecycle({ find, tap, tapNode, ui, adb, sc
     await screenshot('native-' + alertState + '-opened');
     pass('Actual ' + alertState + ' notification tap opens the native app and remains separate from medication reporting');
   } finally {
-    if (offlinePlan) { fault({}); await adb('reverse', 'tcp:8443', 'tcp:8443'); }
+    if (offline) { fault({}); await adb('reverse', 'tcp:8443', 'tcp:8443'); }
     await adb('shell', 'input', 'keyevent', 'KEYCODE_WAKEUP');
     await adb('shell', 'wm', 'dismiss-keyguard');
     await adb('shell', 'locksettings', 'set-disabled', originalLockDisabled);

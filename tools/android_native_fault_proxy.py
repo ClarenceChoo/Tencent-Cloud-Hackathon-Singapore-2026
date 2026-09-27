@@ -151,7 +151,7 @@ def main():
             finally:
                 upstream.close()
 
-        do_GET = do_POST = do_PUT = do_HEAD = proxy
+        do_GET = do_POST = do_PUT = do_HEAD = do_DELETE = proxy
 
     class Server(ThreadingHTTPServer):
         daemon_threads = True

@@ -556,3 +556,96 @@ it("pause on a replacement installation also waits for the preceding cleanup", a
   expect(newer.registerPush).not.toHaveBeenCalled();
   expect(native.scheduled.size).toBe(0);
 });
+
+it("rebuilds unchanged native alarms after backward and forward device clock changes", async () => {
+  const server = Date.now();
+  await render();
+  const first = [...native.scheduled.values()][0];
+  const original = first.trigger.date.getTime();
+  for (const [index, offset] of [-300000, 300000].entries()) {
+    vi.setSystemTime(server + index * 5000 + offset);
+    api.scheduleData.server_time = new Date(
+      server + (index + 1) * 5000,
+    ).toISOString();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000);
+    });
+    const [current] = [...native.scheduled.values()];
+    expect(current.identifier).toBe(first.identifier);
+    expect(current.trigger.date.getTime()).toBe(original + offset);
+    expect(current.content).toEqual(first.content);
+    expect(native.cancel).toHaveBeenCalledWith(first.identifier);
+    expect(native.scheduled.size).toBe(1);
+    expect(native.speak).not.toHaveBeenCalled();
+  }
+});
+
+it("rebuilds on device time-zone change without changing the server due instant", async () => {
+  vi.stubEnv("TZ", "Asia/Singapore");
+  expect(new Intl.DateTimeFormat().resolvedOptions().timeZone).toBe(
+    "Asia/Singapore",
+  );
+  const server = Date.now();
+  await render();
+  const first = [...native.scheduled.values()][0];
+  vi.stubEnv("TZ", "Pacific/Honolulu");
+  expect(new Intl.DateTimeFormat().resolvedOptions().timeZone).toBe(
+    "Pacific/Honolulu",
+  );
+  api.scheduleData.server_time = new Date(server + 5000).toISOString();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(5000);
+  });
+  expect(native.schedule).toHaveBeenCalledTimes(2);
+  expect([...native.scheduled.values()][0]).toEqual(first);
+  expect(native.cancel).toHaveBeenCalledWith(first.identifier);
+});
+
+it("refreshes native triggers on foreground resume even when revision and time are unchanged", async () => {
+  await render();
+  const first = [...native.scheduled.values()][0];
+  await event("change", "background");
+  expect(native.schedule).toHaveBeenCalledOnce();
+  await event("change", "active");
+  expect(native.schedule).toHaveBeenCalledTimes(2);
+  expect([...native.scheduled.values()][0]).toEqual(first);
+  expect(native.refresh).toHaveBeenCalledOnce();
+});
+
+it("does not churn native alarms for small response-time variations", async () => {
+  const server = Date.now();
+  await render();
+  const first = [...native.scheduled.values()][0];
+  for (let step = 1; step <= 4; step++) {
+    api.scheduleData.server_time = new Date(
+      server + step * 5000 - step * 100,
+    ).toISOString();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000);
+    });
+  }
+  expect(native.schedule).toHaveBeenCalledOnce();
+  expect(native.cancel).not.toHaveBeenCalled();
+  expect([...native.scheduled.values()][0]).toEqual(first);
+});
+
+it("keeps a foreground refresh requested while a native rebuild is still pending", async () => {
+  await render();
+  const gate = deferred<void>();
+  native.all.mockImplementationOnce(async () => {
+    await gate.promise;
+    return [...native.scheduled.values()];
+  });
+  const enable = await start(() => hook.enable());
+  await event("change", "background");
+  await event("change", "active");
+  await act(async () => {
+    gate.resolve();
+    await enable.task;
+    await drain();
+  });
+  expect(native.schedule).toHaveBeenCalledTimes(3);
+  expect(native.scheduled.size).toBe(1);
+  expect([...native.scheduled.keys()]).toEqual(["parse.phone.occ_one.g2"]);
+  expect(native.speak).not.toHaveBeenCalled();
+});

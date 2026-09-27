@@ -55,6 +55,8 @@ def main():
             commands = db.scalars(select(m.ReminderCommand).join(m.DoseInstance).where(m.DoseInstance.patient_id == patient.id)).all()
             print(json.dumps({
                 "route": {"device_id": route.active_device_id, "generation": route.generation} if route else None,
+                "phone_schedules": [{"device_id": state.device_id, "revision": state.schedule_revision}
+                                    for state in db.scalars(select(m.PhoneState).join(m.Device).where(m.Device.patient_id == patient.id)).all()],
                 "occurrences": [{"id": row.id, "dose_id": row.dose_instance_id, "kind": row.kind} for row in occurrences],
                 "events": [{"identity": row.identity, "stage": row.stage, "at": row.received_at.isoformat()} for row in events],
                 "commands": [{"id": row.id, "dose_id": row.dose_instance_id, "state": row.delivery_state,

@@ -1,0 +1,1714 @@
+{
+  "at": "2026-09-27T14:31:23.680Z",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "environment": "Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and fixture tone replies. No real speech or acoustic audibility evidence.",
+  "source_sha256": {
+    "mobile/src/App.tsx": "040650c4ba7d61a35e2c5926c616a0f09a051f03da778766a3241dcd2ccdb275",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "mobile/src/api.ts": "c47f9fd49c83ec14df83d1939a941d6a2b48cddd8548807d123941b523b328cf",
+    "mobile/src/storage.ts": "d617df7a010d6cc68f0cd5dc6e3dfac021b1684bc6e10bc5fa50963871f3d99f",
+    "tools/android_native_fixture.py": "02f47605eb96b79595ccfb991cd8c2ecf72808bc3680386853d97b2113b75271",
+    "tools/android_native_smoke.cjs": "138cb558bf94c5344dfef1c9966cbe9cc42b0b39a6440c77942f7c0152504fd3",
+    "tools/android_native_care.cjs": "48be6db43584dba70abb17294f000c2e29741f389a531b2ba656b4373bf2897b",
+    "mobile/src/useReminders.ts": "ace3aff6d600a44a73aa5a7384cb15ee616624e42d17d42e13930aa2960ce269",
+    "mobile/src/alertSchedule.ts": "1c3f4f23ea35da5981b6fb4642e668444085f6120476238c101c6b1a477c051e",
+    "tools/android_native_clock.cjs": "84af7a05fdc69af4bbb69a4dadf4644b0e1b7c49432060ba4c55fac0a838d2fd",
+    "tools/android_native_control.py": "868f5d6fc4867f05fa625e9ddb089bea4845be0af3799d9ada76cf0e87187f35"
+  },
+  "checks": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    },
+    {
+      "name": "Native alarms retain their server due time after the running emulator clock moves back five minutes",
+      "passed": true
+    },
+    {
+      "name": "Native alarms retain their server due time after the running emulator clock moves forward five minutes",
+      "passed": true
+    },
+    {
+      "name": "A device time-zone change rebuilds generic alarms without changing the care-plan time, route, care records or notification identities",
+      "passed": true
+    },
+    {
+      "name": "Foreground resume refreshes the unchanged care schedule after a clock change in the background",
+      "passed": true
+    }
+  ],
+  "installed_apk_sha256": "15ad0b843daad17bd030dad58e8db29d9269f2317707db3236dec80484b33c3e",
+  "mode": "clock",
+  "enrollmentCreatedInThisRun": false,
+  "clock_samples": [
+    {
+      "name": "original",
+      "host_at": "2026-09-27T14:31:59.210Z",
+      "clocks": {
+        "android_ms": 1790519519630,
+        "host_midpoint_ms": 1790519519222,
+        "offset_ms": 408,
+        "roundtrip_ms": 24
+      },
+      "zone": "Asia/Singapore",
+      "alarms": [
+        {
+          "at": 1790594340423,
+          "elapsed_at": 91066992
+        },
+        {
+          "at": 1790604000423,
+          "elapsed_at": 100726992
+        }
+      ],
+      "identities": [
+        "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_771de8a961ab4d5bbaca4ba396121910.g15",
+        "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_a4b589684280484984a00c278c7371fe.g15"
+      ],
+      "route": {
+        "device_id": "dev_61c7c95d16034baaacd3220d4a41947d",
+        "generation": 15,
+        "changed_at": "2026-09-27T14:02:16.072230Z"
+      },
+      "revision": "632029f268e0ff090232254ef9320440fe2c5ff7d31d035ba6c36a4d03bcdb21",
+      "presence": {
+        "foreground_ready": true,
+        "last_reported_lifecycle": "foreground",
+        "microphone_permission": "granted",
+        "notification_permission": "granted",
+        "background_alerts_enabled": true,
+        "scheduled_until": "2026-09-28T14:31:55.179441Z",
+        "reported_at": "2026-09-27T14:31:55.188768Z",
+        "push_registered": false
+      },
+      "last_seen": "2026-09-27T14:31:55.188768Z",
+      "notes": [
+        "note_274df94653ac4332aeb5e10c1add1a14",
+        "note_619566712e4247a08a009f9172fe7d22",
+        "note_da2714b3ddfa45ed87cef8c72046e6e4",
+        "note_e3cac52e3601453bba0eab7c2746ba6e",
+        "note_e880d910db694a28b93939f9a3e6e37f"
+      ],
+      "doses": [
+        {
+          "id": "dose_014392a7c6d24ada82f65290e613de5c",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_014393a41532476a85ce8c1363b88a09",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_027ec6bdbde840eb80fad3d276b6896b",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_049a9bdbe1e244deb4e2c5d3f38c5688",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_080643222a37475cbfcf9e56dddfd25a",
+          "report_state": "reported_not_yet"
+        },
+        {
+          "id": "dose_0e0a9483b03f4268b4911b11c117e7df",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_102cbbfe361044c39921e003104b55e2",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_11d0a7a4140d4390a78304c7c3da8fd5",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_136b3bf71c2b4b61a53384e001b4779b",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_14ef4e5e922347b299ec254b10d3c29b",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_196727d882ec475888cc05ae2a919ee1",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_1af5b36fe18f47ceabcbc2e66e5778f1",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_1d2e1ba5d5114c07abfdb19afcdf2b58",
+          "report_state": "reported_uncertain"
+        },
+        {
+          "id": "dose_1dd96877208541f2b86e3c1bc634d942",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_1ee7e3ec45b047febdfec221df5f3309",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_250dee531f5d403f861bb2c1255f7371",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_2b9ae54fdbe7470e9e1338b1f5771deb",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_31a4b9b6fb8444cbba9cf135f5e5d465",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_3d6c44e4aae943799930af8a337923d4",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_3fd6d3b8cbf24beb81142fa96df1b23c",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_411089ce4516473a87577675a6a01260",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_446d96f6585e4f6d9554bdf9d30f15e4",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_4d42b34df55e41e0b78d9b4b3840604d",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_59894c9971d94bb7ab72b12885dcc313",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_629a6ca37ec0446282b83080bb35797c",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_62f96c9a8d7e4854809e4bf47e7ca980",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_664527b1663d42b0b284abe20a4e1163",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_6800414f39714b9f82601f92c1ba7209",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_68ee54c5c05d4128a5d3281a58ab11b6",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_6d6e7bfc44fe463fb454f67004a577f3",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_776b1d62e14244d5b3ecd4ba6f19cb1f",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_78521976f21f42d380b53085c1ad7a5c",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_7b43f6bc8aa34002aaecf351328257bd",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_7cd74af79ef84e08810ec8ec0bc2e41a",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_80b7c61f31974a168b103960105332fe",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_836c36578a8f42a4859fc886d3cc4746",
+          "report_state": "reported_skipped"
+        },
+        {
+          "id": "dose_8c30d327f18b44cbab16a91087c37619",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_8d8b2ab2bc5a4369889a3b5343d4dbe0",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_8eb62368317d4ccfb1532c8f8abc0352",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_917eb511e2204b6fb0b473852878d003",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_92892ab70ab8495195861bee8dc98532",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_9afb0defbdf24ec899f6c5f25e72b9a4",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_9c25218836f6428ab1cd514c7898c5ab",
+          "report_state": "reported_taken"
+        },
+        {
+          "id": "dose_ad421d5632c14b10950e8bf06f2630f0",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_af80eb9ae1914f6fa3bf2e1bcd2ef7a9",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_b39b57586d3b4cec9c5488acbfa90b59",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_b6cbe138adb346f9a307e936922cacd0",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_d1a1ff45d68c46e4813f4b8692fa459f",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_d8e1318e4a6c47f7b4ffda01b61b83ca",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_da51d6156f8c4b1fb6969caca8a484df",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_de81b97fec87454a969bb5099e6f10b4",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_dfc2a2d818294af5a7e1d3131a7bced1",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_ecf5d6dfb79643d1ba9f91dd3adecd69",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_f2f12b7efb764f9c9f796c07b97c1c18",
+          "report_state": "unconfirmed"
+        }
+      ],
+      "scheduling_events": 24
+    },
+    {
+      "name": "clock-back-five-minutes",
+      "host_at": "2026-09-27T14:32:06.350Z",
+      "clocks": {
+        "android_ms": 1790519226762,
+        "host_midpoint_ms": 1790519526364.5,
+        "offset_ms": -299602.5,
+        "roundtrip_ms": 29
+      },
+      "zone": "Asia/Singapore",
+      "alarms": [
+        {
+          "at": 1790594040390,
+          "elapsed_at": 91066972
+        },
+        {
+          "at": 1790603700390,
+          "elapsed_at": 100726971
+        }
+      ],
+      "identities": [
+        "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_771de8a961ab4d5bbaca4ba396121910.g15",
+        "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_a4b589684280484984a00c278c7371fe.g15"
+      ],
+      "route": {
+        "device_id": "dev_61c7c95d16034baaacd3220d4a41947d",
+        "generation": 15,
+        "changed_at": "2026-09-27T14:02:16.072230Z"
+      },
+      "revision": "632029f268e0ff090232254ef9320440fe2c5ff7d31d035ba6c36a4d03bcdb21",
+      "presence": {
+        "foreground_ready": true,
+        "last_reported_lifecycle": "foreground",
+        "microphone_permission": "granted",
+        "notification_permission": "granted",
+        "background_alerts_enabled": true,
+        "scheduled_until": "2026-09-28T14:32:04.910074Z",
+        "reported_at": "2026-09-27T14:32:04.924786Z",
+        "push_registered": false
+      },
+      "last_seen": "2026-09-27T14:32:04.924786Z",
+      "notes": [
+        "note_274df94653ac4332aeb5e10c1add1a14",
+        "note_619566712e4247a08a009f9172fe7d22",
+        "note_da2714b3ddfa45ed87cef8c72046e6e4",
+        "note_e3cac52e3601453bba0eab7c2746ba6e",
+        "note_e880d910db694a28b93939f9a3e6e37f"
+      ],
+      "doses": [
+        {
+          "id": "dose_014392a7c6d24ada82f65290e613de5c",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_014393a41532476a85ce8c1363b88a09",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_027ec6bdbde840eb80fad3d276b6896b",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_049a9bdbe1e244deb4e2c5d3f38c5688",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_080643222a37475cbfcf9e56dddfd25a",
+          "report_state": "reported_not_yet"
+        },
+        {
+          "id": "dose_0e0a9483b03f4268b4911b11c117e7df",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_102cbbfe361044c39921e003104b55e2",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_11d0a7a4140d4390a78304c7c3da8fd5",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_136b3bf71c2b4b61a53384e001b4779b",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_14ef4e5e922347b299ec254b10d3c29b",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_196727d882ec475888cc05ae2a919ee1",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_1af5b36fe18f47ceabcbc2e66e5778f1",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_1d2e1ba5d5114c07abfdb19afcdf2b58",
+          "report_state": "reported_uncertain"
+        },
+        {
+          "id": "dose_1dd96877208541f2b86e3c1bc634d942",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_1ee7e3ec45b047febdfec221df5f3309",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_250dee531f5d403f861bb2c1255f7371",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_2b9ae54fdbe7470e9e1338b1f5771deb",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_31a4b9b6fb8444cbba9cf135f5e5d465",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_3d6c44e4aae943799930af8a337923d4",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_3fd6d3b8cbf24beb81142fa96df1b23c",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_411089ce4516473a87577675a6a01260",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_446d96f6585e4f6d9554bdf9d30f15e4",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_4d42b34df55e41e0b78d9b4b3840604d",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_59894c9971d94bb7ab72b12885dcc313",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_629a6ca37ec0446282b83080bb35797c",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_62f96c9a8d7e4854809e4bf47e7ca980",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_664527b1663d42b0b284abe20a4e1163",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_6800414f39714b9f82601f92c1ba7209",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_68ee54c5c05d4128a5d3281a58ab11b6",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_6d6e7bfc44fe463fb454f67004a577f3",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_776b1d62e14244d5b3ecd4ba6f19cb1f",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_78521976f21f42d380b53085c1ad7a5c",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_7b43f6bc8aa34002aaecf351328257bd",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_7cd74af79ef84e08810ec8ec0bc2e41a",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_80b7c61f31974a168b103960105332fe",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_836c36578a8f42a4859fc886d3cc4746",
+          "report_state": "reported_skipped"
+        },
+        {
+          "id": "dose_8c30d327f18b44cbab16a91087c37619",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_8d8b2ab2bc5a4369889a3b5343d4dbe0",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_8eb62368317d4ccfb1532c8f8abc0352",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_917eb511e2204b6fb0b473852878d003",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_92892ab70ab8495195861bee8dc98532",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_9afb0defbdf24ec899f6c5f25e72b9a4",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_9c25218836f6428ab1cd514c7898c5ab",
+          "report_state": "reported_taken"
+        },
+        {
+          "id": "dose_ad421d5632c14b10950e8bf06f2630f0",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_af80eb9ae1914f6fa3bf2e1bcd2ef7a9",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_b39b57586d3b4cec9c5488acbfa90b59",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_b6cbe138adb346f9a307e936922cacd0",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_d1a1ff45d68c46e4813f4b8692fa459f",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_d8e1318e4a6c47f7b4ffda01b61b83ca",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_da51d6156f8c4b1fb6969caca8a484df",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_de81b97fec87454a969bb5099e6f10b4",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_dfc2a2d818294af5a7e1d3131a7bced1",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_ecf5d6dfb79643d1ba9f91dd3adecd69",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_f2f12b7efb764f9c9f796c07b97c1c18",
+          "report_state": "unconfirmed"
+        }
+      ],
+      "scheduling_events": 26,
+      "corrected_trigger_error_ms": [
+        -22.5,
+        -22.5
+      ]
+    },
+    {
+      "name": "clock-forward-five-minutes",
+      "host_at": "2026-09-27T14:32:13.420Z",
+      "clocks": {
+        "android_ms": 1790519833825,
+        "host_midpoint_ms": 1790519533430,
+        "offset_ms": 300395,
+        "roundtrip_ms": 20
+      },
+      "zone": "Asia/Singapore",
+      "alarms": [
+        {
+          "at": 1790594640392,
+          "elapsed_at": 91066971
+        },
+        {
+          "at": 1790604300392,
+          "elapsed_at": 100726971
+        }
+      ],
+      "identities": [
+        "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_771de8a961ab4d5bbaca4ba396121910.g15",
+        "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_a4b589684280484984a00c278c7371fe.g15"
+      ],
+      "route": {
+        "device_id": "dev_61c7c95d16034baaacd3220d4a41947d",
+        "generation": 15,
+        "changed_at": "2026-09-27T14:02:16.072230Z"
+      },
+      "revision": "632029f268e0ff090232254ef9320440fe2c5ff7d31d035ba6c36a4d03bcdb21",
+      "presence": {
+        "foreground_ready": true,
+        "last_reported_lifecycle": "foreground",
+        "microphone_permission": "granted",
+        "notification_permission": "granted",
+        "background_alerts_enabled": true,
+        "scheduled_until": "2026-09-28T14:32:09.905612Z",
+        "reported_at": "2026-09-27T14:32:09.929269Z",
+        "push_registered": false
+      },
+      "last_seen": "2026-09-27T14:32:09.929269Z",
+      "notes": [
+        "note_274df94653ac4332aeb5e10c1add1a14",
+        "note_619566712e4247a08a009f9172fe7d22",
+        "note_da2714b3ddfa45ed87cef8c72046e6e4",
+        "note_e3cac52e3601453bba0eab7c2746ba6e",
+        "note_e880d910db694a28b93939f9a3e6e37f"
+      ],
+      "doses": [
+        {
+          "id": "dose_014392a7c6d24ada82f65290e613de5c",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_014393a41532476a85ce8c1363b88a09",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_027ec6bdbde840eb80fad3d276b6896b",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_049a9bdbe1e244deb4e2c5d3f38c5688",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_080643222a37475cbfcf9e56dddfd25a",
+          "report_state": "reported_not_yet"
+        },
+        {
+          "id": "dose_0e0a9483b03f4268b4911b11c117e7df",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_102cbbfe361044c39921e003104b55e2",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_11d0a7a4140d4390a78304c7c3da8fd5",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_136b3bf71c2b4b61a53384e001b4779b",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_14ef4e5e922347b299ec254b10d3c29b",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_196727d882ec475888cc05ae2a919ee1",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_1af5b36fe18f47ceabcbc2e66e5778f1",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_1d2e1ba5d5114c07abfdb19afcdf2b58",
+          "report_state": "reported_uncertain"
+        },
+        {
+          "id": "dose_1dd96877208541f2b86e3c1bc634d942",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_1ee7e3ec45b047febdfec221df5f3309",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_250dee531f5d403f861bb2c1255f7371",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_2b9ae54fdbe7470e9e1338b1f5771deb",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_31a4b9b6fb8444cbba9cf135f5e5d465",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_3d6c44e4aae943799930af8a337923d4",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_3fd6d3b8cbf24beb81142fa96df1b23c",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_411089ce4516473a87577675a6a01260",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_446d96f6585e4f6d9554bdf9d30f15e4",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_4d42b34df55e41e0b78d9b4b3840604d",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_59894c9971d94bb7ab72b12885dcc313",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_629a6ca37ec0446282b83080bb35797c",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_62f96c9a8d7e4854809e4bf47e7ca980",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_664527b1663d42b0b284abe20a4e1163",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_6800414f39714b9f82601f92c1ba7209",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_68ee54c5c05d4128a5d3281a58ab11b6",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_6d6e7bfc44fe463fb454f67004a577f3",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_776b1d62e14244d5b3ecd4ba6f19cb1f",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_78521976f21f42d380b53085c1ad7a5c",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_7b43f6bc8aa34002aaecf351328257bd",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_7cd74af79ef84e08810ec8ec0bc2e41a",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_80b7c61f31974a168b103960105332fe",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_836c36578a8f42a4859fc886d3cc4746",
+          "report_state": "reported_skipped"
+        },
+        {
+          "id": "dose_8c30d327f18b44cbab16a91087c37619",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_8d8b2ab2bc5a4369889a3b5343d4dbe0",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_8eb62368317d4ccfb1532c8f8abc0352",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_917eb511e2204b6fb0b473852878d003",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_92892ab70ab8495195861bee8dc98532",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_9afb0defbdf24ec899f6c5f25e72b9a4",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_9c25218836f6428ab1cd514c7898c5ab",
+          "report_state": "reported_taken"
+        },
+        {
+          "id": "dose_ad421d5632c14b10950e8bf06f2630f0",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_af80eb9ae1914f6fa3bf2e1bcd2ef7a9",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_b39b57586d3b4cec9c5488acbfa90b59",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_b6cbe138adb346f9a307e936922cacd0",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_d1a1ff45d68c46e4813f4b8692fa459f",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_d8e1318e4a6c47f7b4ffda01b61b83ca",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_da51d6156f8c4b1fb6969caca8a484df",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_de81b97fec87454a969bb5099e6f10b4",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_dfc2a2d818294af5a7e1d3131a7bced1",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_ecf5d6dfb79643d1ba9f91dd3adecd69",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_f2f12b7efb764f9c9f796c07b97c1c18",
+          "report_state": "unconfirmed"
+        }
+      ],
+      "scheduling_events": 28,
+      "corrected_trigger_error_ms": [
+        -18,
+        -18
+      ]
+    },
+    {
+      "name": "clock-restored",
+      "host_at": "2026-09-27T14:32:20.441Z",
+      "clocks": {
+        "android_ms": 1790519540845,
+        "host_midpoint_ms": 1790519540450,
+        "offset_ms": 395,
+        "roundtrip_ms": 18
+      },
+      "zone": "Asia/Singapore",
+      "alarms": [
+        {
+          "at": 1790594340394,
+          "elapsed_at": 91066973
+        },
+        {
+          "at": 1790604000394,
+          "elapsed_at": 100726972
+        }
+      ],
+      "identities": [
+        "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_771de8a961ab4d5bbaca4ba396121910.g15",
+        "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_a4b589684280484984a00c278c7371fe.g15"
+      ],
+      "route": {
+        "device_id": "dev_61c7c95d16034baaacd3220d4a41947d",
+        "generation": 15,
+        "changed_at": "2026-09-27T14:02:16.072230Z"
+      },
+      "revision": "632029f268e0ff090232254ef9320440fe2c5ff7d31d035ba6c36a4d03bcdb21",
+      "presence": {
+        "foreground_ready": true,
+        "last_reported_lifecycle": "foreground",
+        "microphone_permission": "granted",
+        "notification_permission": "granted",
+        "background_alerts_enabled": true,
+        "scheduled_until": "2026-09-28T14:32:19.937645Z",
+        "reported_at": "2026-09-27T14:32:19.949579Z",
+        "push_registered": false
+      },
+      "last_seen": "2026-09-27T14:32:19.949579Z",
+      "notes": [
+        "note_274df94653ac4332aeb5e10c1add1a14",
+        "note_619566712e4247a08a009f9172fe7d22",
+        "note_da2714b3ddfa45ed87cef8c72046e6e4",
+        "note_e3cac52e3601453bba0eab7c2746ba6e",
+        "note_e880d910db694a28b93939f9a3e6e37f"
+      ],
+      "doses": [
+        {
+          "id": "dose_014392a7c6d24ada82f65290e613de5c",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_014393a41532476a85ce8c1363b88a09",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_027ec6bdbde840eb80fad3d276b6896b",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_049a9bdbe1e244deb4e2c5d3f38c5688",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_080643222a37475cbfcf9e56dddfd25a",
+          "report_state": "reported_not_yet"
+        },
+        {
+          "id": "dose_0e0a9483b03f4268b4911b11c117e7df",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_102cbbfe361044c39921e003104b55e2",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_11d0a7a4140d4390a78304c7c3da8fd5",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_136b3bf71c2b4b61a53384e001b4779b",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_14ef4e5e922347b299ec254b10d3c29b",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_196727d882ec475888cc05ae2a919ee1",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_1af5b36fe18f47ceabcbc2e66e5778f1",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_1d2e1ba5d5114c07abfdb19afcdf2b58",
+          "report_state": "reported_uncertain"
+        },
+        {
+          "id": "dose_1dd96877208541f2b86e3c1bc634d942",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_1ee7e3ec45b047febdfec221df5f3309",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_250dee531f5d403f861bb2c1255f7371",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_2b9ae54fdbe7470e9e1338b1f5771deb",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_31a4b9b6fb8444cbba9cf135f5e5d465",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_3d6c44e4aae943799930af8a337923d4",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_3fd6d3b8cbf24beb81142fa96df1b23c",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_411089ce4516473a87577675a6a01260",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_446d96f6585e4f6d9554bdf9d30f15e4",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_4d42b34df55e41e0b78d9b4b3840604d",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_59894c9971d94bb7ab72b12885dcc313",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_629a6ca37ec0446282b83080bb35797c",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_62f96c9a8d7e4854809e4bf47e7ca980",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_664527b1663d42b0b284abe20a4e1163",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_6800414f39714b9f82601f92c1ba7209",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_68ee54c5c05d4128a5d3281a58ab11b6",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_6d6e7bfc44fe463fb454f67004a577f3",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_776b1d62e14244d5b3ecd4ba6f19cb1f",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_78521976f21f42d380b53085c1ad7a5c",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_7b43f6bc8aa34002aaecf351328257bd",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_7cd74af79ef84e08810ec8ec0bc2e41a",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_80b7c61f31974a168b103960105332fe",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_836c36578a8f42a4859fc886d3cc4746",
+          "report_state": "reported_skipped"
+        },
+        {
+          "id": "dose_8c30d327f18b44cbab16a91087c37619",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_8d8b2ab2bc5a4369889a3b5343d4dbe0",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_8eb62368317d4ccfb1532c8f8abc0352",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_917eb511e2204b6fb0b473852878d003",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_92892ab70ab8495195861bee8dc98532",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_9afb0defbdf24ec899f6c5f25e72b9a4",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_9c25218836f6428ab1cd514c7898c5ab",
+          "report_state": "reported_taken"
+        },
+        {
+          "id": "dose_ad421d5632c14b10950e8bf06f2630f0",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_af80eb9ae1914f6fa3bf2e1bcd2ef7a9",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_b39b57586d3b4cec9c5488acbfa90b59",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_b6cbe138adb346f9a307e936922cacd0",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_d1a1ff45d68c46e4813f4b8692fa459f",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_d8e1318e4a6c47f7b4ffda01b61b83ca",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_da51d6156f8c4b1fb6969caca8a484df",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_de81b97fec87454a969bb5099e6f10b4",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_dfc2a2d818294af5a7e1d3131a7bced1",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_ecf5d6dfb79643d1ba9f91dd3adecd69",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_f2f12b7efb764f9c9f796c07b97c1c18",
+          "report_state": "unconfirmed"
+        }
+      ],
+      "scheduling_events": 30,
+      "corrected_trigger_error_ms": [
+        -16,
+        -16
+      ]
+    },
+    {
+      "name": "timezone-changed",
+      "host_at": "2026-09-27T14:32:27.479Z",
+      "clocks": {
+        "android_ms": 1790519547886,
+        "host_midpoint_ms": 1790519547489.5,
+        "offset_ms": 396.5,
+        "roundtrip_ms": 21
+      },
+      "zone": "Pacific/Honolulu",
+      "alarms": [
+        {
+          "at": 1790594340391,
+          "elapsed_at": 91066970
+        },
+        {
+          "at": 1790604000391,
+          "elapsed_at": 100726970
+        }
+      ],
+      "identities": [
+        "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_771de8a961ab4d5bbaca4ba396121910.g15",
+        "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_a4b589684280484984a00c278c7371fe.g15"
+      ],
+      "route": {
+        "device_id": "dev_61c7c95d16034baaacd3220d4a41947d",
+        "generation": 15,
+        "changed_at": "2026-09-27T14:02:16.072230Z"
+      },
+      "revision": "632029f268e0ff090232254ef9320440fe2c5ff7d31d035ba6c36a4d03bcdb21",
+      "presence": {
+        "foreground_ready": true,
+        "last_reported_lifecycle": "foreground",
+        "microphone_permission": "granted",
+        "notification_permission": "granted",
+        "background_alerts_enabled": true,
+        "scheduled_until": "2026-09-28T14:32:24.976559Z",
+        "reported_at": "2026-09-27T14:32:24.996393Z",
+        "push_registered": false
+      },
+      "last_seen": "2026-09-27T14:32:24.996393Z",
+      "notes": [
+        "note_274df94653ac4332aeb5e10c1add1a14",
+        "note_619566712e4247a08a009f9172fe7d22",
+        "note_da2714b3ddfa45ed87cef8c72046e6e4",
+        "note_e3cac52e3601453bba0eab7c2746ba6e",
+        "note_e880d910db694a28b93939f9a3e6e37f"
+      ],
+      "doses": [
+        {
+          "id": "dose_014392a7c6d24ada82f65290e613de5c",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_014393a41532476a85ce8c1363b88a09",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_027ec6bdbde840eb80fad3d276b6896b",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_049a9bdbe1e244deb4e2c5d3f38c5688",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_080643222a37475cbfcf9e56dddfd25a",
+          "report_state": "reported_not_yet"
+        },
+        {
+          "id": "dose_0e0a9483b03f4268b4911b11c117e7df",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_102cbbfe361044c39921e003104b55e2",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_11d0a7a4140d4390a78304c7c3da8fd5",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_136b3bf71c2b4b61a53384e001b4779b",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_14ef4e5e922347b299ec254b10d3c29b",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_196727d882ec475888cc05ae2a919ee1",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_1af5b36fe18f47ceabcbc2e66e5778f1",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_1d2e1ba5d5114c07abfdb19afcdf2b58",
+          "report_state": "reported_uncertain"
+        },
+        {
+          "id": "dose_1dd96877208541f2b86e3c1bc634d942",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_1ee7e3ec45b047febdfec221df5f3309",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_250dee531f5d403f861bb2c1255f7371",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_2b9ae54fdbe7470e9e1338b1f5771deb",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_31a4b9b6fb8444cbba9cf135f5e5d465",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_3d6c44e4aae943799930af8a337923d4",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_3fd6d3b8cbf24beb81142fa96df1b23c",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_411089ce4516473a87577675a6a01260",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_446d96f6585e4f6d9554bdf9d30f15e4",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_4d42b34df55e41e0b78d9b4b3840604d",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_59894c9971d94bb7ab72b12885dcc313",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_629a6ca37ec0446282b83080bb35797c",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_62f96c9a8d7e4854809e4bf47e7ca980",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_664527b1663d42b0b284abe20a4e1163",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_6800414f39714b9f82601f92c1ba7209",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_68ee54c5c05d4128a5d3281a58ab11b6",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_6d6e7bfc44fe463fb454f67004a577f3",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_776b1d62e14244d5b3ecd4ba6f19cb1f",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_78521976f21f42d380b53085c1ad7a5c",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_7b43f6bc8aa34002aaecf351328257bd",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_7cd74af79ef84e08810ec8ec0bc2e41a",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_80b7c61f31974a168b103960105332fe",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_836c36578a8f42a4859fc886d3cc4746",
+          "report_state": "reported_skipped"
+        },
+        {
+          "id": "dose_8c30d327f18b44cbab16a91087c37619",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_8d8b2ab2bc5a4369889a3b5343d4dbe0",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_8eb62368317d4ccfb1532c8f8abc0352",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_917eb511e2204b6fb0b473852878d003",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_92892ab70ab8495195861bee8dc98532",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_9afb0defbdf24ec899f6c5f25e72b9a4",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_9c25218836f6428ab1cd514c7898c5ab",
+          "report_state": "reported_taken"
+        },
+        {
+          "id": "dose_ad421d5632c14b10950e8bf06f2630f0",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_af80eb9ae1914f6fa3bf2e1bcd2ef7a9",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_b39b57586d3b4cec9c5488acbfa90b59",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_b6cbe138adb346f9a307e936922cacd0",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_d1a1ff45d68c46e4813f4b8692fa459f",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_d8e1318e4a6c47f7b4ffda01b61b83ca",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_da51d6156f8c4b1fb6969caca8a484df",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_de81b97fec87454a969bb5099e6f10b4",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_dfc2a2d818294af5a7e1d3131a7bced1",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_ecf5d6dfb79643d1ba9f91dd3adecd69",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_f2f12b7efb764f9c9f796c07b97c1c18",
+          "report_state": "unconfirmed"
+        }
+      ],
+      "scheduling_events": 32,
+      "corrected_trigger_error_ms": [
+        -20.5,
+        -20.5
+      ]
+    },
+    {
+      "name": "background-clock-change-resumed",
+      "host_at": "2026-09-27T14:32:33.834Z",
+      "clocks": {
+        "android_ms": 1790519254220,
+        "host_midpoint_ms": 1790519553842.5,
+        "offset_ms": -299622.5,
+        "roundtrip_ms": 17
+      },
+      "zone": "Pacific/Honolulu",
+      "alarms": [
+        {
+          "at": 1790594040377,
+          "elapsed_at": 91066973
+        },
+        {
+          "at": 1790603700377,
+          "elapsed_at": 100726973
+        }
+      ],
+      "identities": [
+        "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_771de8a961ab4d5bbaca4ba396121910.g15",
+        "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_a4b589684280484984a00c278c7371fe.g15"
+      ],
+      "route": {
+        "device_id": "dev_61c7c95d16034baaacd3220d4a41947d",
+        "generation": 15,
+        "changed_at": "2026-09-27T14:02:16.072230Z"
+      },
+      "revision": "632029f268e0ff090232254ef9320440fe2c5ff7d31d035ba6c36a4d03bcdb21",
+      "presence": {
+        "foreground_ready": true,
+        "last_reported_lifecycle": "foreground",
+        "microphone_permission": "granted",
+        "notification_permission": "granted",
+        "background_alerts_enabled": true,
+        "scheduled_until": "2026-09-28T14:32:30.157481Z",
+        "reported_at": "2026-09-27T14:32:30.163006Z",
+        "push_registered": false
+      },
+      "last_seen": "2026-09-27T14:32:30.163006Z",
+      "notes": [
+        "note_274df94653ac4332aeb5e10c1add1a14",
+        "note_619566712e4247a08a009f9172fe7d22",
+        "note_da2714b3ddfa45ed87cef8c72046e6e4",
+        "note_e3cac52e3601453bba0eab7c2746ba6e",
+        "note_e880d910db694a28b93939f9a3e6e37f"
+      ],
+      "doses": [
+        {
+          "id": "dose_014392a7c6d24ada82f65290e613de5c",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_014393a41532476a85ce8c1363b88a09",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_027ec6bdbde840eb80fad3d276b6896b",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_049a9bdbe1e244deb4e2c5d3f38c5688",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_080643222a37475cbfcf9e56dddfd25a",
+          "report_state": "reported_not_yet"
+        },
+        {
+          "id": "dose_0e0a9483b03f4268b4911b11c117e7df",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_102cbbfe361044c39921e003104b55e2",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_11d0a7a4140d4390a78304c7c3da8fd5",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_136b3bf71c2b4b61a53384e001b4779b",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_14ef4e5e922347b299ec254b10d3c29b",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_196727d882ec475888cc05ae2a919ee1",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_1af5b36fe18f47ceabcbc2e66e5778f1",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_1d2e1ba5d5114c07abfdb19afcdf2b58",
+          "report_state": "reported_uncertain"
+        },
+        {
+          "id": "dose_1dd96877208541f2b86e3c1bc634d942",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_1ee7e3ec45b047febdfec221df5f3309",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_250dee531f5d403f861bb2c1255f7371",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_2b9ae54fdbe7470e9e1338b1f5771deb",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_31a4b9b6fb8444cbba9cf135f5e5d465",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_3d6c44e4aae943799930af8a337923d4",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_3fd6d3b8cbf24beb81142fa96df1b23c",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_411089ce4516473a87577675a6a01260",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_446d96f6585e4f6d9554bdf9d30f15e4",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_4d42b34df55e41e0b78d9b4b3840604d",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_59894c9971d94bb7ab72b12885dcc313",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_629a6ca37ec0446282b83080bb35797c",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_62f96c9a8d7e4854809e4bf47e7ca980",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_664527b1663d42b0b284abe20a4e1163",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_6800414f39714b9f82601f92c1ba7209",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_68ee54c5c05d4128a5d3281a58ab11b6",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_6d6e7bfc44fe463fb454f67004a577f3",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_776b1d62e14244d5b3ecd4ba6f19cb1f",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_78521976f21f42d380b53085c1ad7a5c",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_7b43f6bc8aa34002aaecf351328257bd",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_7cd74af79ef84e08810ec8ec0bc2e41a",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_80b7c61f31974a168b103960105332fe",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_836c36578a8f42a4859fc886d3cc4746",
+          "report_state": "reported_skipped"
+        },
+        {
+          "id": "dose_8c30d327f18b44cbab16a91087c37619",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_8d8b2ab2bc5a4369889a3b5343d4dbe0",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_8eb62368317d4ccfb1532c8f8abc0352",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_917eb511e2204b6fb0b473852878d003",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_92892ab70ab8495195861bee8dc98532",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_9afb0defbdf24ec899f6c5f25e72b9a4",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_9c25218836f6428ab1cd514c7898c5ab",
+          "report_state": "reported_taken"
+        },
+        {
+          "id": "dose_ad421d5632c14b10950e8bf06f2630f0",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_af80eb9ae1914f6fa3bf2e1bcd2ef7a9",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_b39b57586d3b4cec9c5488acbfa90b59",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_b6cbe138adb346f9a307e936922cacd0",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_d1a1ff45d68c46e4813f4b8692fa459f",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_d8e1318e4a6c47f7b4ffda01b61b83ca",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_da51d6156f8c4b1fb6969caca8a484df",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_de81b97fec87454a969bb5099e6f10b4",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_dfc2a2d818294af5a7e1d3131a7bced1",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_ecf5d6dfb79643d1ba9f91dd3adecd69",
+          "report_state": "unconfirmed"
+        },
+        {
+          "id": "dose_f2f12b7efb764f9c9f796c07b97c1c18",
+          "report_state": "unconfirmed"
+        }
+      ],
+      "scheduling_events": 34,
+      "corrected_trigger_error_ms": [
+        -15.5,
+        -15.5
+      ]
+    }
+  ],
+  "original_clock_settings": {
+    "autoTime": "1",
+    "autoZone": "1",
+    "zone": "Asia/Singapore"
+  },
+  "original_clock": {
+    "android_ms": 1790519491304,
+    "host_midpoint_ms": 1790519490900,
+    "offset_ms": 404,
+    "roundtrip_ms": 18
+  },
+  "restored_clock_settings": {
+    "autoTime": "1",
+    "autoZone": "1",
+    "zone": "Asia/Singapore",
+    "clocks": {
+      "android_ms": 1790519560757,
+      "host_midpoint_ms": 1790519560361,
+      "offset_ms": 396,
+      "roundtrip_ms": 18
+    },
+    "alarms": [
+      {
+        "at": 1790594340394,
+        "elapsed_at": 91066973
+      },
+      {
+        "at": 1790604000394,
+        "elapsed_at": 100726973
+      }
+    ],
+    "identities": [
+      "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_771de8a961ab4d5bbaca4ba396121910.g15",
+      "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_a4b589684280484984a00c278c7371fe.g15"
+    ],
+    "corrected_trigger_error_ms": [
+      -17,
+      -17
+    ]
+  }
+}

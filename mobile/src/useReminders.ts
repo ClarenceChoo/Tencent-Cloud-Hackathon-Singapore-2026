@@ -73,6 +73,9 @@ export function useReminders(options: Options) {
       forcePush = true,
       enabling = false;
     let coverage: ReminderSchedule | null = null;
+    let scheduledClock: { offset: number; zone: string } | null = null;
+    let requestedRefresh = 0,
+      appliedRefresh = -1;
     let permission = "unknown",
       microphone = "unknown";
     const inheritedCleanup = previousCleanup.current;
@@ -127,6 +130,7 @@ export function useReminders(options: Options) {
           "Some alerts remain scheduled. Keep this phone selected and try Pause reminders again.",
         );
       coverage = null;
+      scheduledClock = null;
     }
     function pause() {
       epoch++;
@@ -198,6 +202,7 @@ export function useReminders(options: Options) {
     }
     async function sync(force = false) {
       forcePush ||= force;
+      if (force) requestedRefresh++;
       if (!bound() || !active || !latest.current.home || serial.suspended)
         return;
       if (busy) {
@@ -236,13 +241,27 @@ export function useReminders(options: Options) {
         if (!current(version)) return;
         await serial.run(async (valid) => {
           if (!valid() || !current(version)) return;
-          const desired = observed.granted
-            ? desiredAlerts(schedule, Date.now())
-            : [];
+          const now = Date.now();
+          const desired = observed.granted ? desiredAlerts(schedule, now) : [];
+          const clock = {
+            offset: now - Date.parse(schedule.server_time),
+            zone: new Intl.DateTimeFormat().resolvedOptions().timeZone,
+          };
+          const refresh = requestedRefresh;
+          // Android date alarms retain the device's old wall-clock timestamp.
+          // Rebase when its offset from the server changes; allow five seconds
+          // of response-time variation to avoid churning alarms on every poll.
+          // Keep the last rebuild's offset so small cumulative drift is caught.
+          const rebuild =
+            appliedRefresh !== refresh ||
+            coverage?.revision !== schedule.revision ||
+            !scheduledClock ||
+            Math.abs(scheduledClock.offset - clock.offset) > 5000 ||
+            scheduledClock.zone !== clock.zone;
           let existing =
             await Notifications.getAllScheduledNotificationsAsync();
           if (!valid() || !current(version)) return;
-          if (coverage?.revision !== schedule.revision) {
+          if (rebuild) {
             for (const entry of existing) {
               if (!valid() || !current(version)) return;
               await Notifications.cancelScheduledNotificationAsync(
@@ -284,6 +303,10 @@ export function useReminders(options: Options) {
           }
           if (!valid() || !current(version)) return;
           coverage = observed.granted ? schedule : null;
+          if (rebuild) scheduledClock = observed.granted ? clock : null;
+          // A foreground refresh requested while native work was pending must
+          // still run; do not consume a later request with this completion.
+          appliedRefresh = refresh;
           setStatus(
             !observed.granted
               ? "Notifications are off. Voice works while Parse is open."

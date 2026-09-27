@@ -4,7 +4,7 @@ The phone source lives in `mobile/`. Generate its Android and iOS projects from 
 
 ## Current Android preview
 
-The current local ARM64 preview is **r5**: `runtime/releases/parse-companion-android-arm64-preview-2026-09-27-r5.apk` (31,319,647 bytes; SHA-256 `f144dba7c46e6ce18e9cddd4dbb14625af0edc74d4a6c0eedbc7152e966b0c82`). It includes the native recording, receipt-recovery and saved-connection fixes described below. Its [artifact/install report](evidence/android-preview-r5-2026-09-27.json) records successful build, signature verification, installation and cold launch. It is a debug-key-signed preview without fixture trust, not a distribution release. The call-interruption and paired large-text checks use the separate r5 verification APK against the fictional local service.
+The current local ARM64 preview is **r6**: `runtime/releases/parse-companion-android-arm64-preview-2026-09-27-r6.apk` (31,320,051 bytes; SHA-256 `808105ffbbf7e0e32aeaee678c04fa3f5322ac5b7088b7340b7a9c07d30492a8`). It includes the recording, receipt-recovery, saved-connection and clock/time-zone reminder fixes described below. Its [artifact/install report](evidence/android-preview-r6-2026-09-27.json) records successful build, signature verification, matching installed digest and a 385 ms cold launch; the [pairing screen](evidence/android-preview-r6-2026-09-27.png) was reviewed and no process-scoped errors were observed. It is a debug-key-signed preview without fixture trust, not a distribution release. The earlier call-interruption and paired large-text checks used r5; clock/time-zone checks use a separate r6 verification APK against the fictional local service.
 
 The sections below retain the earlier checkpoints and their matching evidence; their older APK filenames are historical artifacts.
 
@@ -326,3 +326,25 @@ The raw emulator recording, edit script and render filter are retained alongside
 Install full Xcode and its simulator runtime, then select that Xcode developer directory. Command Line Tools alone cannot compile or run the iOS application. From `mobile/`, use `npm run prebuild -- --platform ios` and `npm run ios` with the chosen simulator or development device. Physical-device installation requires the team's signing arrangement. The host used for the Android checkpoint has no full Xcode, so no iOS compile or installation is claimed.
 
 Both platforms remain in scope. Configure the reachable service, live speech provider and each platform's native push credentials before collecting the physical-device evidence in [the setup guide](Phone-Companion-Setup.md) and [the PRD](Phone-Companion-PRD.md).
+
+## Clock and time-zone reminder correction
+
+The original r5 Android app reproduced a reminder defect: moving the running emulator's clock back five minutes left both registered RTC alarms **300,008.5 ms late** relative to their server due times. Foreground synchronization was still working and the two notification identities remained unchanged; the scheduler only replaced alarms when the plan revision changed or an ID disappeared. [Before-fix evidence](evidence/android-clock-before-fix-2026-09-27.json).
+
+The production hook now rebuilds on foreground resume, device time-zone change, or a device/server clock-offset change larger than five seconds. The tolerance prevents minor response-time variation from rebuilding every poll; comparison against the last rebuild also catches cumulative drift. A refresh requested during an outstanding native operation remains pending. Generic content, occurrence/routing identities, serial cleanup and confirmation rules are preserved.
+
+The r6 verification APK (`15ad0b843daad17bd030dad58e8db29d9269f2317707db3236dec80484b33c3e`) passed five native checks including pairing reuse: running-clock changes of minus/plus five minutes, changing the device zone from Asia/Singapore to Pacific/Honolulu, and a background clock change followed by foreground resume. AlarmManager timestamps and the native persistent identity store were inspected directly. Corrected timestamps stayed within **22.5 ms** of the initial registered instants, after adjusting for measured phone/host clock offset; the server schedule revision, route generation, five notes, all medication report states and the two native identities remained unchanged. These measurements concern **scheduled timestamps, not notification arrival latency**. [Complete report](evidence/android-clock-timezone-2026-09-27.json), [reviewed native screen](evidence/android-clock-timezone-2026-09-27.png).
+
+The test changes only the guarded disposable emulator, never the host clock. Automatic time and time-zone settings and Asia/Singapore were restored, and a bounded native-alarm check verified corrected timestamps after restart. The [first fixed run](evidence/android-clock-first-fixed-2026-09-27.json) passed the scenario checks but sampled cleanup too early; its three-and-a-half-second startup sleep was replaced with observation of the actual restored alarms before the final run. No additional production change was needed.
+
+Run against an existing paired fictional fixture:
+
+```sh
+PARSE_NATIVE_FIXTURE_DIR="$PWD/runtime/native-care-20260927" \
+PARSE_NATIVE_RESUME_PAIRED=1 PARSE_NATIVE_CLOCK_ONLY=1 \
+node tools/android_native_smoke.cjs
+```
+
+`tools/android_native_clock.cjs` refuses alarms less than one hour away, preserves the fixture's care records, records source/APK hashes and checks actual server-reported schedule revisions. Five new production-hook regressions cover clock changes, time zones, foreground rebuilding, small timing variation and an overlapping foreground refresh. TypeScript and all **114 mobile tests** pass (25 unit + 89 app/hook/HTTP/storage tests). The normal r6 APK also builds, verifies its signature, installs with a matching digest and cold-launches without fixture trust or observed process-scoped errors.
+
+This does not verify iOS or physical-device scheduling, live push, or clock changes while an unreachable/terminated app cannot refresh. Offline notifications remain generic; OS batching and Focus/battery restrictions can still delay delivery.

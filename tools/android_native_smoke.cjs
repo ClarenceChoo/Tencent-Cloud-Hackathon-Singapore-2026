@@ -15,6 +15,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const decode = value => value.replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
 
 async function main() {
+  const lifecycleOnly = process.env.PARSE_NATIVE_LIFECYCLE_ONLY === '1';
   assert(directory.startsWith(path.join(root, 'runtime') + path.sep));
   assert(/^emulator-\d+$/.test(serial), 'This fixture runs only on a disposable emulator');
   const fixture = JSON.parse(fs.readFileSync(path.join(directory, 'fixture.json')));
@@ -98,10 +99,10 @@ async function main() {
   }
   const report = { at: new Date().toISOString(), liveSpeech: false, physicalPhone: false,
     environment: 'Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and one-second tone replies. No real speech or acoustic audibility evidence.',
-    source_sha256: Object.fromEntries(['mobile/src/App.tsx', 'mobile/src/useVoice.ts', 'mobile/src/api.ts', 'tools/android_native_fixture.py', 'tools/android_native_smoke.cjs', 'tools/android_native_care.cjs'].map(file =>
+    source_sha256: Object.fromEntries(['mobile/src/App.tsx', 'mobile/src/useVoice.ts', 'mobile/src/api.ts', 'mobile/src/storage.ts', 'tools/android_native_fixture.py', 'tools/android_native_smoke.cjs', 'tools/android_native_care.cjs', ...(lifecycleOnly ? ['tools/android_native_lifecycle.cjs'] : [])].map(file =>
       [file, createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex')])),
     checks: [] };
-  const save = () => fs.writeFileSync(path.join(directory, 'native-integration-evidence.json'), JSON.stringify(report, null, 2));
+  const save = () => fs.writeFileSync(path.join(directory, lifecycleOnly ? 'native-lifecycle-evidence.json' : 'native-integration-evidence.json'), JSON.stringify(report, null, 2));
   const pass = name => { report.checks.push({ name, passed: true }); save(); console.log('PASS ' + name); };
   const browser = await chromium.launch({ headless: true, channel: 'chrome' });
   async function login(role) {
@@ -126,9 +127,13 @@ async function main() {
   }
   try {
     await adb('reverse', `tcp:${new URL(fixture.origin).port}`, `tcp:${new URL(fixture.origin).port}`);
+    const installedPath = (await adb('shell', 'pm', 'path', appId)).trim().replace(/^package:/, '');
+    assert(installedPath.startsWith('/data/app/') && installedPath.endsWith('/base.apk') && !installedPath.includes('\n'));
+    report.installed_apk_sha256 = (await adb('shell', 'sha256sum', installedPath)).split(/\s/)[0];
     await adb('shell', 'am', 'start', '-W', '-n', appId + '/sg.parse.companion.MainActivity');
     let code;
     const resume = process.env.PARSE_NATIVE_RESUME_PAIRED === '1';
+    assert(!lifecycleOnly || resume, 'Lifecycle checks require an existing fictional verification installation');
     report.enrollmentCreatedInThisRun = !resume;
     if (!resume) {
       await tap('Parse HTTPS service address');
@@ -164,6 +169,11 @@ async function main() {
       'Native-generated secure identity pairs over verified local TLS through owner browser approval');
     const tapSwitch = await find('Use tap instead of hold to record');
     if (tapSwitch.checked !== 'true') await tapNode(tapSwitch);
+    if (lifecycleOnly) {
+      await require('./android_native_lifecycle.cjs')({ record, arm, find, tap, tapNode, ui, adb, screenshot, pass, owner, caregiver, restricted, fixture, directory, appId, report });
+      save();
+      return;
+    }
     const proposal = wording => ({ intent: 'proposal', kind: 'health_note', payload: {
       wording, occurrence_text: 'after a fictional walk', share_with_user_ids: [fixture.caregiver_id] } });
     await record('original', proposal('Fictional native right knee concern'));

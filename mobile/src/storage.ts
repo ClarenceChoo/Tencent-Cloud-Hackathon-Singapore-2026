@@ -121,8 +121,21 @@ export function removeAudio(uri: string | null) {
   if (file.exists) file.delete();
 }
 export function sweepAudio() {
-  for (const entry of new Directory(Paths.cache).list()) {
-    if (entry instanceof File && /^(recording-|parse-reply-)/.test(entry.name))
-      entry.delete();
+  // The pinned native recorders use Audio on Android and ExpoAudio on iOS.
+  // Keep this bounded to our recorder locations and owned filename prefixes.
+  const directories = [
+    new Directory(Paths.cache),
+    new Directory(Paths.cache, "Audio"),
+    new Directory(Paths.cache, "ExpoAudio"),
+  ];
+  for (const directory of directories) {
+    if (!directory.exists) continue;
+    for (const entry of directory.list()) {
+      if (
+        entry instanceof File &&
+        /^(recording-|parse-reply-)/.test(entry.name)
+      )
+        entry.delete();
+    }
   }
 }

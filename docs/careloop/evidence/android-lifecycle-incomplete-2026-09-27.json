@@ -1,0 +1,41 @@
+{
+  "at": "2026-09-27T11:00:59.535Z",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "environment": "Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and one-second tone replies. No real speech or acoustic audibility evidence.",
+  "source_sha256": {
+    "mobile/src/App.tsx": "263264c635fda8021de4062ba268a793e3b87f4aff4b8e439b58c74b149504e2",
+    "mobile/src/useVoice.ts": "306b9127c41b946530fb71c7388a77bce51e49e48505324bed917df8eddce35d",
+    "mobile/src/api.ts": "c47f9fd49c83ec14df83d1939a941d6a2b48cddd8548807d123941b523b328cf",
+    "mobile/src/storage.ts": "d617df7a010d6cc68f0cd5dc6e3dfac021b1684bc6e10bc5fa50963871f3d99f",
+    "tools/android_native_fixture.py": "cbb7ce19914685368f1779c940d980735b842cbdf573429b5b7bc1f3cc424cd8",
+    "tools/android_native_smoke.cjs": "053344618c447e389d5e6dddf485444efc4cec231e5986fc7b92e9f10139bb4d",
+    "tools/android_native_care.cjs": "48be6db43584dba70abb17294f000c2e29741f389a531b2ba656b4373bf2897b",
+    "tools/android_native_lifecycle.cjs": "4b8cfd0c09f8cbc695fe1a7ec3fc3f2ea95de6a38bd39ef42e047b725bbadaef"
+  },
+  "checks": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    },
+    {
+      "name": "Native Cancel stops recording, removes its cache file and sends no upload",
+      "passed": true
+    },
+    {
+      "name": "Native backgrounding cancels capture without upload or automatic restart",
+      "passed": true
+    },
+    {
+      "name": "Native screen sleep cancels capture; waking does not resume recording",
+      "passed": true
+    }
+  ],
+  "installed_apk_sha256": "b61cc2298826f2757d6e682fc2607aa83a1785204d7f256bd14c01d91413ece4",
+  "enrollmentCreatedInThisRun": false,
+  "emulatorAdbRoot": true,
+  "orphaned_before_reopen": [
+    "Audio/recording-3da6925e-9b71-4c10-9232-956789190e70.m4a"
+  ],
+  "failure": "Error: Native control unavailable: Tap to start recording"
+}

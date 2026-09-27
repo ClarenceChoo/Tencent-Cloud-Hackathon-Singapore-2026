@@ -127,9 +127,24 @@ vi.mock("expo-file-system", () => {
       document: { uri: "file:///document/" },
     },
     Directory: class {
+      uri: string;
+      constructor(first: string | { uri: string }, name = "") {
+        this.uri = (typeof first === "string" ? first : first.uri) + name;
+        if (!this.uri.endsWith("/")) this.uri += "/";
+      }
+      get exists() {
+        return (
+          this.uri === "file:///cache/" ||
+          [...ports.files.keys()].some((uri) => uri.startsWith(this.uri))
+        );
+      }
       list() {
         return [...ports.files.keys()]
-          .filter((uri) => uri.startsWith("file:///cache/"))
+          .filter(
+            (uri) =>
+              uri.startsWith(this.uri) &&
+              !uri.slice(this.uri.length).includes("/"),
+          )
           .map((uri) => new File(uri));
       }
     },

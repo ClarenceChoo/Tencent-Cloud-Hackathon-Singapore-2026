@@ -134,4 +134,37 @@ npm run build
 
 Use only fictional profiles for automated fixtures. Provider fixtures are not a substitute for the final real-microphone → live-provider → confirmation → caregiver demo.
 
+### Phone-to-dashboard browser verification
+
+The browser harness runs the production dashboard with three separate browser sessions and a disposable loopback backend. It enrolls a phone through the real owner UI, submits AAC/M4A through the phone endpoint, corrects and confirms a note, checks recipient privacy, removes sharing, revokes and regrants access, and measures 30 subsequent confirmations without reloading the caregiver page. It also verifies server-invalidated browser sessions and phone revocation. Speech is a hash-matched fixture using encoded tones, not a microphone or live interpretation service.
+
+Install the locked browser-test dependency with `npm ci --prefix tools` and have Chrome installed, or set `CARELOOP_BROWSER_EXECUTABLE` to a Chromium executable. FFmpeg/FFprobe and the backend environment must already be available. From the repository root, start the fixture in a separate terminal:
+
+```sh
+backend/.venv/bin/python tools/phone_browser_fixture.py \
+  --data-dir runtime/phone-browser --port 8003 --web-port 5175
+```
+
+Wait for `Phone/browser fixture ready`. The data directory must be **new** and inside this repository's ignored `runtime/` folder. The fixture refuses an existing directory and binds only to `127.0.0.1`. It creates fictional `.invalid` accounts and never touches the configured application database. Do not deploy this test entry point.
+
+In another terminal:
+
+```sh
+cd frontend
+npm run build
+CARELOOP_API_TARGET=http://127.0.0.1:8003 npm run preview -- --port 5175 --strictPort
+```
+
+Then, from the repository root:
+
+```sh
+PARSE_PHONE_FIXTURE_DIR=runtime/phone-browser node tools/browser_phone.cjs
+```
+
+An existing Playwright installation can be selected with `PLAYWRIGHT_MODULE` pointing to its module directory. The report and screenshots are written inside the fixture directory. Reports include individual results, all 30 timing samples, browser/Node/platform versions, the starting commit, whether the working tree was dirty, and SHA-256 hashes of the relevant dashboard and harness sources. They contain no installation credential. Use a fresh directory for each run and stop the two local servers afterwards.
+
+The latency metric starts when the confirmation audio upload is sent and ends when its confirmed heading is visible in the already-open caregiver page. It includes local normalization and scripted processing, so it is not a measurement of real speech or a deployed phone network. The PRD's physical-phone/live-provider and one-hour evidence remains separate.
+
+The dashboard now removes its entire care view and open dialogs when a refresh returns 401 or 403, and asks the user to sign in again. Late responses from the old view cannot restore records in the new session. Temporary network/server failures preserve the last loaded data with a connection warning; the next successful poll updates it. Revoking an entire grant removes prior explicit note sharing, so regranting dashboard access alone does not reshare old notes.
+
 The supplied Compose stack exposes only Caddy on host ports 80/443. Its private backend sets `FORWARDED_ALLOW_IPS=*` so Uvicorn correctly sees HTTPS and the client address forwarded by that trusted proxy. If changing the network layout or exposing the backend directly, replace that wildcard with the trusted proxy address/range; never trust forwarded headers from arbitrary public clients.

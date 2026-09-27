@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Activity, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronRight, CircleHelp, Clock3, FileText, Heart, ListChecks, LogOut, Menu, Pill, Plus, RefreshCw, Settings, Shield, Sparkles, Stethoscope, Users, X } from 'lucide-react';
-import { api, Dashboard, label, localDay, niceDate, Patient, Proposal, Row, Session, setCsrf, str, val } from './api';
+import { api, ApiError, Dashboard, label, localDay, niceDate, Patient, Proposal, Row, Session, setCsrf, str, val } from './api';
 
 import DeviceSetup from './DeviceSetup';
 import { RecordSource, RecordHistory } from './RecordSource';
@@ -22,6 +22,18 @@ const displayName = (patient?: Patient) => patient?.preferred_name || patient?.n
 const demo = import.meta.env.VITE_DEMO_MODE === 'true';
 
 export default function App() {
+  const [boundary, setBoundary] = useState({ generation: 0, message: '' });
+  const onAccessLost = useCallback((message: string) => {
+    // Unmount every patient view/dialog and its state. Late requests from the
+    // old session cannot repopulate a new sign-in, even for the same patient.
+    setBoundary(current => current.generation === boundary.generation
+      ? { generation: current.generation + 1, message } : current);
+    setCsrf('');
+  }, [boundary.generation]);
+  return <CareApp key={boundary.generation} skipSession={boundary.generation > 0} initialLoginError={boundary.message} onAccessLost={onAccessLost}/>;
+}
+
+function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boolean;initialLoginError:string;onAccessLost:(message:string)=>void}) {
   const [session, setSession] = useState<Session | null>(null);
   const [patientId, setPatientId] = useState('');
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
@@ -29,7 +41,8 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [loginError, setLoginError] = useState('');
+  const [loginError, setLoginError] = useState(initialLoginError);
+  const [refreshWarning, setRefreshWarning] = useState('');
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [noteForSharing, setNoteForSharing] = useState<Row | null>(null);
   const [proposalKind, setProposalKind] = useState('health_note');
@@ -48,26 +61,39 @@ export default function App() {
   const [publicSummary, setPublicSummary] = useState<Row | null>(null);
   const [publicError, setPublicError] = useState('');
   const refreshInFlight = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  const accessFailed = useCallback((error: unknown) => {
+    if (error instanceof ApiError && [401, 403].includes(error.status)) {
+      if (mounted.current) onAccessLost(error.status === 401
+        ? 'Your session ended. Sign in again to view current care information.'
+        : 'Your access to this care space changed. Sign in again to check your current access.');
+      return true;
+    }
+    return false;
+  }, [onAccessLost]);
   const sharedToken = useMemo(() => window.location.pathname.match(/^\/shared\/summaries\/([^/]+)\/?$/)?.[1] || '', []);
 
   const refreshSession = useCallback(async () => {
-    const value = await api.session(); setSession(value); setCsrf(value.csrf_token);
+    const value = await api.session(); if (!mounted.current) return value; setSession(value); setCsrf(value.csrf_token);
     const selected = value.patients[0]?.id || ''; setPatientId(current => current || selected);
     return value;
   }, []);
   const loadDashboard = useCallback(async (id: string) => {
     if (!id) return;
     setLoading(true); setError('');
-    try { setDashboard(await api.dashboard(id)); } catch (err) { setError(err instanceof Error ? err.message : 'Could not load this care space.'); }
+    try { setDashboard(await api.dashboard(id)); setRefreshWarning(''); } catch (err) { if (!accessFailed(err)) setError(err instanceof Error ? err.message : 'Could not load this care space.'); }
     finally { setLoading(false); }
-  }, []);
+  }, [accessFailed]);
   useEffect(() => {
     if (sharedToken) {
       api.sharedSummary(decodeURIComponent(sharedToken)).then(setPublicSummary).catch(err => setPublicError(err instanceof Error ? err.message : 'This shared summary is no longer available.')).finally(() => setLoading(false));
+    } else if (skipSession) {
+      setLoading(false);
     } else {
       refreshSession().then(value=>{if(!value.patients.length)setLoading(false);}).catch(() => {setSession(null);setLoading(false);});
     }
-  }, [refreshSession, sharedToken]);
+  }, [refreshSession, sharedToken, skipSession]);
   useEffect(() => { if (session && patientId) loadDashboard(patientId); }, [session, patientId, loadDashboard]);
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'auto' }); }, [view]);
   useEffect(() => {
@@ -78,13 +104,15 @@ export default function App() {
       refreshInFlight.current = true;
       try {
         const value = await api.dashboard(patientId);
-        if (active) setDashboard(value);
-      } catch { /* Keep the last committed view during a transient refresh failure. */ }
+        if (active) { setDashboard(value); setRefreshWarning(''); }
+      } catch (err) {
+        if (active && !accessFailed(err)) setRefreshWarning('Connection interrupted. Showing the last loaded care information.');
+      }
       finally { refreshInFlight.current = false; }
     };
     const timer = window.setInterval(refresh, 1000);
     return () => { active = false; window.clearInterval(timer); };
-  }, [session, patientId, sharedToken]);
+  }, [session, patientId, sharedToken, accessFailed]);
   useEffect(() => {
     if (!dashboard || dashboard.patient.id !== patientId || summaryPatientId === patientId) return;
     const saved = (dashboard.summaries || []).find(item => !val(item,'invalidated_at'));
@@ -106,11 +134,11 @@ export default function App() {
   async function login(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault(); setBusy(true); setLoginError('');
     const data = new FormData(e.currentTarget);
-    try { const value = await api.login(String(data.get('email')), String(data.get('password'))); setSession(value); setCsrf(value.csrf_token); setPatientId(value.patients[0]?.id || ''); }
+    try { const value = await api.login(String(data.get('email')), String(data.get('password'))); if (!mounted.current) return; setSession(value); setCsrf(value.csrf_token); setPatientId(value.patients[0]?.id || ''); }
     catch (err) { setLoginError(err instanceof Error ? err.message : 'Sign in failed.'); }
     finally { setBusy(false); }
   }
-  async function logout() { setBusy(true); try { await api.logout(); } finally { setSession(null); setDashboard(null); setBusy(false); } }
+  async function logout() { setBusy(true); try { await api.logout(); } finally { if (mounted.current) onAccessLost(''); } }
   async function propose(kind: string, payload: Record<string, unknown>) {
     if (!patientId) return;
     setBusy(true); setError('');
@@ -190,6 +218,7 @@ export default function App() {
         <div className="workspace-bar"><div className="patient-select-wrap"><label className="patient-select-label"><span>Care space</span><select value={patientId} onChange={e => setPatientId(e.target.value)} aria-label="Choose patient profile">{session.patients.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label><ChevronDown size={14} className="select-chevron"/></div><div className="workspace-actions">{demo && <span className="demo-badge"><span className="demo-dot"/>Fictional demo data</span>}<button className="icon-button" aria-label="Refresh care data" onClick={() => loadDashboard(patientId)}><RefreshCw size={16}/></button></div></div>
         <div className="page-heading"><div><h1>{greeting}</h1><p className="lead">{weekdayDate(patient?.timezone)}<span className="page-timezone">{patient?.timezone.replaceAll('_',' ')}</span></p></div>{view !== 'summary' && canWriteCare && <button className="button button-primary" onClick={() => beginComposer('health_note')}><Plus size={19}/> Add entry</button>}</div>
         {(error || toast) && <div className={`feedback ${error ? 'feedback-error' : 'feedback-success'}`} role={error ? 'alert' : 'status'}>{error || toast}<button aria-label="Dismiss" onClick={() => { setError(''); setToast(''); }}><X size={15} /></button></div>}
+        {refreshWarning && <p className="source-note" role="status">{refreshWarning}</p>}
         {loading ? <div className="loading-card"><span className="spinner" /><p>Loading confirmed care information…</p></div> : error && !d ? <div className="empty-card"><CircleHelp size={24} /><h2>This care space isn’t available</h2><p>Check your access or try again. No new information has been saved.</p><button className="button" onClick={() => loadDashboard(patientId)}>Try again</button></div> : d ? <>
           {view === 'overview' && <Overview data={d} canWriteCare={canWriteCare} onNavigate={setView} canShareNote={canManageSharing} canDeleteNote={canWriteCare} onShareNote={setNoteForSharing} onDeleteNote={deleteNote} onCompose={beginComposer} />}
     {view === 'timeline' && <Timeline key={patientId} data={d} onNavigate={setView} onReviewProposal={openReview} onCorrect={row=>beginComposer('measurement',measurementSeed(row))} canWriteCare={canWriteCare} canShareNote={canManageSharing} canDeleteNote={canWriteCare} onShareNote={setNoteForSharing} onDeleteNote={deleteNote} />}

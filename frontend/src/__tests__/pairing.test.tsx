@@ -61,6 +61,8 @@ it('approves an expiring phone code through the phone flow and labels phone iden
   expect(claim).toHaveBeenCalledExactlyOnceWith('P-ABCDE-12345','phone');
   expect(screen.getByText('Parse phone · Mei iPhone')).toBeTruthy();
   expect(screen.getByText(/code expires after ten minutes/)).toBeTruthy();
+  expect(screen.getByText(/app connects using Wi-Fi or mobile data/)).toBeTruthy();
+  expect(screen.queryByText('How to connect the cardholder to Wi-Fi')).toBeNull();
 });
 
 it('separates saved push registration from foreground presence and local alert coverage',()=>{

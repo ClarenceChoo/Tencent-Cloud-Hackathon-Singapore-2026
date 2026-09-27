@@ -1,0 +1,95 @@
+{
+  "at": "2026-09-27T09:08:26.042Z",
+  "commit": "796963abe7c0f7d34338ef13193a66853fa58d4c",
+  "workingTreeDirty": true,
+  "source_sha256": {
+    "frontend/src/App.tsx": "a3abad59209d9e7c51bc9c2984d7b521211b25a80a7988109a948744d87cc65a",
+    "frontend/src/api.ts": "887f301eb20bd698aa73ea04478d90874b56123b62c1de29180ab1e0e3a51120",
+    "frontend/src/DeviceSetup.tsx": "f30e95be7126449f9c999014e2972a82b01a062f7a9468fbf1985eee76aae53f",
+    "tools/browser_phone.cjs": "c4a051737887fce89af5d2d0f7aba2219f701f6a74c7915fb3a7c756c7cbaa53",
+    "tools/phone_browser_fixture.py": "44d8e3a2e7f028b2f5f90cfbf2f9117b62ef39c118c9b72c502440c5dd63781d"
+  },
+  "browser": "153.0.8010.54",
+  "node": "v25.2.1",
+  "platform": "darwin/arm64",
+  "origin": "http://127.0.0.1:5175",
+  "backend": "http://127.0.0.1:8003",
+  "environment": "Desktop headless Chromium; loopback HTTP Vite/FastAPI; isolated fictional SQLite; encoded tone AAC and scripted speech. No native app, real microphone, live provider, push or target-phone network.",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "evidence": [
+    {
+      "name": "Owner approves the phone code and explicitly selects it in the existing dashboard",
+      "passed": true
+    },
+    {
+      "name": "AAC phone correction and confirmation produce exactly one source-labelled note in the already-open caregiver timeline",
+      "passed": true
+    },
+    {
+      "name": "Private notes and phone proposal details stay absent from unauthorized caregiver HTTP responses and rendered views",
+      "passed": true
+    },
+    {
+      "name": "Changing a note’s recipients removes and restores it automatically without a page refresh",
+      "passed": true
+    },
+    {
+      "name": "Revoking the whole caregiver grant clears the open care view",
+      "passed": true
+    },
+    {
+      "name": "30 confirmed phone events reach the already-open permitted dashboard within the local p95 target",
+      "passed": true
+    },
+    {
+      "name": "A server-invalidated browser session clears displayed care information on refresh",
+      "passed": true
+    },
+    {
+      "name": "Owner phone revocation blocks further phone reads and appears in the browser",
+      "passed": true
+    }
+  ],
+  "samples_ms": [
+    914,
+    921,
+    937,
+    1424,
+    1426,
+    1430,
+    912,
+    912,
+    913,
+    415,
+    917,
+    1413,
+    939,
+    918,
+    922,
+    920,
+    206,
+    940,
+    933,
+    1425,
+    918,
+    918,
+    320,
+    923,
+    1425,
+    931,
+    1422,
+    920,
+    408,
+    911
+  ],
+  "latency": {
+    "count": 30,
+    "metric": "Phone confirmation upload request start to visible confirmed heading in an already-open caregiver dashboard, ms; includes AAC normalization and scripted processing",
+    "p50_ms": 920,
+    "p95_ms": 1426,
+    "max_ms": 1430,
+    "target_ms": 2000
+  },
+  "passed": true
+}

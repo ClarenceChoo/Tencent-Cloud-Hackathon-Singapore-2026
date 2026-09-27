@@ -9,7 +9,10 @@ export default function DeviceSetup({data,canManage,onClaim,onRevoke}:{data:Dash
   const [error,setError]=useState('');
   const [revokeId,setRevokeId]=useState('');
   const active=data.devices.filter(d=>!d.revoked_at);
-  const online=active.some(d=>d.status==='connected');
+  const phoneSetup=kind==='phone'||!canManage&&active.length>0&&active.every(d=>d.device_type==='phone');
+  const matching=active.filter(d=>(d.device_type==='phone')===phoneSetup);
+  const online=matching.some(d=>d.status==='connected');
+  const selected=matching.some(d=>d.selected);
   const setup=data.device_setup;
   const voice=setup?.voice_service;
   async function pair(event:React.FormEvent) {
@@ -19,13 +22,13 @@ export default function DeviceSetup({data,canManage,onClaim,onRevoke}:{data:Dash
     catch(err){setError(err instanceof Error?err.message:'Could not pair this companion. Try again.');}
     finally{setPairing(false);}
   }
-  return <section className="card pairing-card" aria-label="Cardholder setup">
+  return <section className="card pairing-card" aria-label="Companion setup">
     <div className="section-head"><div><div className="eyebrow">Your Parse companion</div><h2>Pair your companion</h2></div><Wifi size={21}/></div>
-    <p className="section-intro">Connect the cardholder to home Wi-Fi or a phone hotspot. Your phone and care circle see the updates through Parse.</p>
+    <p className="section-intro">{phoneSetup?'Open the installed Parse app on the phone and enter its pairing code below. The app connects using Wi-Fi or mobile data.':'Connect the cardholder to home Wi-Fi or a phone hotspot. Your phone and care circle see the updates through Parse.'}</p>
     <ol className="pairing-steps">
-      <li className={active.length?'is-done':''}><span>{active.length?<Check size={17}/>:<Link2 size={17}/>}</span><div><b>1. Pair to this care space</b><p>{active.length?'Cardholder paired. It can still be offline.':'Use the one-use code supplied with your cardholder.'}</p></div></li>
-      <li className={online?'is-done':''}><span>{online?<Check size={17}/>:<Wifi size={17}/>}</span><div><b>2. Connect to Wi-Fi</b><p>{online?'A live connection has been received.':'Power it on and complete its Wi-Fi setup. Wait for Online below.'}</p></div></li>
-      <li><span><MessageCircle size={17}/></span><div><b>3. Try a conversation</b><p>{voice==='configured'?'Press to speak, listen to the read-back, then confirm. Check the timeline.':'Finish the voice-service setup before testing a spoken note.'}</p></div></li>
+      <li className={matching.length?'is-done':''}><span>{matching.length?<Check size={17}/>:<Link2 size={17}/>}</span><div><b>1. Pair to this care space</b><p>{matching.length?`${phoneSetup?'Phone':'Cardholder'} paired. It can still be offline.`:phoneSetup?'Use the expiring code displayed in the Parse phone app.':'Use the one-use code supplied with your cardholder.'}</p></div></li>
+      <li className={(phoneSetup?selected:online)?'is-done':''}><span>{(phoneSetup?selected:online)?<Check size={17}/>:<Wifi size={17}/>}</span><div><b>{phoneSetup?'2. Choose the reminder companion':'2. Connect to Wi-Fi'}</b><p>{phoneSetup?'Use Reminder companion below to select this phone. Pairing alone does not change where reminders go.':online?'A live connection has been received.':'Power it on and complete its Wi-Fi setup. Wait for Online below.'}</p></div></li>
+      <li><span><MessageCircle size={17}/></span><div><b>3. Try a conversation</b><p>{voice==='configured'?phoneSetup?'On the phone, allow the microphone when prompted and check the speaker. Hold to talk, listen to the read-back, then confirm. Check the timeline.':'Press to speak, listen to the read-back, then confirm. Check the timeline.':'Finish the voice-service setup before testing a spoken note.'}</p></div></li>
     </ol>
     {canManage&&<form className="claim-form" onSubmit={pair}>
       <label htmlFor="pairing-kind">Companion type<select id="pairing-kind" value={kind} disabled={pairing} onChange={e=>{setKind(e.target.value as 'phone'|'pendant');setCode('');setError('')}}><option value="pendant">Cardholder</option><option value="phone">Parse phone app</option></select></label>
@@ -52,8 +55,8 @@ export default function DeviceSetup({data,canManage,onClaim,onRevoke}:{data:Dash
       <div><b>Voice service</b><p>{voice==='configured'?'Configured. A successful live conversation still needs to be checked.':voice==='simulated'?'Simulation mode. These are test responses, not live speech.':voice==='invalid_configuration'?'The voice-service configuration needs attention from the project team.':'Voice replies are not enabled on this server yet. Pairing and dashboard records still work.'}</p></div>
       {setup&&!setup.scheduler_enabled&&<p className="source-note">Scheduled reminders are disabled on this server.</p>}
     </div>
-    <details className="pairing-help"><summary>How to connect the cardholder to Wi-Fi</summary><ol><li>Power on the cardholder. On first setup, join the <b>CareLoop-XXXX</b> Wi-Fi network using the setup password supplied with it.</li><li>Open <b>http://192.168.4.1/</b> while connected to that network.</li><li>Enter your 2.4 GHz WPA2 Wi-Fi or compatible hotspot details, and the service address above.</li><li>Reconnect your phone to its usual network and return to Parse. Look for <b>Online</b>.</li></ol><p>The pairing code and Wi-Fi setup password are different. Keep the pendant’s private device credential with its firmware setup files.</p><p>To change Wi-Fi later, hold the talk button while powering on for five seconds. Release it after two vibration pulses, then repeat setup with the same setup password.</p></details>
-    <div className="card-footnote"><Shield size={15}/><span>The microphone records only while the pendant’s button is pressed. Pairing does not start recording.</span></div>
+    {!phoneSetup&&<details className="pairing-help"><summary>How to connect the cardholder to Wi-Fi</summary><ol><li>Power on the cardholder. On first setup, join the <b>CareLoop-XXXX</b> Wi-Fi network using the setup password supplied with it.</li><li>Open <b>http://192.168.4.1/</b> while connected to that network.</li><li>Enter your 2.4 GHz WPA2 Wi-Fi or compatible hotspot details, and the service address above.</li><li>Reconnect your phone to its usual network and return to Parse. Look for <b>Online</b>.</li></ol><p>The pairing code and Wi-Fi setup password are different. Keep the pendant’s private device credential with its firmware setup files.</p><p>To change Wi-Fi later, hold the talk button while powering on for five seconds. Release it after two vibration pulses, then repeat setup with the same setup password.</p></details>}
+    <div className="card-footnote"><Shield size={15}/><span>{phoneSetup?'The phone records only when you use its talk control. Pairing does not start recording.':'The microphone records only while the pendant’s button is pressed. Pairing does not start recording.'}</span></div>
     {revokeId&&<div className="modal-backdrop"><div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="revoke-title"><h2 id="revoke-title">Disconnect this companion?</h2><p>Its credential will stop working. Reconnecting it requires a new device setup; your saved care records will stay available.</p><div className="modal-actions"><button className="button" onClick={()=>setRevokeId('')}>Keep connected</button><button className="button button-danger" onClick={()=>{onRevoke(revokeId);setRevokeId('')}}>Revoke access</button></div></div></div>}
   </section>;
 }

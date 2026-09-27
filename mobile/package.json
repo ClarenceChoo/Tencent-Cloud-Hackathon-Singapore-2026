@@ -8,8 +8,10 @@
     "ios": "expo run:ios",
     "android": "expo run:android",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test test/*.test.ts",
-    "prebuild": "expo prebuild --no-install"
+    "test": "npm run test:unit && npm run test:adapters",
+    "prebuild": "expo prebuild --no-install",
+    "test:unit": "node --import tsx --test test/*.test.ts",
+    "test:adapters": "vitest run"
   },
   "dependencies": {
     "expo": "57.0.25",
@@ -27,8 +29,11 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.0",
+    "@types/react-test-renderer": "19.1.0",
     "prettier": "3.6.2",
+    "react-test-renderer": "19.2.3",
     "tsx": "^4.20.0",
-    "typescript": "~5.9.3"
+    "typescript": "~5.9.3",
+    "vitest": "4.1.11"
   }
 }

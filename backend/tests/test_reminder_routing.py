@@ -228,3 +228,26 @@ def test_new_phone_readback_invalidates_old_and_late_older_completion(env, monke
         db.rollback()
         assert db.get(m.ConfirmationProposal,current.id,populate_existing=True).status=='pending'
         assert db.scalar(select(func.count()).select_from(m.HealthNote))==0
+
+
+@pytest.mark.parametrize('kind', ['medication', 'checkin'])
+def test_head_checks_route_without_claiming_audio_was_downloaded(env, monkeypatch, kind):
+    client, app, ids = env
+    phone, _ = setup(env, monkeypatch, kind)
+    asyncio.run(scheduler_tick(app))
+    model = m.ReminderCommand if kind == 'medication' else m.CheckInDelivery
+    with app.state.db.SessionLocal() as db:
+        command = db.scalar(select(model))
+        command_id = command.id
+        asset = command.audio_asset_id if kind == 'medication' else command.audio_asset_ids[0]
+    path = '/v1/device/audio/' + asset
+    assert client.head(path, headers=auth(ids['credential'])).status_code == 200
+    with app.state.db.SessionLocal() as db:
+        assert db.get(model, command_id).audio_accessed_at is None
+    assert choose(client, ids, phone, login(client)).status_code == 200
+    assert client.head(path, headers=auth(ids['credential'])).status_code == 410
+    asyncio.run(scheduler_tick(app))
+    with app.state.db.SessionLocal() as db:
+        # A metadata check is not download/playback evidence: the unplayed
+        # occurrence may still move to the explicitly selected replacement.
+        assert db.scalar(select(func.count()).select_from(model)) == 2

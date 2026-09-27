@@ -59,13 +59,21 @@ This produces Hermes JavaScript bundles, not an installable application. Use `np
 
 Only one deliberate voice interaction should run at a time. Until the routing and notifications gates are completed, this development checkpoint does not replace the pendant's background reminders.
 
+## Audio interruption and cleanup
+
+Recording monitors native pause/reset state every 200 ms while active and checks microphone permission at most once per second. Focus loss, cancellation and an installation change discard the current capture. Setup/stop failures remove partial files. The JavaScript deadline is 19 seconds with a separate 19.5-second native ceiling; both remain below the server's 20-second maximum. A paused native recorder is cancelled rather than treated as a completed user utterance.
+
+Replies use private cache files, one clip at a time. The player waits for readiness, checks the current authenticated asset and then obtains any reminder-start authorization. It rejects expired/invalid envelopes, retains the 1–20 clip/120-second limits and releases/deletes every clip on completion or interruption. Downloads are streamed with a 768 KiB client limit and a 30-second total transfer timeout. Stop halts local playback immediately and drains admitted start/ledger writes before a device handoff. If cleanup fails, **Retry stop** keeps new voice operations disabled until cleanup is verified.
+
+`npm test` runs 25 pure unit tests and 32 React-hook/HTTP-adapter tests. `npm run test:adapters` runs only the latter. The hook tests execute the production React hook against controlled native module adapters; they do not exercise a phone microphone, native decoder, operating-system audio focus or Keychain/Keystore. Run the physical-platform checklist in the PRD before accepting those behaviors.
+
 ## Care sources and spoken status
 
 The phone home response and the caregiver dashboard expose a `provenance` object on medication reports, notes, measurements, preventive tasks, support requests and follow-ups. It identifies a confirmed phone, cardholder or dashboard source, with the originating turn/proposal and confirmation time where available. Missing evidence is `unknown`; it is not inferred to be a dashboard action. Record visibility is checked before provenance is assembled. Device credentials, raw transcripts and recipient emails are not part of this metadata.
 
 Preventive tasks retain their clinical `source` separately from the recording channel. Their `transitions` preserve appointment and completion dates; dose `report_history` and follow-up `resolutions` retain each confirmation source. The phone response includes up to 20 history entries per record with `history_truncated` when older entries are omitted. The native screen shows the latest three updates; the dashboard expands the history. A reading entered by phone is still labelled with its reported external measurement source and timing.
 
-For support and follow-up status questions, the interpreter identifies a record using `support_status` or `followup_status`. The backend renders the answer from the patient's stored acknowledgement/resolution/outcome fields and ignores model-written status prose. An unknown or foreign record requires clarification. Status is rechecked after speech generation, and newly generated status audio returns 410 if its record has changed before retrieval. This does not establish freshness for an audio file already downloaded to a phone; native playback freshness remains an acceptance item.
+For support and follow-up status questions, the interpreter identifies a record using `support_status` or `followup_status`. The backend renders the answer from the patient's stored acknowledgement/resolution/outcome fields and ignores model-written status prose. An unknown or foreign record requires clarification. Status is rechecked after speech generation, and newly generated status audio returns 410 if its record has changed before retrieval. The native player revalidates a downloaded clip with authenticated HEAD when loading completes and once per second during playback. Failed checks stop the sequence; a five-second check timeout bounds an unresponsive service. This reduces stale playback but cannot guarantee instantaneous remote cancellation. Physical interruption and freshness behavior still require device verification.
 
 ## Select the reminder companion
 

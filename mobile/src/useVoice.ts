@@ -33,7 +33,8 @@ type Phase =
   | "sending"
   | "waiting"
   | "speaking"
-  | "error";
+  | "error"
+  | "cleanup_required";
 export function useVoice(
   api: PhoneApi | null,
   context: string | null,
@@ -103,70 +104,67 @@ export function useVoice(
     authorize?: () => Promise<void>,
     validate?: () => Promise<unknown>,
   ) {
-    if (
-      !api ||
-      api !== apiRef.current ||
-      operations.current.closed ||
-      !event.payload.audio_paths?.length
-    )
-      throw new Error("Playback is paused.");
-    if (event.payload.audio_paths.length > 20)
-      throw new Error("The spoken reply contains too many parts.");
-    let seconds = 0;
-    move("speaking");
+    const check = () => {
+      if (
+        !api ||
+        api !== apiRef.current ||
+        operations.current.closed ||
+        controller.signal.aborted ||
+        !active.current
+      )
+        throw new Error(
+          "Speech interrupted. Tap Repeat to hear a current reply.",
+        );
+      const expiry = Date.parse(event.expires_at);
+      if (!Number.isFinite(expiry) || expiry <= Date.now())
+        throw new Error(
+          "This spoken reply has expired. Check the current care details.",
+        );
+    };
+    check();
+    const paths = event.payload.audio_paths;
+    if (!paths?.length || paths.length > 20)
+      throw new Error(
+        "The spoken reply must contain between one and twenty parts.",
+      );
+    let seconds = 0,
+      authorised = false;
+    move("preparing_reply");
     await setIsAudioActiveAsync(true);
+    check();
     await setAudioModeAsync({
       allowsRecording: false,
       shouldPlayInBackground: false,
       playsInSilentMode: true,
       interruptionMode: "doNotMix",
     });
-    let authorised = false;
-    for (const path of event.payload.audio_paths) {
+    check();
+    for (const path of paths) {
       if (validate) await validate();
-      if (controller.signal.aborted || !active.current)
-        throw new Error(
-          "Speech interrupted. Tap Repeat to hear a current reply.",
-        );
-      if (Date.parse(event.expires_at) <= Date.now())
-        throw new Error(
-          "This spoken reply has expired. Check the current care details.",
-        );
-      const bytes = await api.audio(path, controller.signal);
+      check();
+      const bytes = await api!.audio(path, controller.signal);
+      check();
       const duration = wavDuration(bytes);
       seconds += duration;
-      if (seconds > 120 || controller.signal.aborted)
-        throw new Error("The spoken reply was stopped.");
+      if (seconds > 120)
+        throw new Error("The spoken reply exceeds two minutes.");
       const file = new File(
         Paths.cache,
         "parse-reply-" + Crypto.randomUUID() + ".wav",
       );
-      file.write(bytes);
-      if (!authorised && authorize) {
-        try {
-          await authorize();
-          authorised = true;
-        } catch (error) {
-          removeAudio(file.uri);
-          throw error;
-        }
-      }
-      if (controller.signal.aborted || !active.current) {
-        removeAudio(file.uri);
-        throw new Error("Playback was interrupted.");
-      }
-      let player: ReturnType<typeof createAudioPlayer>;
-      try {
-        player = createAudioPlayer(file.uri, { updateInterval: 100 });
-      } catch (error) {
-        removeAudio(file.uri);
-        throw error;
-      }
+      let player: ReturnType<typeof createAudioPlayer> | undefined;
       let cleanPlayback = () => {};
+      let pendingStart: Promise<void> | null = null;
       try {
+        file.write(bytes);
+        player = createAudioPlayer(file.uri, { updateInterval: 100 });
+        const nativePlayer = player;
         await new Promise<void>((resolve, reject) => {
-          let started = false;
-          let hasPlayed = false;
+          let starting = false,
+            started = false,
+            hasPlayed = false,
+            disposed = false,
+            checking = false;
           const stop = () =>
             reject(
               new Error("Speech interrupted. Tap Repeat when you are ready."),
@@ -175,14 +173,43 @@ export function useVoice(
             () => reject(new Error("Speech playback did not complete.")),
             (duration + 8) * 1000,
           );
-          const subscription = player.addListener(
+          const current = async () => {
+            await api!.validateAudio(path, controller.signal);
+            if (validate) await validate();
+            check();
+          };
+          const launch = () => {
+            if (starting || disposed) return;
+            starting = true;
+            pendingStart = (async () => {
+              try {
+                // Native loading may take time. Revalidate the downloaded clip at
+                // readiness, then obtain any reminder start authorization.
+                await current();
+                if (disposed) return;
+                if (!authorised && authorize) {
+                  await authorize();
+                  authorised = true;
+                }
+                check();
+                if (disposed) return;
+                started = true;
+                move("speaking");
+                nativePlayer.play();
+              } catch (error) {
+                if (!disposed) reject(error);
+              }
+            })();
+          };
+          const subscription = nativePlayer.addListener(
             "playbackStatusUpdate",
             (status) => {
+              if (disposed) return;
               if (status.error || status.mediaServicesDidReset) {
                 reject(new Error("Speech playback was interrupted."));
                 return;
               }
-              if (status.didJustFinish) {
+              if (status.didJustFinish && started) {
                 resolve();
                 return;
               }
@@ -196,39 +223,53 @@ export function useVoice(
                 reject(new Error("Speech playback was interrupted."));
                 return;
               }
-              if (status.isLoaded && !started) {
-                started = true;
-                player.play();
-              }
+              if (status.isLoaded) void launch();
             },
           );
-          controller.signal.addEventListener("abort", stop, { once: true });
-          if (controller.signal.aborted) stop();
-          const cleanup = () => {
+          // Revalidate during playback as well. A failed check stops audio;
+          // polling is not a guarantee of instantaneous remote cancellation.
+          const monitor = setInterval(() => {
+            if (!started || checking || disposed) return;
+            checking = true;
+            void current()
+              .catch((error) => {
+                if (!disposed) reject(error);
+              })
+              .finally(() => {
+                checking = false;
+              });
+          }, 1000);
+          cleanPlayback = () => {
+            disposed = true;
             clearTimeout(timeout);
+            clearInterval(monitor);
             subscription.remove();
             controller.signal.removeEventListener("abort", stop);
           };
-          // Completion cleanup is owned by the surrounding promise's finalizer.
-          cleanPlayback = cleanup;
-          if (player.isLoaded) {
-            started = true;
-            player.play();
-          }
+          controller.signal.addEventListener("abort", stop, { once: true });
+          if (controller.signal.aborted) stop();
+          else if (nativePlayer.isLoaded) void launch();
         });
+        check();
       } finally {
         try {
-          cleanPlayback();
-        } finally {
           try {
-            player.pause();
+            cleanPlayback();
           } finally {
             try {
-              player.release();
+              player?.pause();
             } finally {
-              removeAudio(file.uri);
+              try {
+                player?.release();
+              } finally {
+                removeAudio(file.uri);
+              }
             }
           }
+        } finally {
+          // Stop sound immediately, but drain any admitted ledger/start ACK
+          // before a handoff or unpair can attest cleanup and clear storage.
+          await pendingStart;
         }
       }
     }
@@ -378,11 +419,20 @@ export function useVoice(
     capturedContext.current = context;
     intent.current = true;
     move("preparing");
+    const stillWanted = () =>
+      intent.current &&
+      active.current &&
+      api === apiRef.current &&
+      !operations.current.closed;
     try {
       if (await loadPending()) {
         move("idle");
         intent.current = false;
         await recover();
+        return;
+      }
+      if (!stillWanted()) {
+        move("idle");
         return;
       }
       setMessage("Parse uses the microphone only for this recording.");
@@ -391,7 +441,7 @@ export function useVoice(
         throw new Error(
           "Microphone access is off. Enable it in your phone settings to speak to Parse.",
         );
-      if (!intent.current || !active.current) {
+      if (!stillWanted()) {
         move("idle");
         return;
       }
@@ -402,8 +452,13 @@ export function useVoice(
         playsInSilentMode: true,
         interruptionMode: "doNotMix",
       });
+      if (!stillWanted()) {
+        await setAudioModeAsync({ allowsRecording: false });
+        move("idle");
+        return;
+      }
       await recorder.prepareToRecordAsync();
-      if (!intent.current || !active.current) {
+      if (!stillWanted()) {
         await recorder.stop();
         removeAudio(recorder.uri);
         await setAudioModeAsync({ allowsRecording: false });
@@ -421,7 +476,10 @@ export function useVoice(
       }, 19000);
     } catch (error) {
       intent.current = false;
+      await recorder.stop().catch(() => {});
+      await setIsAudioActiveAsync(false).catch(() => {});
       await setAudioModeAsync({ allowsRecording: false }).catch(() => {});
+      removeAudio(recorder.uri);
       fail(error);
     }
   }
@@ -439,25 +497,31 @@ export function useVoice(
       return;
     }
     move("sending");
-    const duration = recorder.getStatus().durationMillis;
+    let duration = 0;
     try {
+      duration = recorder.getStatus().durationMillis;
       await recorder.stop();
+      await setAudioModeAsync({ allowsRecording: false });
     } catch (error) {
-      await setIsAudioActiveAsync(false);
+      await setIsAudioActiveAsync(false).catch(() => {});
       removeAudio(recorder.uri);
       fail(error);
       return;
-    } finally {
-      await setAudioModeAsync({ allowsRecording: false });
     }
     const uri = recorder.uri;
-    if (cancel || cancelled.current || !active.current) {
+    if (
+      cancel ||
+      cancelled.current ||
+      !active.current ||
+      api !== apiRef.current ||
+      operations.current.closed
+    ) {
       removeAudio(uri);
       move("idle");
       setMessage("Recording cancelled.");
       return;
     }
-    if (!uri || duration < 300) {
+    if (!uri || !Number.isFinite(duration) || duration < 300) {
       removeAudio(uri);
       fail(new Error("Please speak for at least a moment before releasing."));
       return;
@@ -511,6 +575,7 @@ export function useVoice(
     void operations.current.run(() => finish(true)).catch(fail);
   };
   useEffect(() => {
+    active.current = AppState.currentState === "active";
     sweepAudio();
     const change = AppState.addEventListener("change", (state) => {
       active.current = state === "active";
@@ -532,6 +597,7 @@ export function useVoice(
       void recoverRef.current(true).catch(fail);
     });
     return () => {
+      active.current = false;
       change.remove();
       blur.remove();
       focus.remove();
@@ -540,6 +606,45 @@ export function useVoice(
       void finishRef.current(true).catch(() => {});
     };
   }, []);
+  useEffect(() => {
+    if (phase !== "recording") return;
+    let live = true,
+      checking = false,
+      permissionCheckedAt = 0;
+    const timer = setInterval(() => {
+      if (!live || phaseRef.current !== "recording") return;
+      try {
+        const status = recorder.getStatus();
+        if (!status.isRecording || status.mediaServicesDidReset) {
+          interrupted.current();
+          return;
+        }
+      } catch {
+        interrupted.current();
+        return;
+      }
+      if (!checking && Date.now() - permissionCheckedAt >= 1000) {
+        checking = true;
+        permissionCheckedAt = Date.now();
+        void AudioModule.getRecordingPermissionsAsync()
+          .then((permission) => {
+            if (live && phaseRef.current === "recording" && !permission.granted)
+              interrupted.current();
+          })
+          .catch(() => {
+            if (live) interrupted.current();
+          })
+          .finally(() => {
+            checking = false;
+          });
+      }
+    }, 200);
+    return () => {
+      live = false;
+      clearInterval(timer);
+    };
+  }, [phase, recorder]);
+
   async function repeat() {
     if (
       operations.current.closed ||
@@ -559,28 +664,45 @@ export function useVoice(
     }
   }
   const stop = (after?: () => Promise<void>) =>
-    operations.current.stop(
-      async () => {
-        intent.current = false;
-        cancelled.current = true;
-        job.current?.abort();
-        await setIsAudioActiveAsync(false);
-        await finish(true);
-      },
-      async () => {
-        // A permission/prepare call may have been resolving during interruption.
-        // Disable audio again only after every admitted operation has settled.
-        await setIsAudioActiveAsync(false);
-        await setAudioModeAsync({ allowsRecording: false });
-        if (recorder.getStatus().isRecording)
-          throw new Error(
-            "Recording has not stopped. Keep this phone selected and try again.",
-          );
-        sweepAudio();
-        await after?.();
-        move("idle");
-      },
-    );
+    operations.current
+      .stop(
+        async () => {
+          intent.current = false;
+          cancelled.current = true;
+          job.current?.abort();
+          await setIsAudioActiveAsync(false);
+          await finish(true);
+        },
+        async () => {
+          // A permission/prepare call may have been resolving during interruption.
+          // Disable audio again only after every admitted operation has settled.
+          await setIsAudioActiveAsync(false);
+          await setAudioModeAsync({ allowsRecording: false });
+          if (recorder.getStatus().isRecording)
+            throw new Error(
+              "Recording has not stopped. Keep this phone selected and try again.",
+            );
+          sweepAudio();
+          await after?.();
+          move("idle");
+          setMessage("Stopped. You can speak when you are ready.");
+        },
+      )
+      .catch((error) => {
+        move("cleanup_required");
+        setMessage(
+          "Audio cleanup did not finish. Choose Retry stop before speaking again.",
+        );
+        throw error;
+      });
+  useEffect(
+    () => () => {
+      // Identity changes and unmounts cancel even if a permission/prepare await
+      // is still pending. The stop barrier drains it before any new admission.
+      void stop().catch(() => {});
+    },
+    [api],
+  );
   return {
     phase,
     message,

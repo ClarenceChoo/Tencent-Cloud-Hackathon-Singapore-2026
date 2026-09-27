@@ -694,8 +694,9 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
             raise HTTPException(status_code=503, detail="Turn result exceeds device transport limit")
         return payload
 
+    @app.head("/v1/device/audio/{asset_id}")
     @app.get("/v1/device/audio/{asset_id}")
-    def device_audio(asset_id: str, authorization: Optional[str] = Header(default=None), db: Session = Depends(get_db)):
+    def device_audio(asset_id: str, request: Request, authorization: Optional[str] = Header(default=None), db: Session = Depends(get_db)):
         device = authenticate_device_header(db, authorization)
         lock_patient(db, device.patient_id)
         db.refresh(device)
@@ -726,10 +727,11 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         related = commands + [item for item in checkins if asset.id in (item.audio_asset_ids or [])]
         if related and not any(current_attempt(db, device, item) for item in related):
             raise HTTPException(410, detail="Reminder audio is no longer current")
-        for item in related:
-            item.audio_accessed_at = item.audio_accessed_at or utcnow()
+        if request.method == "GET":
+            for item in related:
+                item.audio_accessed_at = item.audio_accessed_at or utcnow()
         db.commit()
-        return Response(content=asset.wav_bytes, media_type="audio/wav", headers={"Cache-Control": "private, no-store", "Content-Length": str(len(asset.wav_bytes))})
+        return Response(content=asset.wav_bytes if request.method == "GET" else b"", media_type="audio/wav", headers={"Cache-Control": "private, no-store", "Content-Length": str(len(asset.wav_bytes))})
 
     @app.post("/v1/device/acks")
     def device_ack(data: DeviceAck, authorization: Optional[str] = Header(default=None), db: Session = Depends(get_db)):

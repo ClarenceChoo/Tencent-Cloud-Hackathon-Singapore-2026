@@ -18,12 +18,21 @@ export class Operations {
       return this.stopping.then(() => this.stop(interrupt, verify));
     this.closed = true;
     this.stopping = (async () => {
+      let verified = false;
       try {
-        await interrupt();
-        await Promise.allSettled([...this.pending]);
+        // Even a failed native stop must drain admitted callbacks. Otherwise
+        // an old prepare/ledger write can outlive a failed cleanup attempt.
+        try {
+          await interrupt();
+        } finally {
+          await Promise.allSettled([...this.pending]);
+        }
         await verify();
+        verified = true;
       } finally {
-        this.closed = false;
+        // A failed cleanup cannot safely admit fresh recording/playback. A
+        // later explicit stop may retry and reopen admission after verification.
+        this.closed = !verified;
         this.stopping = null;
       }
     })();

@@ -491,7 +491,13 @@ function Companion() {
             </View>
             {!["idle", "error"].includes(voice.phase) && (
               <Button
-                title={isRecording ? "Cancel recording" : "Stop"}
+                title={
+                  voice.phase === "cleanup_required"
+                    ? "Retry stop"
+                    : isRecording
+                      ? "Cancel recording"
+                      : "Stop"
+                }
                 secondary
                 onPress={() => {
                   void voice.stop().catch(showError);

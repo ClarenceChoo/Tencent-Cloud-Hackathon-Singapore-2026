@@ -196,20 +196,83 @@ export class PhoneApi {
   revoke() {
     return this.request("/v1/phone/installation", { method: "DELETE" });
   }
-  async audio(path: string, signal: AbortSignal) {
-    const response = await fetch(this.installation.service + audioPath(path), {
-      redirect: "error",
-      signal,
-      headers: { Authorization: "Bearer " + this.installation.credential },
-    });
-    if (!response.ok)
-      throw new ApiError(
-        response.status,
-        "This spoken reply is no longer available. Check the current care details.",
+  private async fetchAudio<T>(
+    path: string,
+    signal: AbortSignal,
+    method: "GET" | "HEAD",
+    consume: (response: Response, signal: AbortSignal) => Promise<T>,
+  ): Promise<T> {
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    signal.addEventListener("abort", abort, { once: true });
+    if (signal.aborted) abort();
+    const timer = setTimeout(abort, method === "HEAD" ? 5000 : 30000);
+    try {
+      const response = await fetch(
+        this.installation.service + audioPath(path),
+        {
+          method,
+          redirect: "error",
+          signal: controller.signal,
+          headers: { Authorization: "Bearer " + this.installation.credential },
+        },
       );
-    const body = new Uint8Array(await response.arrayBuffer());
-    if (body.length > 768 * 1024)
-      throw new Error("Spoken reply exceeds its size limit.");
-    return body;
+      if (!response.ok)
+        throw new ApiError(
+          response.status,
+          "This spoken reply is no longer available. Check the current care details.",
+        );
+      if (controller.signal.aborted)
+        throw new Error("Spoken reply transfer was interrupted.");
+      return await consume(response, controller.signal);
+    } finally {
+      clearTimeout(timer);
+      signal.removeEventListener("abort", abort);
+    }
+  }
+  validateAudio(path: string, signal: AbortSignal) {
+    return this.fetchAudio(path, signal, "HEAD", async () => {});
+  }
+  audio(path: string, signal: AbortSignal) {
+    return this.fetchAudio(path, signal, "GET", async (response, transfer) => {
+      const max = 768 * 1024;
+      const length = Number(response.headers.get("Content-Length"));
+      if (length > max) {
+        void response.body?.cancel().catch(() => {});
+        throw new Error("Spoken reply exceeds its size limit.");
+      }
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("Spoken reply body is missing.");
+      const abort = () => {
+        void reader.cancel().catch(() => {});
+      };
+      transfer.addEventListener("abort", abort, { once: true });
+      const chunks: Uint8Array[] = [];
+      let size = 0;
+      try {
+        if (transfer.aborted) abort();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (transfer.aborted)
+            throw new Error("Spoken reply transfer was interrupted.");
+          if (done) break;
+          size += value.length;
+          if (size > max)
+            throw new Error("Spoken reply exceeds its size limit.");
+          chunks.push(value);
+        }
+        const bytes = new Uint8Array(size);
+        let offset = 0;
+        for (const chunk of chunks) {
+          bytes.set(chunk, offset);
+          offset += chunk.length;
+        }
+        return bytes;
+      } finally {
+        transfer.removeEventListener("abort", abort);
+        void reader.cancel().catch(() => {});
+        reader.releaseLock();
+      }
+    });
   }
 }

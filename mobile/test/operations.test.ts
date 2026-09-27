@@ -72,3 +72,44 @@ test("a second stop still performs its own handoff verification", async () => {
   await Promise.all([first, second]);
   assert.deepEqual(steps, ["first", "handoff"]);
 });
+
+test("a failed native stop drains old callbacks and keeps admission closed until a verified retry", async () => {
+  const operations = new Operations();
+  let release!: () => void;
+  const pending = operations.run(
+    () =>
+      new Promise<void>((resolve) => {
+        release = resolve;
+      }),
+  );
+  let finished = false,
+    attested = false;
+  const stop = operations.stop(
+    async () => {
+      throw new Error("Native stop failed");
+    },
+    async () => {
+      attested = true;
+    },
+  );
+  const rejected = assert.rejects(stop, /Native stop failed/).then(() => {
+    finished = true;
+  });
+  await Promise.resolve();
+  assert.equal(finished, false);
+  assert.equal(operations.closed, true);
+  release();
+  await pending;
+  await rejected;
+  assert.equal(attested, false);
+  assert.equal(operations.closed, true);
+  assert.equal(await operations.run(async () => "must not start"), undefined);
+  await operations.stop(
+    async () => {},
+    async () => {
+      attested = true;
+    },
+  );
+  assert.equal(attested, true);
+  assert.equal(operations.closed, false);
+});

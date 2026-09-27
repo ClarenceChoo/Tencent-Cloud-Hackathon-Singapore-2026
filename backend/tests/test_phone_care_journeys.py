@@ -483,3 +483,48 @@ def test_phone_sources_feed_reviewed_summary_with_omission_expiry_and_revocation
             link.expires_at = utcnow() - timedelta(seconds=1)
         db.commit()
     assert client.get(expiring["url"]).status_code == 410
+
+
+def test_head_revalidates_owned_unexpired_context_without_replaying_audio(journey):
+    client, app, ids, headers, voice = journey
+    proposal, turn = voice.propose("health_note", {"wording": "Fictional concern"})
+    event = client.get("/v1/device/turns/" + turn, headers=headers).json()["event"]
+    path = event["payload"]["audio_paths"][0]
+    original = client.get(path, headers=headers)
+    checked = client.head(path, headers=headers)
+    assert checked.status_code == 200 and checked.content == b""
+    assert checked.headers["content-length"] == str(len(original.content))
+    assert checked.headers["cache-control"] == "private, no-store"
+    assert client.head(path).status_code == 401
+    assert client.head(path, headers={"Authorization": "Bearer " + ids["credential"]}).status_code == 404
+    voice.confirm(proposal)
+    assert client.head(path, headers=headers).status_code == 410
+    _, reply, _ = voice.speak({"intent": "chat", "spoken_text": "Hello Pat"})
+    current = reply["payload"]["audio_paths"][0]
+    with app.state.db.SessionLocal() as db:
+        asset = db.get(m.AudioAsset, current.rsplit("/", 1)[1])
+        asset.expires_at = utcnow() - timedelta(seconds=1)
+        db.commit()
+    assert client.head(current, headers=headers).status_code == 410
+    owner = login(client)
+    device = voice.home()["device_id"]
+    assert client.post("/v1/app/devices/" + device + "/revoke", headers=owner).status_code == 200
+    assert client.head(current, headers=headers).status_code == 403
+
+
+def test_head_invalidates_changed_plan_and_support_status(journey):
+    client, _, ids, headers, voice = journey
+    create_plan(client, ids["patient"], login(client))
+    _, explanation, _ = voice.speak({"intent": "explain", "payload": {"medicine_id": "med_one"}})
+    plan_audio = explanation["payload"]["audio_paths"][0]
+    assert client.head(plan_audio, headers=headers).status_code == 200
+    create_plan(client, ids["patient"], login(client))
+    assert client.head(plan_audio, headers=headers).status_code == 410
+    proposal, _ = voice.propose("support_request", {"request_text": "Fictional request", "recipient_user_id": ids["caregiver"]})
+    support_id = voice.confirm(proposal)
+    _, status, _ = voice.speak({"intent": "support_status", "payload": {"record_id": support_id}})
+    status_audio = status["payload"]["audio_paths"][0]
+    assert client.head(status_audio, headers=headers).status_code == 200
+    caregiver = login(client, "caregiver@example.invalid", "caregiver-password")
+    assert client.post("/v1/app/support-requests/" + support_id + "/acknowledge", headers=caregiver).status_code == 200
+    assert client.head(status_audio, headers=headers).status_code == 410

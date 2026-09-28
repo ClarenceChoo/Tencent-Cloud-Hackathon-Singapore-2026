@@ -1,0 +1,2524 @@
+{
+  "at": "2026-09-28T05:05:01.017482+00:00",
+  "label": "r9-before",
+  "checks": [
+    {
+      "name": "Native Android plays distinct protected clips in envelope order, one active track at sampled instants, and clears each cached reply",
+      "passed": true
+    }
+  ],
+  "physical_phone": false,
+  "live_speech": false,
+  "environment": "Rooted Android 16 ARM64 emulator; actual native media player and cache; local verified TLS proxy, scripted distinct PCM tones; host audio disabled.",
+  "source_sha256": {
+    "mobile/src/useVoice.ts": "f05583036e1888d98784b224f7be201ed5ab27df25f8408cb0b28883edd8250f",
+    "mobile/src/App.tsx": "a84714d87377a775cf5f7617f2a38ff5fb2d6faf10c74ecfc8b8bc47b9a4b3c8",
+    "mobile/src/api.ts": "8c7bc2a0d324246701885082d83b6db3ac8ce0cb52ab6d394ae2861c12c8fab0",
+    "tools/android_native_sequence.py": "7fee8aed7ac3a3c3d4fd4c63f18ecc5de4b566f219047db4c247e064f307e9ea",
+    "tools/android_native_fixture.py": "9e8d6f971127599677a610a6600d48054493b396fb236481c2ab0351a77a4b87",
+    "tools/android_native_fault_proxy.py": "55b329a9872a48208437904f8879e5aa5473704f7d367bc9dbba00ecbf60e30e"
+  },
+  "before": {
+    "health_notes": {
+      "count": 8,
+      "sha256": "9234dda4d94811766ded432d680b094f21d050f508b3e7712e0f6f1ca37a9622"
+    },
+    "measurements": {
+      "count": 1,
+      "sha256": "2457ef73a9e0b3365b0f83cce0e753e19ea0353207976414c46f1a43b33ec8f7"
+    },
+    "preventive_tasks": {
+      "count": 1,
+      "sha256": "77550713b9d4ac0c750b78513d1ed7eecd0f3591cdd4714417161c7ebc1b859f"
+    },
+    "support_requests": {
+      "count": 1,
+      "sha256": "d53c279e1dcd53b0387a72bd17442297ded5b42e8d61da24c0bba120f3ae5716"
+    },
+    "followups": {
+      "count": 1,
+      "sha256": "88856db41ac6e37d3b541de3532e232853bf61c3cbcf4d91a8f8cfc13a14d7be"
+    },
+    "voice_turns": {
+      "count": 36,
+      "sha256": "b7fe759c69d44d52c40045a7a5a228f8a01ad97817c53e2dc16de41173e5e909"
+    },
+    "confirmation_proposals": {
+      "count": 25,
+      "sha256": "df63e92dfe8eb5dd0a88f14fc846080e82a4e0a5c168d7479cb17a63f47406aa"
+    },
+    "companion_routes": {
+      "count": 1,
+      "sha256": "0fd426b10eeb010bff557f2646c1d747b92759b06d50ff26bb05ca0dd2e18e57"
+    },
+    "uploads": 36
+  },
+  "installed_apk_sha256": "9829db43036a4c7802b6cdd57530dac37c62ddb9a38d6ffb7f0a4abb5f51bf3a",
+  "clock_offset_ms": -887.24072265625,
+  "clock_roundtrip_ms": 21.334228515625,
+  "pid": "3494",
+  "ordered": {
+    "response": {
+      "at": "2026-09-28T05:05:18.917619+00:00",
+      "kind": "speaker_sequence",
+      "expires_at": "2026-09-28T05:07:18.913767Z",
+      "audio_paths": [
+        "/v1/device/audio/audio_e5c1f7c65e344b20a7fa22589d707b45",
+        "/v1/device/audio/audio_b4b2eeffad1a48569f824f1a082a324a",
+        "/v1/device/audio/audio_6d43b1b4c3b8424e9f8138ca59deb697",
+        "/v1/device/audio/audio_f66a6ec6e2614c66989573ddfb012c76",
+        "/v1/device/audio/audio_2512a7118072415d9e118290aeae4b18"
+      ]
+    },
+    "assets": [
+      {
+        "id": "audio_e5c1f7c65e344b20a7fa22589d707b45",
+        "device_id": "dev_947066d4299a47ffa044a44b7049238d",
+        "duration_ms": 6000,
+        "content_sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+      },
+      {
+        "id": "audio_b4b2eeffad1a48569f824f1a082a324a",
+        "device_id": "dev_947066d4299a47ffa044a44b7049238d",
+        "duration_ms": 6000,
+        "content_sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+      },
+      {
+        "id": "audio_6d43b1b4c3b8424e9f8138ca59deb697",
+        "device_id": "dev_947066d4299a47ffa044a44b7049238d",
+        "duration_ms": 6000,
+        "content_sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+      },
+      {
+        "id": "audio_f66a6ec6e2614c66989573ddfb012c76",
+        "device_id": "dev_947066d4299a47ffa044a44b7049238d",
+        "duration_ms": 6000,
+        "content_sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+      },
+      {
+        "id": "audio_2512a7118072415d9e118290aeae4b18",
+        "device_id": "dev_947066d4299a47ffa044a44b7049238d",
+        "duration_ms": 6000,
+        "content_sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+      }
+    ],
+    "events": [
+      {
+        "at": "2026-09-28T05:05:18.917619+00:00",
+        "kind": "speaker_sequence",
+        "expires_at": "2026-09-28T05:07:18.913767Z",
+        "audio_paths": [
+          "/v1/device/audio/audio_e5c1f7c65e344b20a7fa22589d707b45",
+          "/v1/device/audio/audio_b4b2eeffad1a48569f824f1a082a324a",
+          "/v1/device/audio/audio_6d43b1b4c3b8424e9f8138ca59deb697",
+          "/v1/device/audio/audio_f66a6ec6e2614c66989573ddfb012c76",
+          "/v1/device/audio/audio_2512a7118072415d9e118290aeae4b18"
+        ]
+      },
+      {
+        "at": "2026-09-28T05:05:19.004066+00:00",
+        "kind": "audio_request",
+        "method": "GET",
+        "path": "/v1/device/audio/audio_e5c1f7c65e344b20a7fa22589d707b45",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:19.061812+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_e5c1f7c65e344b20a7fa22589d707b45",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:20.056429+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_e5c1f7c65e344b20a7fa22589d707b45",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:21.068505+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_e5c1f7c65e344b20a7fa22589d707b45",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:22.084921+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_e5c1f7c65e344b20a7fa22589d707b45",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:23.101751+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_e5c1f7c65e344b20a7fa22589d707b45",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:24.118863+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_e5c1f7c65e344b20a7fa22589d707b45",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:25.137947+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_e5c1f7c65e344b20a7fa22589d707b45",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:25.156658+00:00",
+        "kind": "audio_request",
+        "method": "GET",
+        "path": "/v1/device/audio/audio_b4b2eeffad1a48569f824f1a082a324a",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:25.200645+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_b4b2eeffad1a48569f824f1a082a324a",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:26.203972+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_b4b2eeffad1a48569f824f1a082a324a",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:27.216789+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_b4b2eeffad1a48569f824f1a082a324a",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:28.234877+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_b4b2eeffad1a48569f824f1a082a324a",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:29.251304+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_b4b2eeffad1a48569f824f1a082a324a",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:30.272708+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_b4b2eeffad1a48569f824f1a082a324a",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:31.286089+00:00",
+        "kind": "audio_request",
+        "method": "GET",
+        "path": "/v1/device/audio/audio_6d43b1b4c3b8424e9f8138ca59deb697",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:31.323094+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_6d43b1b4c3b8424e9f8138ca59deb697",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:32.317392+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_6d43b1b4c3b8424e9f8138ca59deb697",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:33.338043+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_6d43b1b4c3b8424e9f8138ca59deb697",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:34.351905+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_6d43b1b4c3b8424e9f8138ca59deb697",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:35.368093+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_6d43b1b4c3b8424e9f8138ca59deb697",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:36.386623+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_6d43b1b4c3b8424e9f8138ca59deb697",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:37.404888+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_6d43b1b4c3b8424e9f8138ca59deb697",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:37.409871+00:00",
+        "kind": "audio_request",
+        "method": "GET",
+        "path": "/v1/device/audio/audio_f66a6ec6e2614c66989573ddfb012c76",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:37.438430+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_f66a6ec6e2614c66989573ddfb012c76",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:38.435117+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_f66a6ec6e2614c66989573ddfb012c76",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:39.451585+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_f66a6ec6e2614c66989573ddfb012c76",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:40.468685+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_f66a6ec6e2614c66989573ddfb012c76",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:41.484841+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_f66a6ec6e2614c66989573ddfb012c76",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:42.502744+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_f66a6ec6e2614c66989573ddfb012c76",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:43.517805+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_f66a6ec6e2614c66989573ddfb012c76",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:43.529285+00:00",
+        "kind": "audio_request",
+        "method": "GET",
+        "path": "/v1/device/audio/audio_2512a7118072415d9e118290aeae4b18",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:43.559769+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_2512a7118072415d9e118290aeae4b18",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:44.573355+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_2512a7118072415d9e118290aeae4b18",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:45.585879+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_2512a7118072415d9e118290aeae4b18",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:46.606401+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_2512a7118072415d9e118290aeae4b18",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:47.618060+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_2512a7118072415d9e118290aeae4b18",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:48.634621+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_2512a7118072415d9e118290aeae4b18",
+        "upstream_status": 200
+      }
+    ],
+    "samples": [
+      {
+        "at_ms": 1790571916867.1328,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571917064.2712,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571917267.003,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571917480.9229,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571917691.833,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571917909.628,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571918119.1008,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571918336.174,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571918557.144,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571918786.1672,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571919005.007,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571919222.923,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2839 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4017 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571919442.999,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2839 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4017 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571919669.2532,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2839 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4017 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571919906.5542,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2839 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4017 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571920124.392,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2839 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4017 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571920362.656,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2839 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4017 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571920597.729,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2839 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4017 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571920837.7227,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2839 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4017 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571921064.6348,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2839 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4017 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571921296.734,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2839 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4017 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571921531.711,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2839 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4017 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571921765.0881,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2839 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4017 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571922003.225,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2839 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4017 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571922235.841,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2839 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4017 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571922459.209,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2839 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4017 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571922692.8398,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2839 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4017 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571922912.57,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2839 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4017 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571923130.911,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2839 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4017 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571923389.566,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2839 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4017 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571923612.274,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2839 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4017 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571923832.8472,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2839 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4017 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571924050.1492,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2839 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4017 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571924282.13,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2839 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4017 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571924505.52,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2839 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4017 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571924729.8801,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": []
+      },
+      {
+        "at_ms": 1790571924952.183,
+        "cache": [
+          {
+            "name": "parse-reply-5c307cf6-cd2c-40da-9753-472643fab1cf.wav",
+            "sha256": "4d72cfa6deafdec1c66a083472161dc69c1c8a6baf38585e5915f5dba664fe82"
+          }
+        ],
+        "active": []
+      },
+      {
+        "at_ms": 1790571925195.9731,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571925410.4478,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2847 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4033 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571925621.102,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2847 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4033 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571925846.102,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2847 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4033 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571926083.315,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2847 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4033 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571926308.3179,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2847 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4033 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571926543.2583,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2847 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4033 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571926763.7297,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2847 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4033 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571926979.352,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2847 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4033 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571927203.97,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2847 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4033 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571927425.247,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2847 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4033 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571927649.881,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2847 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4033 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571927877.388,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2847 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4033 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571928115.6667,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2847 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4033 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571928333.924,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2847 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4033 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571928571.774,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2847 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4033 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571928801.037,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2847 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4033 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571929033.677,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2847 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4033 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571929264.4758,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2847 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4033 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571929500.4731,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2847 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4033 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571929731.125,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2847 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4033 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571929965.893,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2847 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4033 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571930200.678,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2847 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4033 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571930430.469,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2847 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4033 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571930661.4321,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2847 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4033 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571930898.546,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": []
+      },
+      {
+        "at_ms": 1790571931131.1172,
+        "cache": [
+          {
+            "name": "parse-reply-a6f6e6fd-0554-4ecc-a944-5873a61fa596.wav",
+            "sha256": "a092ee80644381f59fe2965f0833767dd4f17ae38693d6997a2c2f5ac7833499"
+          }
+        ],
+        "active": []
+      },
+      {
+        "at_ms": 1790571931352.3562,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571931585.96,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571931815.2478,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571932047.2058,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571932291.5718,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571932515.361,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571932743.253,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571932975.023,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571933206.6392,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571933435.689,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571933674.6152,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571933910.8,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571934137.9958,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571934367.423,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571934593.9487,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571934825.946,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571935052.234,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571935275.917,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571935499.536,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571935723.214,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571935959.0342,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571936180.374,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571936410.792,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571936638.1829,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571936856.631,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2855 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4041 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571937089.609,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": []
+      },
+      {
+        "at_ms": 1790571937330.6172,
+        "cache": [
+          {
+            "name": "parse-reply-96177ab6-77bd-4d65-a7a3-194a8c508b8d.wav",
+            "sha256": "f090ad15c7ad42cf81e69ca3d1053198312ae0b38fa531becb2c2af59b29a5f8"
+          }
+        ],
+        "active": []
+      },
+      {
+        "at_ms": 1790571937555.328,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571937782.903,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571938007.572,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571938239.9941,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571938469.391,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571938705.5203,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571938944.7988,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571939175.0012,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571939404.7307,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571939630.9768,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571939867.512,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571940103.7231,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571940323.851,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571940549.1729,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571940777.0537,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571941012.5881,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571941240.625,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571941479.449,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571941716.821,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571941946.2368,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571942175.7979,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571942391.907,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571942622.3308,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571942850.112,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571943081.1401,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2863 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4049 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571943303.7551,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": []
+      },
+      {
+        "at_ms": 1790571943530.459,
+        "cache": [
+          {
+            "name": "parse-reply-fbac6d57-1106-43c8-ba94-e71a611f5517.wav",
+            "sha256": "93faabbeb74718d9c1e369c6bb0381c9ff153959671479fd1566800abb530292"
+          }
+        ],
+        "active": []
+      },
+      {
+        "at_ms": 1790571943759.475,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2871 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4057 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571943992.405,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2871 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4057 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571944221.4248,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2871 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4057 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571944451.9282,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2871 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4057 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571944673.118,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2871 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4057 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571944903.7222,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2871 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4057 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571945137.1362,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2871 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4057 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571945355.8809,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2871 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4057 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571945590.858,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2871 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4057 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571945819.133,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2871 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4057 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571946052.3123,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2871 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4057 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571946284.2961,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2871 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4057 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571946520.696,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2871 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4057 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571946748.273,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2871 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4057 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571946971.294,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2871 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4057 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571947202.785,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2871 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4057 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571947427.649,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2871 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4057 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571947656.631,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2871 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4057 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571947882.116,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2871 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4057 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571948114.052,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2871 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4057 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571948347.7021,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2871 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4057 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571948584.3682,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2871 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4057 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571948816.971,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2871 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4057 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571949045.6729,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2871 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4057 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571949266.95,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": []
+      },
+      {
+        "at_ms": 1790571949502.5051,
+        "cache": [
+          {
+            "name": "parse-reply-b7f974d8-1014-41a7-88c3-597ee03123c9.wav",
+            "sha256": "37cac99c9078dd0851f8f8bee98286d137af522178e4cadeb749121a88c9dd9b"
+          }
+        ],
+        "active": []
+      },
+      {
+        "at_ms": 1790571949721.524,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571949935.9739,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571950158.055,
+        "cache": [],
+        "active": []
+      }
+    ]
+  },
+  "expired": {
+    "response": {
+      "at": "2026-09-28T05:05:54.649304+00:00",
+      "kind": "speaker_sequence",
+      "expires_at": "2026-09-28T05:05:57.649176+00:00",
+      "audio_paths": [
+        "/v1/device/audio/audio_78e345b6e3f8476196df9b7ef1afdff5",
+        "/v1/device/audio/audio_f93fe240a236430b9873f81ccc0bde9c",
+        "/v1/device/audio/audio_b67bd0978955408ba903563f8c68bdda",
+        "/v1/device/audio/audio_c7006017f86945f18a68dd309589631b",
+        "/v1/device/audio/audio_ad1228a9402f48a49a7618639c716811"
+      ]
+    },
+    "assets": [
+      {
+        "id": "audio_78e345b6e3f8476196df9b7ef1afdff5",
+        "device_id": "dev_947066d4299a47ffa044a44b7049238d",
+        "duration_ms": 18000,
+        "content_sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+      },
+      {
+        "id": "audio_f93fe240a236430b9873f81ccc0bde9c",
+        "device_id": "dev_947066d4299a47ffa044a44b7049238d",
+        "duration_ms": 18000,
+        "content_sha256": "6b5dd01c538f2de88ff7e67a406a31f8efc2d8ca59f3b5cda71361aaa909243b"
+      },
+      {
+        "id": "audio_b67bd0978955408ba903563f8c68bdda",
+        "device_id": "dev_947066d4299a47ffa044a44b7049238d",
+        "duration_ms": 18000,
+        "content_sha256": "33c5aad0542f15ad25b70a2dfa593366074898ea16f75de602ee11a5400b47f2"
+      },
+      {
+        "id": "audio_c7006017f86945f18a68dd309589631b",
+        "device_id": "dev_947066d4299a47ffa044a44b7049238d",
+        "duration_ms": 18000,
+        "content_sha256": "2b6b15eb7f3021d1ddb90157b2252db483e00d1e4ca38bb4a3095615362858bd"
+      },
+      {
+        "id": "audio_ad1228a9402f48a49a7618639c716811",
+        "device_id": "dev_947066d4299a47ffa044a44b7049238d",
+        "duration_ms": 18000,
+        "content_sha256": "b5f0fb49e5e873becf79226816d6970a4ffd3e7a6589c37846697a2ac2c2a1a5"
+      }
+    ],
+    "events": [
+      {
+        "at": "2026-09-28T05:05:54.649247+00:00",
+        "kind": "speaker_deadline_shortened",
+        "expires_at": "2026-09-28T05:05:57.649176+00:00",
+        "audio_paths": [
+          "/v1/device/audio/audio_78e345b6e3f8476196df9b7ef1afdff5",
+          "/v1/device/audio/audio_f93fe240a236430b9873f81ccc0bde9c",
+          "/v1/device/audio/audio_b67bd0978955408ba903563f8c68bdda",
+          "/v1/device/audio/audio_c7006017f86945f18a68dd309589631b",
+          "/v1/device/audio/audio_ad1228a9402f48a49a7618639c716811"
+        ]
+      },
+      {
+        "at": "2026-09-28T05:05:54.649304+00:00",
+        "kind": "speaker_sequence",
+        "expires_at": "2026-09-28T05:05:57.649176+00:00",
+        "audio_paths": [
+          "/v1/device/audio/audio_78e345b6e3f8476196df9b7ef1afdff5",
+          "/v1/device/audio/audio_f93fe240a236430b9873f81ccc0bde9c",
+          "/v1/device/audio/audio_b67bd0978955408ba903563f8c68bdda",
+          "/v1/device/audio/audio_c7006017f86945f18a68dd309589631b",
+          "/v1/device/audio/audio_ad1228a9402f48a49a7618639c716811"
+        ]
+      },
+      {
+        "at": "2026-09-28T05:05:54.661231+00:00",
+        "kind": "audio_request",
+        "method": "GET",
+        "path": "/v1/device/audio/audio_78e345b6e3f8476196df9b7ef1afdff5",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:54.720907+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_78e345b6e3f8476196df9b7ef1afdff5",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:55.718942+00:00",
+        "kind": "audio_request",
+        "method": "HEAD",
+        "path": "/v1/device/audio/audio_78e345b6e3f8476196df9b7ef1afdff5",
+        "upstream_status": 200
+      },
+      {
+        "at": "2026-09-28T05:05:55.719087+00:00",
+        "kind": "audio_validation_stalled",
+        "path": "/v1/device/audio/audio_78e345b6e3f8476196df9b7ef1afdff5",
+        "seconds": 15
+      }
+    ],
+    "samples": [
+      {
+        "at_ms": 1790571952462.838,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571952657.6697,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571952873.044,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571953096.262,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571953313.2788,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571953524.983,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571953721.76,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571953939.117,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571954144.416,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571954357.279,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571954566.2598,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571954796.593,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571955031.968,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571955266.6528,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571955494.033,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571955721.618,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571955954.1262,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571956182.958,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571956418.973,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571956652.383,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571956886.309,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571957110.6628,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571957351.5342,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571957574.718,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571957800.417,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571958030.646,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571958259.894,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571958487.774,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571958720.6973,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571958952.173,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571959185.006,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571959422.7258,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571959652.971,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571959887.9722,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571960136.378,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571960369.2212,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571960607.725,
+        "cache": [
+          {
+            "name": "parse-reply-0f1d3164-09e4-4632-af37-7a0e08e3f141.wav",
+            "sha256": "5ecbceb77c1d4eda4881ae3168c0da9ea282c9f7e8759bed6fdaee4f1368fc9d"
+          }
+        ],
+        "active": [
+          "AudioPlaybackConfiguration piid:2879 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/3494 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:4065 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+        ]
+      },
+      {
+        "at_ms": 1790571960825.523,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571961026.326,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571961237.615,
+        "cache": [],
+        "active": []
+      },
+      {
+        "at_ms": 1790571961453.1572,
+        "cache": [],
+        "active": []
+      }
+    ],
+    "last_observed_active_after_deadline_ms": 2071.30859375,
+    "first_clear_after_deadline_ms": 2289.1064453125
+  },
+  "failure": "AssertionError: Native playback continued beyond the known reply deadline while its freshness request stalled",
+  "cleanup": {
+    "sequence_override_removed": true,
+    "direct_fixture_connection_restored": true,
+    "care_unchanged": true
+  },
+  "interpretation": "Three-second deadline is shorter than the existing five-second HEAD request timeout. Native playback remained active beyond the reply deadline, reproducing the defect; the assertion failure is expected evidence."
+}

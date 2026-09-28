@@ -115,7 +115,7 @@ def serve(directory: Path, port: int, resume: bool = False):
     from app.main import create_app
     from app.models import AccessGrant, Patient, User
     from app.provisioning import private_file
-    from app.providers import FixtureProvider, ProviderUnavailable, validate_speech_wav
+    from app.providers import FixtureProvider, ProviderUnavailable, SpeechTooLong, validate_speech_wav
     from app.security import hash_password
     from app import phone_audio, worker
     from fastapi import HTTPException
@@ -132,6 +132,31 @@ def serve(directory: Path, port: int, resume: bool = False):
                                  for n in range(16000)))
 
     class ArmedNativeProvider(FixtureProvider):
+        async def synthesise_speech(self, text: str) -> bytes:
+            sequence = directory / "sequence-tone.json"
+            if not sequence.is_file():
+                return await super().synthesise_speech(text)
+            # Explicit local fixture only: force the production sequence splitter
+            # to return distinct PCM tones whose bytes can be identified on-device.
+            config = json.loads(sequence.read_text())
+            limit, duration = config["max_chars"], config["duration_ms"]
+            if not isinstance(limit, int) or not 20 <= limit <= 160 or not isinstance(duration, int) or not 300 <= duration <= 20000:
+                raise ProviderUnavailable("Invalid native sequence fixture configuration.")
+            if len(text) > limit:
+                raise SpeechTooLong("Fixture asks the production worker to split this text.")
+            text_hash = hashlib.sha256(text.encode()).hexdigest()
+            frequency = 300 + int(text_hash[:4], 16) % 2000 + (int(text_hash[4:8], 16) % 100) / 100
+            output = io.BytesIO()
+            with wave.open(output, "wb") as wav:
+                wav.setparams((1, 2, 16000, 0, "NONE", "not compressed"))
+                wav.writeframes(b"".join(struct.pack("<h", int(1500 * math.sin(2 * math.pi * frequency * n / 16000)))
+                                         for n in range(duration * 16)))
+            data = output.getvalue()
+            with (directory / "native-syntheses.jsonl").open("a") as log:
+                log.write(json.dumps({"text_sha256": text_hash, "wav_sha256": hashlib.sha256(data).hexdigest(),
+                                      "duration_ms": duration}) + "\n")
+            return validate_speech_wav(data)
+
         async def transcribe_audio(self, wav: bytes) -> str:
             validate_speech_wav(wav)
             armed = directory / "next-utterance.json"

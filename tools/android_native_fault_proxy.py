@@ -15,6 +15,8 @@ import socket
 import sqlite3
 import ssl
 import threading
+import time
+import re
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -43,6 +45,7 @@ def main():
     local_tls.load_cert_chain(directory / "tls/server.pem", directory / "tls/server.key")
     lock = threading.Lock()
     mode_file = directory / "fault-mode.json"
+    audio_heads = {}
 
     def mode():
         return json.loads(mode_file.read_text()) if mode_file.is_file() else {}
@@ -110,8 +113,30 @@ def main():
                 data = response.read(8 * 1024 * 1024 + 1)
                 if len(data) > 8 * 1024 * 1024:
                     raise ValueError("Fixture response exceeds limit")
+                delay = 0
                 with lock:
                     current = mode()
+                    if self.command == "POST" and self.path == "/v1/phone/speaker-check" and response.status == 200 and current.get("speaker_deadline_seconds"):
+                        seconds = current["speaker_deadline_seconds"]
+                        if not isinstance(seconds, (int, float)) or not 3 <= seconds <= 30:
+                            raise ValueError("Invalid local speaker deadline")
+                        from datetime import timedelta
+                        payload = json.loads(data)
+                        payload["expires_at"] = (datetime.now(timezone.utc) + timedelta(seconds=seconds)).isoformat()
+                        data = json.dumps(payload).encode()
+                        event("speaker_deadline_shortened", expires_at=payload["expires_at"], audio_paths=payload["payload"]["audio_paths"])
+                    if current.get("observe_audio") and self.command == "POST" and self.path == "/v1/phone/speaker-check" and response.status == 200:
+                        payload = json.loads(data)
+                        event("speaker_sequence", expires_at=payload["expires_at"], audio_paths=payload["payload"]["audio_paths"])
+                    if current.get("observe_audio") and re.fullmatch(r"/v1/device/audio/audio_[a-f0-9]{32}", self.path):
+                        event("audio_request", method=self.command, path=self.path, upstream_status=response.status)
+                        if self.command == "HEAD" and response.status == 200:
+                            audio_heads[self.path] = audio_heads.get(self.path, 0) + 1
+                            if current.get("stall_audio_head_seconds") and audio_heads[self.path] > 1:
+                                delay = current["stall_audio_head_seconds"]
+                                if not isinstance(delay, (int, float)) or not 1 <= delay <= 20:
+                                    raise ValueError("Invalid local audio validation delay")
+                                event("audio_validation_stalled", path=self.path, seconds=delay)
                     if self.command == "POST" and self.path == "/v1/phone/turns" and response.status == 202 and current.get("next_receipt_fault"):
                         fault = current["next_receipt_fault"]
                         if fault not in {"disconnect", "503"}:
@@ -138,6 +163,8 @@ def main():
                     if self.path.startswith("/v1/phone/turn-receipts/"):
                         event("receipt_lookup", upstream_status=response.status,
                               **({"turn_id": json.loads(data)["turn_id"]} if response.status == 200 else {}))
+                if delay:
+                    time.sleep(delay)
                 self.send_response(response.status)
                 for key, value in response.getheaders():
                     if key.lower() not in {"connection", "transfer-encoding", "content-length", "server", "date"}:

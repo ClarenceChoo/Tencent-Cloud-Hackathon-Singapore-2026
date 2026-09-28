@@ -618,6 +618,73 @@ it("revocation during playback stops sound and prevents another clip", async () 
   expect(native.players[0]!.pause).toHaveBeenCalledOnce();
   expect(native.files.size).toBe(0);
 });
+it.each(["loading", "playing"])(
+  "the local reply deadline stops %s even while its freshness request is stalled",
+  async (stage) => {
+    api.audio.mockResolvedValue(wav(18));
+    let stalledSignal: AbortSignal | undefined;
+    const stalled = vi.fn(
+      (_path: string, signal: AbortSignal) =>
+        new Promise<void>((_resolve, reject) => {
+          stalledSignal = signal;
+          signal.addEventListener(
+            "abort",
+            () => reject(new Error("Request aborted")),
+            { once: true },
+          );
+        }),
+    );
+    if (stage === "loading")
+      api.validateAudio.mockImplementation(stalled as any);
+    const speaking = await start(() =>
+      voice.speak({
+        ...reply(2),
+        expires_at: new Date(Date.now() + 2500).toISOString(),
+      }),
+    );
+    if (stage === "playing") {
+      expect(native.players[0]!.play).toHaveBeenCalledOnce();
+      api.validateAudio.mockImplementation(stalled as any);
+    }
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    expect(stalled).toHaveBeenCalledOnce();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1500);
+      await drain();
+    });
+    expect(native.players[0]!.pause).toHaveBeenCalledOnce();
+    expect(native.players[0]!.release).toHaveBeenCalledOnce();
+    expect(stalledSignal?.aborted).toBe(true);
+    expect(native.files.size).toBe(0);
+    expect(voice.phase).toBe("error");
+    expect(voice.message).toContain("spoken reply has expired");
+    expect(api.audio).toHaveBeenCalledOnce();
+    if (stage === "loading")
+      expect(native.players[0]!.play).not.toHaveBeenCalled();
+    await act(async () => {
+      await speaking.task;
+    });
+  },
+);
+it("completed playback removes its expiry timer without later aborting the operation", async () => {
+  const speaking = await start(() =>
+    voice.speak({
+      ...reply(),
+      expires_at: new Date(Date.now() + 500).toISOString(),
+    }),
+  );
+  const signal = (api.audio.mock.calls as any[][])[0]![1] as AbortSignal;
+  await emit({ didJustFinish: true, playing: false });
+  await act(async () => {
+    await speaking.task;
+    await vi.advanceTimersByTimeAsync(600);
+  });
+  expect(signal.aborted).toBe(false);
+  expect(native.files.size).toBe(0);
+  expect(native.players[0]!.pause).toHaveBeenCalledOnce();
+});
 it("a timed-out player cannot start when its late authorization returns", async () => {
   const gate = deferred<void>();
   api.validateAudio.mockReturnValue(gate.promise);

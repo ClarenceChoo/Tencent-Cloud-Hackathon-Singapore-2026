@@ -173,6 +173,19 @@ export function useVoice(
             () => reject(new Error("Speech playback did not complete.")),
             (duration + 8) * 1000,
           );
+          // The known reply deadline must not wait for a stalled freshness
+          // request. Abort it as well so readiness/authorization can drain.
+          const expiryTimeout = setTimeout(
+            () => {
+              reject(
+                new Error(
+                  "This spoken reply has expired. Check the current care details.",
+                ),
+              );
+              controller.abort();
+            },
+            Math.max(0, Date.parse(event.expires_at) - Date.now()),
+          );
           const current = async () => {
             await api!.validateAudio(path, controller.signal);
             if (validate) await validate();
@@ -242,6 +255,7 @@ export function useVoice(
           cleanPlayback = () => {
             disposed = true;
             clearTimeout(timeout);
+            clearTimeout(expiryTimeout);
             clearInterval(monitor);
             subscription.remove();
             controller.signal.removeEventListener("abort", stop);

@@ -1,0 +1,80 @@
+{
+  "at": "2026-09-28T02:41:25.000Z",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "environment": "Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and fixture tone replies. No real speech or acoustic audibility evidence.",
+  "source_sha256": {
+    "mobile/src/App.tsx": "e854420b5868f2633df7a1004b184deca3c6b69eaf84664f7aac00a1f932367d",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "mobile/src/api.ts": "8c7bc2a0d324246701885082d83b6db3ac8ce0cb52ab6d394ae2861c12c8fab0",
+    "mobile/src/storage.ts": "d617df7a010d6cc68f0cd5dc6e3dfac021b1684bc6e10bc5fa50963871f3d99f",
+    "tools/android_native_fixture.py": "02f47605eb96b79595ccfb991cd8c2ecf72808bc3680386853d97b2113b75271",
+    "tools/android_native_smoke.cjs": "95285bda317f0a4b638522211181432a644a11490ad480e58bcb0db32cda9117",
+    "tools/android_native_care.cjs": "48be6db43584dba70abb17294f000c2e29741f389a531b2ba656b4373bf2897b",
+    "tools/android_native_speaker.cjs": "90bc08905694b44dca1ea31267943198ed5c418241025d124197c8217357f97f",
+    "backend/app/phone.py": "82d9f695c01efc446a0c9b19fcf79c63824ad63e9a6b41b646ad8452c887a4d9",
+    "backend/app/worker.py": "c8f8f395f02039502b8f562da72f4afc9ba7848aea3410fb2dd2de7850641664",
+    "mobile/src/contracts.ts": "ce346ef36a1c2c506a013c8874c6c3b06ef2aa80963f53ee5592c2e6ab228e0a"
+  },
+  "checks": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    },
+    {
+      "name": "Native Test speaker plays a private fixture clip with microphone denied; explicit Stop releases playback and deletes its cached audio",
+      "passed": true
+    }
+  ],
+  "installed_apk_sha256": "0ae2027d3bafade4e78af5edf1950a3990c1fb7b2b82bd829d5435b1e4ba281c",
+  "mode": "speaker",
+  "enrollmentCreatedInThisRun": false,
+  "speaker": {
+    "original_tone_sha256": "d39c56e1f27b1207d67a746d81ebd0e168062cef2d037808cd0b5560a9a82320",
+    "before": {
+      "assets": [],
+      "turns": 35,
+      "proposals": 24
+    },
+    "care_before": {
+      "notes": [
+        "note_274df94653ac4332aeb5e10c1add1a14",
+        "note_619566712e4247a08a009f9172fe7d22",
+        "note_7e8554703f7949b985f689b842cfc029",
+        "note_a1c9a90ed3084838b24176708a2fc239",
+        "note_da2714b3ddfa45ed87cef8c72046e6e4",
+        "note_e3cac52e3601453bba0eab7c2746ba6e",
+        "note_e880d910db694a28b93939f9a3e6e37f"
+      ],
+      "measurements": [
+        "measurement_491f76ea3ff64b2d962f3ce1fbdd5cdd"
+      ],
+      "preventive_tasks": [
+        "task_a889866ec4a042cdacdf38ceb38f6501"
+      ],
+      "support_requests": [
+        "support_4857be3a8d984fb79f57a1c3ba1845a6"
+      ],
+      "followups": [
+        "followup_cd27c49e06d24dcda562c1915036e0ac"
+      ]
+    },
+    "route_before": {
+      "device_id": "dev_43587ddb28f14a4982d0afd0e88ed869",
+      "generation": 17,
+      "changed_at": "2026-09-28T02:26:23.958956Z"
+    },
+    "uploads_before": 35,
+    "microphone_before": false,
+    "long_tone_sha256": "8ae1a1641fae3b2de1f9ce692220e1a054d99d6b1e7daaeb6c9dd1be216a190a",
+    "playback_cache": [
+      "/data/user/0/sg.parse.companion.verification/cache/parse-reply-ce67b6d0-a9f4-4da3-adce-d69c22e39134.wav"
+    ],
+    "player_pid": "18306",
+    "playback_rows": [
+      "  AudioPlaybackConfiguration piid:2711 deviceIds:[2] type:android.media.AudioTrack u/pid:10154/18306 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:3857 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+    ],
+    "restored_tone_sha256": "d39c56e1f27b1207d67a746d81ebd0e168062cef2d037808cd0b5560a9a82320"
+  },
+  "failure": "Error: Native control unavailable: Speaker test stopped."
+}

@@ -847,3 +847,97 @@ it("treats restored Keychain identity only as cleanup authority before pairing a
   expect(ports.secure.has("parse.installation")).toBe(false);
   expect(button("Get pairing code")).toBeTruthy();
 });
+
+it("speaker setup plays protected audio without recording or altering a pending care proposal", async () => {
+  home.current_proposal = proposal();
+  ports.api.testSpeaker = vi.fn(async () => ({
+    ...reply("speaker_check"),
+    payload: { ...reply("speaker_check").payload, simulated: true },
+  }));
+  await mount();
+  await tab("Settings");
+  await press("Test speaker");
+  expect(ports.api.testSpeaker).toHaveBeenCalledOnce();
+  expect(ports.permission).not.toHaveBeenCalled();
+  expect(ports.recorder.record).not.toHaveBeenCalled();
+  expect(ports.api.upload).not.toHaveBeenCalled();
+  expect(ports.api.confirm).not.toHaveBeenCalled();
+  expect(ports.api.cancel).not.toHaveBeenCalled();
+  expect(home.current_proposal?.id).toBe("proposal_one");
+  expect(ports.api.audio).toHaveBeenCalledOnce();
+  expect(ports.api.validateAudio).toHaveBeenCalledOnce();
+  expect(ports.players[0].play).toHaveBeenCalledOnce();
+  expect(text()).toContain(
+    "Simulated audio test. This does not verify live speech.",
+  );
+  expect(button("Test speaker")!.props.disabled).toBe(true);
+  await press("Stop speaker test");
+  expect(ports.players[0].pause).toHaveBeenCalled();
+  expect(ports.players[0].release).toHaveBeenCalled();
+  expect(
+    [...ports.files.keys()].filter((key) => key.includes("parse-reply-")),
+  ).toEqual([]);
+  expect(text()).toContain("Speaker test stopped.");
+  expect(button("Test speaker")!.props.disabled).toBe(false);
+});
+
+it.each(["stop", "background", "blur"])(
+  "a late speaker response cannot play after %s",
+  async (interruption) => {
+    const pending = deferred<TurnEvent>();
+    ports.api.testSpeaker = vi.fn(() => pending.promise);
+    await mount();
+    await tab("Settings");
+    await press("Test speaker");
+    const signal = ports.api.testSpeaker.mock.calls[0][0] as AbortSignal;
+    if (interruption === "stop") await press("Stop speaker test");
+    else
+      await act(async () => {
+        if (interruption === "background")
+          ports.appState.currentState = "background";
+        ports.listeners
+          .get(interruption === "background" ? "change" : "blur")
+          ?.forEach((fn) => fn("background"));
+        await drain();
+        ports.appState.currentState = "active";
+        ports.listeners.get("change")?.forEach((fn) => fn("active"));
+        ports.listeners.get("focus")?.forEach((fn) => fn("active"));
+        await drain();
+      });
+    expect(signal.aborted).toBe(true);
+    await act(async () => {
+      pending.resolve(reply("speaker_check"));
+      await drain();
+    });
+    expect(ports.players).toHaveLength(0);
+    expect(ports.api.audio).not.toHaveBeenCalled();
+    expect(ports.recorder.record).not.toHaveBeenCalled();
+    expect(text()).toContain("Speaker test stopped.");
+  },
+);
+
+it("speaker setup explains unavailable speech and handles server failure without recording or claiming success", async () => {
+  home.voice.voice_service = "unconfigured";
+  ports.api.testSpeaker = vi
+    .fn()
+    .mockRejectedValue(
+      new ApiError(
+        503,
+        "The speaker test is unavailable. Check the connection and speech service, then try again.",
+      ),
+    );
+  await mount();
+  await tab("Settings");
+  expect(button("Test speaker")!.props.disabled).toBe(true);
+  expect(text()).toContain(
+    "The speaker test needs the speech service to be configured.",
+  );
+  home.voice.voice_service = "configured";
+  await advance(5000);
+  await press("Test speaker");
+  expect(text()).toContain("The speaker test is unavailable.");
+  expect(ports.players).toHaveLength(0);
+  expect(ports.permission).not.toHaveBeenCalled();
+  expect(ports.api.confirm).not.toHaveBeenCalled();
+  expect(text()).not.toContain("Saved.");
+});

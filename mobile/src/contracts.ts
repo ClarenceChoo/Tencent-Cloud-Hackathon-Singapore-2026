@@ -50,6 +50,7 @@ export type TurnEvent = {
   payload: {
     status: string;
     spoken_text?: string;
+    simulated?: boolean;
     context_id?: string;
     audio_paths?: string[];
     record_id?: string;

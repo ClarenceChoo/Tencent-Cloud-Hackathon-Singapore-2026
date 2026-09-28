@@ -149,6 +149,13 @@ export class PhoneApi {
       },
     );
   }
+  testSpeaker(signal: AbortSignal) {
+    return this.request<TurnEvent>(
+      "/v1/phone/speaker-check",
+      { method: "POST" },
+      signal,
+    );
+  }
   schedule() {
     return this.request<ReminderSchedule>("/v1/phone/reminder-schedule");
   }

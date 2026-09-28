@@ -76,6 +76,9 @@ function Companion() {
   const retryConnection = useRef<(() => Promise<void>) | null>(null);
   const [busy, setBusy] = useState(false);
   const [busyMessage, setBusyMessage] = useState("");
+  const [testingSpeaker, setTestingSpeaker] = useState(false);
+  const [speakerMessage, setSpeakerMessage] = useState("");
+  const speakerRequest = useRef<AbortController | null>(null);
   const [booting, setBooting] = useState(true);
   const interaction = useTalkMode();
   const { tapMode } = interaction;
@@ -143,6 +146,18 @@ function Companion() {
     refresh,
     !!home && !busy,
   );
+  useEffect(() => {
+    const cancel = () => speakerRequest.current?.abort();
+    const state = AppState.addEventListener("change", (value) => {
+      if (value !== "active") cancel();
+    });
+    const blur = AppState.addEventListener("blur", cancel);
+    return () => {
+      cancel();
+      state.remove();
+      blur.remove();
+    };
+  }, [api]);
   const reminders = useReminders({
     api,
     home,
@@ -447,6 +462,46 @@ function Companion() {
       if (settings) await Linking.openSettings();
       else if (address) await Linking.openURL(address);
     }, "Stopping audio before opening the next screen…");
+  }
+  async function testSpeaker() {
+    if (!api) return;
+    await action(async (valid) => {
+      const controller = new AbortController();
+      speakerRequest.current = controller;
+      setTestingSpeaker(true);
+      setSpeakerMessage("Preparing the speaker test…");
+      try {
+        await voice.stop();
+        if (!valid() || controller.signal.aborted) return;
+        const reply = await api.testSpeaker(controller.signal);
+        if (!valid() || controller.signal.aborted) return;
+        setSpeakerMessage(
+          reply.payload.simulated
+            ? "Simulated audio test. This does not verify live speech."
+            : "Listen for the test message. Use your phone's media volume buttons to adjust it.",
+        );
+        await voice.speak(reply);
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          setSpeakerMessage(
+            "The speaker test could not start. Check your connection and try again.",
+          );
+          throw err;
+        }
+      } finally {
+        if (speakerRequest.current === controller)
+          speakerRequest.current = null;
+        if (valid()) {
+          setTestingSpeaker(false);
+          if (controller.signal.aborted)
+            setSpeakerMessage("Speaker test stopped.");
+        }
+      }
+    }, "Preparing the speaker test…");
+  }
+  async function stopSpeakerTest() {
+    speakerRequest.current?.abort();
+    await voice.stop().catch(showError);
   }
   const isRecording =
     voice.phase === "recording" || voice.phase === "preparing";
@@ -769,7 +824,7 @@ function Companion() {
                 }
                 secondary
                 onPress={() => {
-                  void voice.stop().catch(showError);
+                  void stopSpeakerTest();
                 }}
               />
             )}
@@ -1016,6 +1071,51 @@ function Companion() {
               <View style={s.card}>
                 <Text style={s.heading}>This phone</Text>
                 <Text style={s.body}>{installation?.service}</Text>
+                <Text style={s.body}>
+                  Test the sound before speaking. Use your phone's media volume
+                  buttons; sound may play through connected headphones.
+                </Text>
+                <Button
+                  title="Test speaker"
+                  secondary
+                  disabled={
+                    busy ||
+                    !["idle", "error"].includes(voice.phase) ||
+                    !["configured", "simulated"].includes(
+                      home.voice.voice_service,
+                    )
+                  }
+                  onPress={() => {
+                    void testSpeaker();
+                  }}
+                />
+                {testingSpeaker && (
+                  <Button
+                    title="Stop speaker test"
+                    secondary
+                    onPress={() => {
+                      void stopSpeakerTest();
+                    }}
+                  />
+                )}
+                {!!speakerMessage && (
+                  <Text accessibilityLiveRegion="polite" style={s.body}>
+                    {speakerMessage}
+                  </Text>
+                )}
+                {voice.phase === "error" &&
+                  voice.lastReply?.payload.status === "speaker_check" && (
+                    <Text accessibilityLiveRegion="polite" style={s.body}>
+                      {voice.message}
+                    </Text>
+                  )}
+                {!["configured", "simulated"].includes(
+                  home.voice.voice_service,
+                ) && (
+                  <Text style={s.caption}>
+                    The speaker test needs the speech service to be configured.
+                  </Text>
+                )}
                 <Text style={s.caption}>
                   Paired to {home.patient.name}. A paired phone is not a measure
                   of wellbeing.

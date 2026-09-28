@@ -42,13 +42,13 @@ class EnrollmentLimiter:
         self.lock = threading.Lock()
         self.windows = {}
 
-    def check(self, key, limit, seconds):
+    def check(self, key, limit, seconds, message="Too many pairing requests; try again later"):
         now = time.monotonic()
         with self.lock:
             self.windows = {k: v for k, v in self.windows.items() if v[0] > now}
             expiry, count = self.windows.get(key, (now + seconds, 0))
             if count >= limit or (key not in self.windows and len(self.windows) >= 4096):
-                raise HTTPException(429, "Too many pairing requests; try again later", headers={"Retry-After": str(max(1, int(expiry - now)))})
+                raise HTTPException(429, message, headers={"Retry-After": str(max(1, int(expiry - now)))})
             self.windows[key] = (expiry, count + 1)
 
 
@@ -376,6 +376,41 @@ def turn_receipt(idempotency_key: str, authorization: str | None = Header(defaul
     if not turn:
         raise HTTPException(404, 'No accepted turn found for this installation')
     return {'turn_id': turn.id, 'status': turn.status, 'received_at': iso(turn.received_at)}
+
+
+@router.post('/speaker-check')
+async def speaker_check(request: Request, response: Response,
+                        authorization: str | None = Header(default=None), db=Depends(phone_db)):
+    from .providers import FixtureProvider
+    from .services import sha_bytes
+    from .worker import _provider, _synthesise_sequence
+    device = authenticate_phone(db, authorization)
+    response.headers['Cache-Control'] = 'private, no-store'
+    request.app.state.phone_limiter.check(('speaker-check', device.id), 6, 60,
+        'Too many speaker tests; wait a moment before trying again')
+    spoken = ("This is Parse. If you can hear this message, your sound is working. "
+              "Use your phone's volume buttons to adjust it.")
+    try:
+        provider = _provider(request.app)
+        clips = await _synthesise_sequence(provider, spoken)
+    except Exception:
+        raise HTTPException(503, 'The speaker test is unavailable. Check the connection and speech service, then try again.')
+    # Never hold the patient write lock during external speech generation.
+    lock_patient(db, device.patient_id)
+    db.refresh(device)
+    if device.revoked_at:
+        raise HTTPException(403, 'This phone has been revoked')
+    expires = utcnow() + timedelta(minutes=2)
+    paths = []
+    for wav, duration in clips:
+        asset = m.AudioAsset(device_id=device.id, wav_bytes=wav,
+            content_sha256=sha_bytes(wav), duration_ms=duration, expires_at=expires)
+        db.add(asset)
+        db.flush()
+        paths.append('/v1/device/audio/' + asset.id)
+    db.commit()
+    return {'expires_at': iso(expires), 'payload': {'status': 'speaker_check',
+        'spoken_text': spoken, 'audio_paths': paths, 'simulated': isinstance(provider, FixtureProvider)}}
 
 
 @router.post('/proposals/{proposal_id}/speech')

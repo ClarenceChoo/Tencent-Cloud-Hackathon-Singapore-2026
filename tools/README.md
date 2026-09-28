@@ -1,6 +1,6 @@
 # Developer checks
 
-These tools exercise implementation contracts with fictional data. The product voice client remains the ESP32 cardholder.
+These tools exercise implementation contracts with fictional data. Parse has an ESP32 cardholder and a native phone companion under `mobile/`, using the same backend and care records. See the [phone setup guide](../docs/careloop/Phone-Companion-Setup.md) and [verification ledger](../docs/careloop/Phone-Companion-Verification.md) for the platform evidence and remaining acceptance work. Developer fixtures do not establish physical hardware or live speech behavior.
 
 ## Software demo
 

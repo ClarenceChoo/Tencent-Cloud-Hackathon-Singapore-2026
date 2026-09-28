@@ -80,7 +80,7 @@ The native implementation is under `mobile/`. The original website remains the c
 
 ## Acceptance gates
 
-E01 is partial: the current backend has 142 passing tests on both databases; the dashboard has 31 passing tests and a successful production build. Current mobile checks pass 25 unit tests and 115 app/React-hook/HTTP/storage-adapter tests. An ARM64 Android preview APK now compiles, verifies, installs and cold-launches in an Android 16 emulator. Both-platform bundle exports and prebuilds passed at prior checkpoints. Firmware core host checks and eight pendant transport tests also pass. The eight phone browser checks and fourteen existing dashboard browser journeys also pass. iOS compilation, remaining native-module journeys and physical-phone evidence remain.
+E01 software baseline compatibility is verified in the documented local environments. The [r9 compatibility audit](evidence/phone-baseline-r9-2026-09-28.json) reruns all **14 existing dashboard browser checks**, the firmware core host test and **eight pendant transport tests** against the current code. It verifies the original log hashes and unchanged source trees for the earlier **142 backend tests on each of SQLite/PostgreSQL**, **31 dashboard tests and production build**, and **140 mobile tests**; these suites are explicitly reused evidence, not claimed as new runs. The browser served the exact current production index, and its care, summary, profile, plan review and claim/revocation scenarios all passed. The separate eight phone-browser checks retain their original checkpoint scope. Native iOS compilation, physical-phone and live-provider acceptance belong to the still-open P01/E04–E11 requirements; this software baseline does not satisfy them.
 
 E02/E03 have automated SQLite/PostgreSQL evidence; deployment migration rehearsal and physical identity tests remain.
 
@@ -89,6 +89,8 @@ E04–E10 are **not accepted**. No physical phone or live speech provider has be
 E11 is in progress. This ledger and setup guide are maintained with the build. A caption-only Android emulator recording is delivered locally with its digest; physical-phone/live-provider demonstration and the remaining platform acceptance evidence are outstanding.
 
 ## External dependencies and known engineering work
+
+The [28 September prerequisite audit](evidence/phone-acceptance-prerequisites-2026-09-28.json) observed only the Android emulator, Command Line Tools without `simctl` or a standard Xcode installation, and no required live speech/public endpoint/push values in the current process or project environment files. The existing loopback fixture is healthy. This audit concerns the available environment; it does not infer that the user has no devices or accounts elsewhere. A concrete independent P05 checkpoint remains: integrated native Android multi-clip ordering and expiry during playback. Its controlled hook/API coverage does not prove native callback behavior or physical audibility.
 
 - The host has Command Line Tools but no full Xcode or iOS Simulator tools. An isolated Android SDK/adb/emulator and JDK 17 are now installed under ignored `runtime/android-build/`; no system Java or global SDK setting was changed. Android Studio is not needed for the verified command-line build. Prebuild and Metro export alone remain insufficient evidence of native compilation.
 - Test phones, signing/install route, reachable HTTPS service, live speech provider and push credentials have not been supplied/verified. Credentials belong in secret configuration, not this repository.

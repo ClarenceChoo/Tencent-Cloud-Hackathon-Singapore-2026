@@ -1,0 +1,85 @@
+{
+  "at": "2026-09-28T02:19:12.573Z",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "environment": "Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and fixture tone replies. No real speech or acoustic audibility evidence.",
+  "source_sha256": {
+    "mobile/src/App.tsx": "040650c4ba7d61a35e2c5926c616a0f09a051f03da778766a3241dcd2ccdb275",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "mobile/src/api.ts": "c47f9fd49c83ec14df83d1939a941d6a2b48cddd8548807d123941b523b328cf",
+    "mobile/src/storage.ts": "d617df7a010d6cc68f0cd5dc6e3dfac021b1684bc6e10bc5fa50963871f3d99f",
+    "tools/android_native_fixture.py": "02f47605eb96b79595ccfb991cd8c2ecf72808bc3680386853d97b2113b75271",
+    "tools/android_native_smoke.cjs": "b03e7ca3ec8dd1577bb9072319958153ddd685122b131162bdf8f322023b271b",
+    "tools/android_native_care.cjs": "48be6db43584dba70abb17294f000c2e29741f389a531b2ba656b4373bf2897b",
+    "tools/android_native_reinstall.cjs": "f5762cef4dcf62b9bdc6b19562e7ed6627947f1d09dfff94dd2a8c235852ecac",
+    "backend/app/routing.py": "fb5c959ac5d56ac54778381bb1bd3b2b805280a7c726c9ada99b091f4d83bc07",
+    "backend/app/main.py": "609cb916a6143585757b1d44c7f6667ed19c0bc4e591bece7e4405058f9898e4",
+    "backend/app/schemas.py": "c36a91131e91da6b436192dd3b65067d8fdfddd74eacb499b9ba10f1a4f37568",
+    "frontend/src/CompanionSelection.tsx": "c561a4f26dbaf1c0d9e69f0efadcad95d29d6d1c9e100b3174413b34b9d5cee1",
+    "frontend/src/App.tsx": "dcdc8a2e6c6626b87ae77fe1e95926fa737e44608269efac676a658d9fec6492",
+    "frontend/src/api.ts": "d7857850b0cd789216be9b27815073eca7ce0755fb2a9e38d6f348c9c5f45365"
+  },
+  "checks": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    },
+    {
+      "name": "Actual Android uninstall removes the verification package, private data and OS alarms without changing server care or reminder selection",
+      "passed": true
+    }
+  ],
+  "installed_apk_sha256": "15ad0b843daad17bd030dad58e8db29d9269f2317707db3236dec80484b33c3e",
+  "mode": "reinstall",
+  "enrollmentCreatedInThisRun": false,
+  "reinstall": {
+    "apk_sha256": "15ad0b843daad17bd030dad58e8db29d9269f2317707db3236dec80484b33c3e",
+    "original_device_id": "dev_61c7c95d16034baaacd3220d4a41947d",
+    "original_route": {
+      "device_id": "dev_61c7c95d16034baaacd3220d4a41947d",
+      "generation": 15,
+      "changed_at": "2026-09-27T14:02:16.072230Z"
+    },
+    "care_before": {
+      "notes": [
+        "note_274df94653ac4332aeb5e10c1add1a14",
+        "note_619566712e4247a08a009f9172fe7d22",
+        "note_7e8554703f7949b985f689b842cfc029",
+        "note_a1c9a90ed3084838b24176708a2fc239",
+        "note_da2714b3ddfa45ed87cef8c72046e6e4",
+        "note_e3cac52e3601453bba0eab7c2746ba6e",
+        "note_e880d910db694a28b93939f9a3e6e37f"
+      ],
+      "measurements": [
+        "measurement_491f76ea3ff64b2d962f3ce1fbdd5cdd"
+      ],
+      "preventive_tasks": [
+        "task_a889866ec4a042cdacdf38ceb38f6501"
+      ],
+      "support_requests": [
+        "support_4857be3a8d984fb79f57a1c3ba1845a6"
+      ],
+      "followups": [
+        "followup_cd27c49e06d24dcda562c1915036e0ac"
+      ]
+    },
+    "scheduled_before": [
+      "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_771de8a961ab4d5bbaca4ba396121910.g15",
+      "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_a99c7eacc13b4bdbb6a70f6a7576a38f.g15"
+    ],
+    "alarms_before": [
+      "RTC_WAKEUP #10: Alarm{780e800 type 0 origWhen 1790594338465 whenElapsed 40575961 sg.parse.companion.verification}",
+      "RTC_WAKEUP #13: Alarm{90c842c type 0 origWhen 1790610478465 whenElapsed 56715961 sg.parse.companion.verification}"
+    ],
+    "uploads_before": 35,
+    "alarms_after_uninstall": [],
+    "alarm_dump_after_sha256": "4d5b247598c1ced4b8f193db0223d951c161324d38271f5566ea5dcdc2fcd8e5",
+    "uninstalled": {
+      "at": "2026-09-28T02:19:48.771Z",
+      "package_absent": true,
+      "private_data_absent": true,
+      "alarms_absent": true
+    }
+  },
+  "failure": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert(unpaired.some(n => n['content-desc'] === 'Parse HTTPS service address' && !n.text))\n"
+}

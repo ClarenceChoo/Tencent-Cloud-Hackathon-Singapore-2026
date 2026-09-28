@@ -118,6 +118,32 @@ def pause_phone(db, device):
     db.flush()
 
 
+def release_removed_phone(db, patient_id, device_id, expected_generation, actor_id):
+    """Release a revoked, removed installation without pretending it attested cleanup.
+
+    The owner must first uninstall/reset that app. This is a physical-removal
+    acknowledgement, like the pendant power-off boundary, not remote quiescence.
+    A new target always requires a separate explicit selection.
+    """
+    lock_patient(db, patient_id)
+    device = db.get(m.Device, device_id, populate_existing=True)
+    current = route(db, patient_id)
+    if not device or device.patient_id != patient_id or device.device_type != 'phone' or not device.revoked_at:
+        raise HTTPException(409, 'Revoke this phone before confirming that its Parse installation was removed or reset.')
+    if not current or current.active_device_id != device_id or current.generation != expected_generation:
+        raise HTTPException(409, 'Companion selection changed. Refresh before finishing removal.')
+    cancel_route(db, patient_id, 'route_changed')
+    current.active_device_id = None
+    current.generation += 1
+    current.changed_at = utcnow()
+    db.add(m.AuditEvent(actor_type='user', actor_id=actor_id, patient_id=patient_id,
+        action='phone.removed_installation_released', object_type='device', object_id=device_id,
+        details={'generation': current.generation, 'app_removed_or_reset': True,
+                 'local_cleanup_verified_by_server': False}))
+    db.flush()
+    return route_view(db, patient_id)
+
+
 def may_deliver(db, occurrence, generation):
     model = m.ReminderCommand if occurrence.kind == 'medication' else m.CheckInDelivery
     attempts = db.scalars(select(model).where(model.occurrence_id == occurrence.id)

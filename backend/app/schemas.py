@@ -77,6 +77,11 @@ class ActiveCompanionSelect(BaseModel):
     other_pendants_powered_off: bool = False
 
 
+class RemovedPhoneRelease(BaseModel):
+    expected_generation: int = Field(ge=0)
+    app_removed_or_reset: Literal[True]
+
+
 class ResolveRequest(BaseModel):
     outcome: str = Field(min_length=1, max_length=2000)
 

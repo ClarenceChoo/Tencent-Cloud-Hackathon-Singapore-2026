@@ -1,0 +1,39 @@
+{
+  "date": "2026-09-28",
+  "change": "Owner recovery after an actually removed/reset selected phone installation",
+  "checks": {
+    "backend_sqlite": {
+      "result": "136 passed",
+      "log_sha256": "73035b6ec148308dbec818fe72074e9e9e5fd776f9d2bdbf083bf4d0e9013020"
+    },
+    "backend_postgresql": {
+      "result": "136 passed",
+      "log_sha256": "38100ebe7e69b60c33774eac932afaa71bf702bbeeb39057e0213c4c6dc7f76c"
+    },
+    "dashboard": {
+      "result": "25 passed",
+      "log_sha256": "5606441496cc4099c42634c1bcd6db3c1db62ea48cf64a4e2a5b06df8c78cdee"
+    }
+  },
+  "dashboard_production_build": "passed",
+  "new_regressions": {
+    "backend": 8,
+    "dashboard": 3
+  },
+  "source_sha256": {
+    "backend/app/main.py": "609cb916a6143585757b1d44c7f6667ed19c0bc4e591bece7e4405058f9898e4",
+    "backend/app/routing.py": "fb5c959ac5d56ac54778381bb1bd3b2b805280a7c726c9ada99b091f4d83bc07",
+    "backend/app/schemas.py": "c36a91131e91da6b436192dd3b65067d8fdfddd74eacb499b9ba10f1a4f37568",
+    "backend/tests/test_phone_reinstall.py": "dea1fc21bdb8aa2d8afbd393aabd5f2eb05196f95722ca9252411c3d242adb1f",
+    "frontend/src/App.tsx": "dcdc8a2e6c6626b87ae77fe1e95926fa737e44608269efac676a658d9fec6492",
+    "frontend/src/CompanionSelection.tsx": "c561a4f26dbaf1c0d9e69f0efadcad95d29d6d1c9e100b3174413b34b9d5cee1",
+    "frontend/src/api.ts": "d7857850b0cd789216be9b27815073eca7ce0755fb2a9e38d6f348c9c5f45365",
+    "frontend/src/__tests__/companion-selection.test.tsx": "4941b573f0a7f02669f78cfd007f95b0ee153ddcf22ec66b43c53c0ba60ae5e1"
+  },
+  "production_bundle_sha256": {
+    "frontend/dist/assets/index-C-KiNYND.css": "7d5cdd6f333fdaed4db71d00ccb76e8bd29c091bae203e2c71a3910ca27f61df",
+    "frontend/dist/assets/index-XjRUJ1q1.js": "407f5690f55d8374b55b264fa7c7f9bcf03b061725854a8b1abf33fcdeb3a671"
+  },
+  "native_report": "android-reinstall-2026-09-28.json",
+  "limits": "Android emulator and fictional local HTTPS service only; no new native APK, physical-device, iOS, live speech or push acceptance claim."
+}

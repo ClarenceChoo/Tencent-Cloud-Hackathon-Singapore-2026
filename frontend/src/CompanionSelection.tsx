@@ -1,14 +1,15 @@
 import {useEffect,useState} from 'react';
 import {Dashboard,label} from './api';
 
-type Props={data:Dashboard;canManage:boolean;onSelect:(deviceId:string|null,generation:number,poweredOff:boolean)=>Promise<void>};
-export default function CompanionSelection({data,canManage,onSelect}:Props) {
+type Props={data:Dashboard;canManage:boolean;onSelect:(deviceId:string|null,generation:number,poweredOff:boolean)=>Promise<void>;onReleaseRemoved?:(deviceId:string,generation:number)=>Promise<void>};
+export default function CompanionSelection({data,canManage,onSelect,onReleaseRemoved}:Props) {
   const route=data.active_companion;
   const [selected,setSelected]=useState(route?.device_id||'');
   const [poweredOff,setPoweredOff]=useState(false);
+  const [removed,setRemoved]=useState(false);
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
-  useEffect(()=>{setSelected(route?.device_id||'');setPoweredOff(false)},[route?.device_id,route?.generation]);
+  useEffect(()=>{setSelected(route?.device_id||'');setPoweredOff(false);setRemoved(false)},[route?.device_id,route?.generation]);
   const current=data.devices.find(d=>d.id===route?.device_id);
   const available=data.devices.filter(d=>!d.revoked_at);
   const phoneMustPause=current?.device_type==='phone';
@@ -18,6 +19,13 @@ export default function CompanionSelection({data,canManage,onSelect}:Props) {
     event.preventDefault();setBusy(true);setError('');
     try{await onSelect(selected||null,route?.generation||0,poweredOff)}
     catch(err){setError(err instanceof Error?err.message:'Could not change the reminder companion. Refresh and try again.')}
+    finally{setBusy(false)}
+  }
+  async function releaseRemoved() {
+    if(!canManage||!removed||!current?.revoked_at||!phoneMustPause||!onReleaseRemoved||busy)return;
+    setBusy(true);setError('');
+    try{await onReleaseRemoved(String(current.id),route?.generation||0)}
+    catch(err){setError(err instanceof Error?err.message:'Could not finish removing this phone. Refresh and try again.')}
     finally{setBusy(false)}
   }
   return <section className="card" aria-label="Reminder companion">
@@ -35,6 +43,12 @@ export default function CompanionSelection({data,canManage,onSelect}:Props) {
       <button className="button button-deep" disabled={busy||phoneMustPause||selected===(route?.device_id||'')||needsPowerOff&&!poweredOff}>{busy?'Updating…':'Save reminder companion'}</button>
       {error&&<p role="alert" className="inline-error">{error}</p>}
     </form>:<p className="source-note">The care-space owner selects where reminders are delivered.</p>}
+    {canManage&&phoneMustPause&&!!current?.revoked_at&&onReleaseRemoved&&<div className="claim-form">
+      <h3>Already removed Parse from this phone?</h3>
+      <p className="source-note">Use this only after uninstalling Parse or clearing its app data on that phone. If Parse is still installed, use Pause reminders on the phone instead. Reminders will stay paused until you choose another companion.</p>
+      <label><input type="checkbox" checked={removed} disabled={busy} onChange={e=>setRemoved(e.target.checked)}/> I have uninstalled Parse or cleared its app data on the old phone.</label>
+      <button type="button" className="button button-deep" disabled={busy||!removed} onClick={()=>void releaseRemoved()}>{busy?'Updating…':'Finish removing this phone'}</button>
+    </div>}
     <p className="source-note">Delivery history stays with each dose. A reminder that may already have played will not automatically repeat after switching.</p>
   </section>;
 }

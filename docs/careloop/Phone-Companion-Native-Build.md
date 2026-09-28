@@ -492,3 +492,30 @@ python3 tools/android_native_talkback_care.py
 The browser observer signs into only the existing fictional loopback fixture. Its dashboard operations are read-only; native TalkBack activation performs the confirmation. The harness will not overwrite a pending scripted utterance, and cleanup removes only an utterance armed by this run. Source hashes and the native APK/touch-helper digests are included in the report. Python/JavaScript syntax, warning-free C compilation, evidence links and screenshot layout were checked.
 
 This establishes the Android emulator's note correction/confirmation screen-reader path. It does not establish physical audibility, live ASR/TTS, other screen-reader care journeys, iOS VoiceOver, a one-hour phone run or full E04–E10 acceptance. TalkBack's debug overlays remain visible in the unedited screenshots.
+
+## Native Android uninstall and reinstall
+
+On 28 September, the unchanged r6 verification APK completed six checks across an actual uninstall checkpoint and its continuation. [Final report](evidence/android-reinstall-2026-09-28.json), [original checkpoint](evidence/android-reinstall-initial-checkpoint-2026-09-28.json), [backend/dashboard validation](evidence/phone-reinstall-validation-2026-09-28.json).
+
+Uninstalling the selected verification app removed its package, private application directory and actual pending Android alarms. Historical alarm statistics are excluded from the pending-alarm check. Reinstalling the identical APK opened **Connect to Parse**, with no patient details, prior identity, microphone permission or stored alerts. Native enrollment and owner-browser approval created a different device identity while retaining the existing server care records and old reminder selection.
+
+This exposed a recovery gap: after uninstall/reset, the old installation no longer has its credential and cannot call phone quiescence. The dashboard now lets the device-managing owner revoke that phone, explicitly acknowledge its actual uninstall/reset and finish removing the old reminder selection. The server checks the exact selected phone and generation under the patient lock. It records an owner acknowledgement, not a server-verified cleanup, and leaves reminders paused. A separately selected replacement then receives reminders. An offline or lost phone with Parse still installed does not satisfy this removal boundary.
+
+The actual browser flow verified that the release button is disabled until the acknowledgement is checked. The route changed from the old phone at generation 15 to paused at 16, then to the newly approved phone at 17. A fresh Android notification grant scheduled two alerts containing only the new identity and generation. Seven notes, one measurement, one preventive task, one support request and one follow-up were retained; voice uploads stayed at 35. The old device remains revoked. Backend regressions additionally check medication/check-in queued, downloaded and started attempts, authorization, stale generations and concurrent phone quiescence. Only a never-downloaded queued occurrence may be rerouted; medication stays unconfirmed.
+
+The initial run stopped after successful uninstall/reinstall because UI Automator exposes an empty text field's placeholder as `text`. The original assertion expected an empty string. The correction accepts an empty value or the exact matching `https://parse.example.org` hint. The continuation rechecked the installed APK, fresh pairing screen, cleared permissions/alerts and unchanged server state before proceeding. Its report explicitly marks the first two checks as inherited from the original checkpoint and retains that checkpoint's hash, failure and source hashes. No old credential or identity was copied into the new app.
+
+Unedited screenshots: [before removal](evidence/android-reinstall-before-2026-09-28.png), [fresh install](evidence/android-reinstall-unpaired-2026-09-28.png), [new pairing before selection](evidence/android-reinstall-paired-not-selected-2026-09-28.png), [owner recovery](evidence/android-reinstall-owner-recovery-2026-09-28.png), [replacement alerts](evidence/android-reinstall-new-alerts-2026-09-28.png), [restored dashboard](evidence/android-reinstall-owner-restored-2026-09-28.png).
+
+To reproduce from an already paired fictional verification installation, rebuild the dashboard, resume the local HTTPS fixture without reseeding its database, and run from the repository root:
+
+```sh
+PLAYWRIGHT_MODULE=/path/to/installed/playwright \
+PARSE_NATIVE_FIXTURE_DIR="$PWD/runtime/native-care-20260927" \
+PARSE_NATIVE_RESUME_PAIRED=1 PARSE_NATIVE_REINSTALL_ONLY=1 \
+node tools/android_native_smoke.cjs
+```
+
+This intentionally uninstalls/reinstalls only `sg.parse.companion.verification` on the disposable rooted emulator. It requires the unchanged r6 verification APK, accessibility disabled, and an already selected fictional phone with scheduled alerts. It uses actual native enrollment and owner UI interactions; it does not reseed care data. The one-time interrupted-run continuation additionally uses `PARSE_NATIVE_REINSTALL_CONTINUE=1` and the preserved `initial-native-reinstall-evidence.json` inside the fixture directory. That mode accepts only the documented two-check placeholder-failure checkpoint and must start at the still-unpaired fresh installation.
+
+All 136 backend tests passed on SQLite and isolated PostgreSQL; all 25 dashboard tests and its production build passed. This API/dashboard change needs no new native APK. This evidence covers Android emulator uninstall/reinstall, not physical Keystore behavior, backup restoration, iOS Keychain persistence, live speech or APNs/FCM. E04–E10 remain unaccepted.

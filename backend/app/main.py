@@ -19,9 +19,10 @@ from .config import Settings, get_settings
 from .database import Database
 from .device_setup import device_status, service_readiness, PROTOCOL
 from .phone import EnrollmentLimiter, router as phone_router
-from .routing import choose_target, current_attempt, lock_patient, route_view
+from .routing import choose_target, current_attempt, lock_patient, release_removed_phone, route_view
 from .schemas import (
     ActiveCompanionSelect,
+    RemovedPhoneRelease,
     DeviceAck,
     DeviceClaim,
     GrantCreate,
@@ -468,6 +469,17 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         require_csrf(request, session)
         result = choose_target(db, patient_id, data.device_id, data.expected_generation,
                                data.other_pendants_powered_off, user.id)
+        db.commit()
+        return result
+
+    @app.post("/v1/app/devices/{device_id}/release-removed-phone")
+    def removed_phone_release(device_id: str, data: RemovedPhoneRelease, request: Request, db: Session = Depends(get_db)):
+        device = db.get(m.Device, device_id)
+        if not device or not device.patient_id:
+            raise HTTPException(404, 'Device not found')
+        user, session, _, _ = _patient_access(request, db, device.patient_id, 'manage:devices')
+        require_csrf(request, session)
+        result = release_removed_phone(db, device.patient_id, device.id, data.expected_generation, user.id)
         db.commit()
         return result
 

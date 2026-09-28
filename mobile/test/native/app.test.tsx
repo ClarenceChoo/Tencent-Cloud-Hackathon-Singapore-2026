@@ -16,6 +16,9 @@ import { ApiError } from "../../src/errors";
 const ports = vi.hoisted(() => ({
   api: null as any,
   secure: new Map<string, string>(),
+  readSecure: vi.fn(),
+  deleteSecure: vi.fn(),
+  apiIdentity: vi.fn(),
   files: new Map<string, unknown>(),
   listeners: new Map<string, Set<(value: any) => void>>(),
   appState: { currentState: "active", addEventListener: vi.fn() },
@@ -87,13 +90,11 @@ vi.mock("expo-audio", () => ({
 }));
 vi.mock("expo-secure-store", () => ({
   AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY: "device-only",
-  getItemAsync: async (key: string) => ports.secure.get(key) || null,
+  getItemAsync: ports.readSecure,
   setItemAsync: async (key: string, value: string) => {
     ports.secure.set(key, value);
   },
-  deleteItemAsync: async (key: string) => {
-    ports.secure.delete(key);
-  },
+  deleteItemAsync: ports.deleteSecure,
 }));
 vi.mock("expo-crypto", () => ({
   randomUUID: () =>
@@ -184,12 +185,14 @@ vi.mock("expo-notifications", () => ({
 vi.mock("../../src/api", async () => ({
   ApiError: (await import("../../src/errors")).ApiError,
   PhoneApi: class {
-    constructor() {
+    constructor(identity: Installation) {
+      ports.apiIdentity(identity);
       return ports.api;
     }
   },
 }));
 import App from "../../src/App";
+import { clearInstallation } from "../../src/storage";
 
 const installation: Installation = {
   version: 1,
@@ -313,6 +316,12 @@ beforeEach(() => {
   (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
   root = null;
   ports.secure.clear();
+  ports.readSecure.mockImplementation(
+    async (key: string) => ports.secure.get(key) || null,
+  );
+  ports.deleteSecure.mockImplementation(async (key: string) => {
+    ports.secure.delete(key);
+  });
   ports.files.clear();
   ports.listeners.clear();
   ports.players = [];
@@ -846,6 +855,152 @@ it("treats restored Keychain identity only as cleanup authority before pairing a
   expect(ports.api.revoke).toHaveBeenCalledOnce();
   expect(ports.secure.has("parse.installation")).toBe(false);
   expect(button("Get pairing code")).toBeTruthy();
+});
+
+it.each([
+  "{broken",
+  "null",
+  JSON.stringify({ ...installation, credential: "bad" }),
+  JSON.stringify({ ...installation, enrollmentKey: undefined }),
+  JSON.stringify({ ...installation, platform: "browser" }),
+  JSON.stringify({ ...installation, service: "http://parse.example" }),
+  JSON.stringify({ ...installation, displayName: null }),
+])(
+  "blocks setup and all care access for unreadable saved identity %s",
+  async (raw) => {
+    ports.secure.set("parse.installation", raw);
+    await mount();
+    expect(text()).toContain("Saved pairing needs attention");
+    expect(button("Get pairing code")).toBeUndefined();
+    expect(button("Retry saved pairing")).toBeTruthy();
+    expect(button("Reset this phone")).toBeTruthy();
+    expect(ports.apiIdentity).not.toHaveBeenCalled();
+    expect(ports.secure.get("parse.installation")).toBe(raw);
+  },
+);
+
+it.each(["marker", "pending", "playback"])(
+  "recognises a missing credential with residual %s state",
+  async (residual) => {
+    ports.secure.delete("parse.installation");
+    if (residual !== "marker")
+      ports.files.delete("file:///document/parse-installation-v1");
+    if (residual === "pending")
+      ports.secure.set("parse.pending-turn", "{unfinished");
+    if (residual === "playback")
+      ports.secure.set("parse.playback-index.7", "[]");
+    await mount();
+    expect(text()).toContain("Saved pairing needs attention");
+    expect(button("Get pairing code")).toBeUndefined();
+    expect(ports.apiIdentity).not.toHaveBeenCalled();
+  },
+);
+
+it("retries a temporary secure-store failure without replacing or deleting the pairing", async () => {
+  ports.readSecure.mockRejectedValueOnce(
+    new Error("Keychain temporarily unavailable"),
+  );
+  await mount();
+  expect(text()).toContain("Saved pairing needs attention");
+  expect(ports.apiIdentity).not.toHaveBeenCalled();
+  await press("Retry saved pairing");
+  expect(text()).toContain("How are you");
+  expect(ports.apiIdentity).toHaveBeenCalledWith(installation);
+  expect(ports.secure.get("parse.installation")).toBe(
+    JSON.stringify(installation),
+  );
+  expect(ports.deleteSecure).not.toHaveBeenCalled();
+});
+
+async function confirmReset() {
+  await press("Reset this phone");
+  const actions = ports.alert.mock.calls.at(-1)![2];
+  await act(async () => {
+    actions.find((item: any) => item.text === "Reset").onPress();
+    await drain();
+  });
+}
+
+it("waits for native cleanup before resetting lost pairing data and creates a fresh identity", async () => {
+  ports.secure.delete("parse.installation");
+  ports.secure.set("parse.pending-turn", "{unfinished");
+  const command = "cmd_" + "b".repeat(32);
+  ports.secure.set(
+    "parse.playback-index.0",
+    JSON.stringify([[command, Date.now()]]),
+  );
+  ports.secure.set("parse.playback." + command, "old playback");
+  ports.secure.set("parse.interaction-mode", "tap");
+  ports.scheduled = [{ identifier: "old alert" }];
+  const clearing = deferred<void>();
+  ports.cancelAlerts.mockImplementation(async () => {
+    await clearing.promise;
+    ports.scheduled = [];
+  });
+  await mount();
+  await confirmReset();
+  expect(button("Get pairing code")).toBeUndefined();
+  expect(ports.secure.has("parse.pending-turn")).toBe(true);
+  expect(ports.apiIdentity).not.toHaveBeenCalled();
+  await act(async () => {
+    clearing.resolve();
+    await drain();
+  });
+  expect(ports.scheduled).toEqual([]);
+  expect(ports.dismissAlerts).toHaveBeenCalled();
+  expect([...ports.secure.keys()]).toEqual(["parse.interaction-mode"]);
+  expect(ports.api.quiesce).not.toHaveBeenCalled();
+  expect(ports.api.revoke).not.toHaveBeenCalled();
+  expect(text()).toContain("revoke the old phone");
+  await act(async () => {
+    root!.root
+      .findByProps({ accessibilityLabel: "Parse HTTPS service address" })
+      .props.onChangeText("https://parse.example");
+    await drain();
+  });
+  await press("Get pairing code");
+  const replacement = JSON.parse(ports.secure.get("parse.installation")!);
+  expect(replacement.credential).not.toBe(installation.credential);
+  expect(ports.apiIdentity).toHaveBeenCalledWith(replacement);
+  expect(ports.api.receipt).not.toHaveBeenCalled();
+  expect(ports.api.upload).not.toHaveBeenCalled();
+});
+
+it("keeps recovery gated when old alerts remain, then allows an explicit cleanup retry", async () => {
+  ports.secure.set("parse.installation", "{broken");
+  ports.scheduled = [{ identifier: "stuck alert" }];
+  ports.cancelAlerts.mockResolvedValue(undefined);
+  await mount();
+  await confirmReset();
+  expect(button("Get pairing code")).toBeUndefined();
+  expect(ports.secure.get("parse.installation")).toBe("{broken");
+  expect(text()).toContain("Some alerts are still scheduled");
+  ports.cancelAlerts.mockImplementation(async () => {
+    ports.scheduled = [];
+  });
+  await confirmReset();
+  expect(button("Get pairing code")).toBeTruthy();
+  expect(ports.apiIdentity).not.toHaveBeenCalled();
+});
+
+it("persists an unfinished reset across restart even when the original credential is still valid", async () => {
+  ports.deleteSecure.mockRejectedValueOnce(new Error("Storage unavailable"));
+  await expect(clearInstallation()).rejects.toThrow("Storage unavailable");
+  expect(ports.secure.has("parse.installation")).toBe(true);
+  expect(ports.files.has("file:///document/parse-reset-required-v1")).toBe(
+    true,
+  );
+  await mount();
+  expect(text()).toContain("Saved pairing needs attention");
+  expect(ports.apiIdentity).not.toHaveBeenCalled();
+  await press("Retry saved pairing");
+  expect(ports.apiIdentity).not.toHaveBeenCalled();
+  await confirmReset();
+  expect(button("Get pairing code")).toBeTruthy();
+  expect(ports.files.has("file:///document/parse-reset-required-v1")).toBe(
+    false,
+  );
+  expect(ports.secure.has("parse.installation")).toBe(false);
 });
 
 it("speaker setup plays protected audio without recording or altering a pending care proposal", async () => {

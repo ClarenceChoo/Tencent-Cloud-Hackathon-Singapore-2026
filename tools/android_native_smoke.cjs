@@ -20,6 +20,9 @@ async function main() {
   const alertLifecycle = !!alertState;
   const reinstallOnly = process.env.PARSE_NATIVE_REINSTALL_ONLY === '1';
   const speakerOnly = process.env.PARSE_NATIVE_SPEAKER_ONLY === '1';
+  const pairingRecoveryOnly = process.env.PARSE_NATIVE_PAIRING_RECOVERY_ONLY === '1';
+  const pairingRecoveryContinue = process.env.PARSE_NATIVE_PAIRING_RECOVERY_CONTINUE === '1';
+  assert(!pairingRecoveryContinue || (pairingRecoveryOnly && process.env.PARSE_NATIVE_RESUME_PAIRED === '1'));
   const reinstallContinue = process.env.PARSE_NATIVE_REINSTALL_CONTINUE === '1';
   assert(!reinstallContinue || (reinstallOnly && process.env.PARSE_NATIVE_RESUME_PAIRED === '1'));
   const connectionOnly = process.env.PARSE_NATIVE_CONNECTION_ONLY === '1';
@@ -33,7 +36,7 @@ async function main() {
   const lifecycleOnly = process.env.PARSE_NATIVE_LIFECYCLE_ONLY === '1' || confirmationOnly;
   const alertsOnly = process.env.PARSE_NATIVE_ALERTS_ONLY === '1';
   const remindersOnly = process.env.PARSE_NATIVE_REMINDERS_ONLY === '1' || alertsOnly;
-  assert([speakerOnly, reinstallOnly, lifecycleOnly, remindersOnly, recoveryOnly, alertLifecycle, connectionOnly, callsOnly, largeTextOnly, clockOnly].filter(Boolean).length <= 1, 'Select one native verification mode');
+  assert([pairingRecoveryOnly, speakerOnly, reinstallOnly, lifecycleOnly, remindersOnly, recoveryOnly, alertLifecycle, connectionOnly, callsOnly, largeTextOnly, clockOnly].filter(Boolean).length <= 1, 'Select one native verification mode');
   assert(directory.startsWith(path.join(root, 'runtime') + path.sep));
   assert(/^emulator-\d+$/.test(serial), 'This fixture runs only on a disposable emulator');
   const fixture = JSON.parse(fs.readFileSync(path.join(directory, 'fixture.json')));
@@ -129,6 +132,10 @@ async function main() {
     for (const file of ['tools/android_native_speaker.cjs', 'backend/app/phone.py', 'backend/app/worker.py', 'mobile/src/contracts.ts'])
       report.source_sha256[file] = createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex');
   }
+  if (pairingRecoveryOnly) {
+    for (const file of ['tools/android_native_pairing_recovery.cjs', 'mobile/src/reminderStorage.ts'])
+      report.source_sha256[file] = createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex');
+  }
   if (connectionOnly) {
     for (const file of ['tools/android_native_connection.cjs', 'tools/android_native_fault_proxy.py'])
       report.source_sha256[file] = createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex');
@@ -145,7 +152,7 @@ async function main() {
     for (const file of ['mobile/src/useReminders.ts', 'mobile/src/alertSchedule.ts', 'tools/android_native_clock.cjs', 'tools/android_native_control.py'])
       report.source_sha256[file] = createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex');
   }
-  const save = () => fs.writeFileSync(path.join(directory, speakerOnly ? 'native-speaker-evidence.json' : reinstallOnly ? 'native-reinstall-evidence.json' : clockOnly ? 'native-clock-evidence.json' : largeTextOnly ? 'native-large-text-evidence.json' : callsOnly ? 'native-calls-evidence.json' : connectionOnly ? 'native-connection-evidence.json' : alertLifecycle ? `native-alert-${alertState}-evidence.json` : recoveryOnly ? `native-recovery-${receiptFault}-evidence.json` : alertsOnly ? 'native-alerts-evidence.json' : confirmationOnly ? 'native-confirmation-evidence.json' : lifecycleOnly ? 'native-lifecycle-evidence.json' : remindersOnly ? 'native-reminders-evidence.json' : 'native-integration-evidence.json'), JSON.stringify(report, null, 2));
+  const save = () => fs.writeFileSync(path.join(directory, pairingRecoveryOnly ? 'native-pairing-recovery-evidence.json' : speakerOnly ? 'native-speaker-evidence.json' : reinstallOnly ? 'native-reinstall-evidence.json' : clockOnly ? 'native-clock-evidence.json' : largeTextOnly ? 'native-large-text-evidence.json' : callsOnly ? 'native-calls-evidence.json' : connectionOnly ? 'native-connection-evidence.json' : alertLifecycle ? `native-alert-${alertState}-evidence.json` : recoveryOnly ? `native-recovery-${receiptFault}-evidence.json` : alertsOnly ? 'native-alerts-evidence.json' : confirmationOnly ? 'native-confirmation-evidence.json' : lifecycleOnly ? 'native-lifecycle-evidence.json' : remindersOnly ? 'native-reminders-evidence.json' : 'native-integration-evidence.json'), JSON.stringify(report, null, 2));
   if (alertState === 'dnd') {
     const file = 'tools/android_native_dnd.cjs';
     report.source_sha256[file] = createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex');
@@ -192,8 +199,8 @@ async function main() {
     await adb('shell', 'am', 'start', '-W', '-n', appId + '/sg.parse.companion.MainActivity');
     let code;
     const resume = process.env.PARSE_NATIVE_RESUME_PAIRED === '1';
-    assert(!(speakerOnly || reinstallOnly || lifecycleOnly || remindersOnly || recoveryOnly || alertLifecycle || connectionOnly || callsOnly || largeTextOnly || clockOnly) || resume, 'These checks require an existing fictional verification installation');
-    report.mode = speakerOnly ? 'speaker' : reinstallOnly ? 'reinstall' : clockOnly ? 'clock' : largeTextOnly ? 'large-text' : callsOnly ? 'calls' : connectionOnly ? 'connection' : alertLifecycle ? 'alert-' + alertState : recoveryOnly ? 'recovery-' + receiptFault : alertsOnly ? 'alerts' : confirmationOnly ? 'confirmation' : lifecycleOnly ? 'lifecycle' : remindersOnly ? 'reminders' : 'care';
+    assert(!(pairingRecoveryOnly || speakerOnly || reinstallOnly || lifecycleOnly || remindersOnly || recoveryOnly || alertLifecycle || connectionOnly || callsOnly || largeTextOnly || clockOnly) || resume, 'These checks require an existing fictional verification installation');
+    report.mode = pairingRecoveryOnly ? 'pairing-recovery' : speakerOnly ? 'speaker' : reinstallOnly ? 'reinstall' : clockOnly ? 'clock' : largeTextOnly ? 'large-text' : callsOnly ? 'calls' : connectionOnly ? 'connection' : alertLifecycle ? 'alert-' + alertState : recoveryOnly ? 'recovery-' + receiptFault : alertsOnly ? 'alerts' : confirmationOnly ? 'confirmation' : lifecycleOnly ? 'lifecycle' : remindersOnly ? 'reminders' : 'care';
     report.enrollmentCreatedInThisRun = !resume;
     if (!resume) {
       await tap('Parse HTTPS service address');
@@ -210,6 +217,25 @@ async function main() {
     const caregiver = await login('caregiver');
     const restricted = await login('restricted');
     await owner.page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Settings', exact: true }).click();
+    if (pairingRecoveryContinue) {
+      const bytes = fs.readFileSync(path.join(directory, 'native-pairing-recovery-checkpoint.json'));
+      const checkpoint = JSON.parse(bytes);
+      assert.equal(checkpoint.mode, 'pairing-recovery');
+      assert.equal(checkpoint.installed_apk_sha256, report.installed_apk_sha256);
+      assert.equal(checkpoint.checks.length, 2);
+      assert(checkpoint.checks.every(check => check.passed));
+      assert.equal(checkpoint.failure, 'Error: Native control unavailable: Keep pairing');
+      for (const file of ['mobile/src/App.tsx', 'mobile/src/storage.ts', 'mobile/src/reminderStorage.ts'])
+        assert.equal(checkpoint.source_sha256[file], report.source_sha256[file]);
+      report.continued_from = { checkpoint_sha256:createHash('sha256').update(bytes).digest('hex'),
+        at:checkpoint.at, source_sha256:checkpoint.source_sha256, failure:checkpoint.failure,
+        reason:'Android renders Alert button labels in uppercase. Continue from the already lost credential; do not restore or inject it again.' };
+      report.checks = checkpoint.checks.map(check => ({ ...check, from_checkpoint:true }));
+      report.pairing_recovery = checkpoint.pairing_recovery;
+      await require('./android_native_pairing_recovery.cjs')({ find, tap, tapNode, ui, adb, screenshot, pass, owner, fixture, directory, appId, report, continueAfterLoss:true });
+      save();
+      return;
+    }
     if (reinstallContinue) {
       // A prior run already uninstalled/reinstalled the disposable app. Keep its
       // provenance separate and recheck the fresh installation before pairing.
@@ -251,6 +277,11 @@ async function main() {
       'Native-generated secure identity pairs over verified local TLS through owner browser approval');
     const tapSwitch = await find('Use tap instead of hold to record');
     if (tapSwitch.checked !== 'true') await tapNode(tapSwitch);
+    if (pairingRecoveryOnly) {
+      await require('./android_native_pairing_recovery.cjs')({ find, tap, tapNode, ui, adb, screenshot, pass, owner, fixture, directory, appId, report });
+      save();
+      return;
+    }
     if (speakerOnly) {
       await require('./android_native_speaker.cjs')({ find, tap, tapNode, ui, adb, screenshot, pass, owner, fixture, directory, appId, report });
       save();

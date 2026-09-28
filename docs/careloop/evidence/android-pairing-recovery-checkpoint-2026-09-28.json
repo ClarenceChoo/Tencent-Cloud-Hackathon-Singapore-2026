@@ -1,0 +1,74 @@
+{
+  "at": "2026-09-28T04:32:21.458Z",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "environment": "Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and fixture tone replies. No real speech or acoustic audibility evidence.",
+  "source_sha256": {
+    "mobile/src/App.tsx": "a84714d87377a775cf5f7617f2a38ff5fb2d6faf10c74ecfc8b8bc47b9a4b3c8",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "mobile/src/api.ts": "8c7bc2a0d324246701885082d83b6db3ac8ce0cb52ab6d394ae2861c12c8fab0",
+    "mobile/src/storage.ts": "3ae16c0c4109a331b28f8dc3601a7453bf07947626651728ca03d999bb2b8fe3",
+    "tools/android_native_fixture.py": "02f47605eb96b79595ccfb991cd8c2ecf72808bc3680386853d97b2113b75271",
+    "tools/android_native_smoke.cjs": "ba9e112ebde9e75bb8847b284c93873fdb0d919964b6ebbf71a5c25357e36ea0",
+    "tools/android_native_care.cjs": "48be6db43584dba70abb17294f000c2e29741f389a531b2ba656b4373bf2897b",
+    "tools/android_native_pairing_recovery.cjs": "640b2b38834ad956bce30947f60211ac66bad1b9fef6733e3fa81a9e4cfa7bbc",
+    "mobile/src/reminderStorage.ts": "269e672e8ca0bfa0ef3a5bd57cc8dbaccf4291eaf797af3fb24b10fd0e4de208"
+  },
+  "checks": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    },
+    {
+      "name": "Unreadable native SecureStore pairing blocks patient access and new pairing; Retry preserves the damaged item and server route",
+      "passed": true
+    }
+  ],
+  "installed_apk_sha256": "9829db43036a4c7802b6cdd57530dac37c62ddb9a38d6ffb7f0a4abb5f51bf3a",
+  "mode": "pairing-recovery",
+  "enrollmentCreatedInThisRun": false,
+  "pairing_recovery": {
+    "fault": "Replace only encrypted installation item with invalid JSON, then remove that same item; no credential restoration.",
+    "care_before": {
+      "health_notes": {
+        "count": 8,
+        "sha256": "9234dda4d94811766ded432d680b094f21d050f508b3e7712e0f6f1ca37a9622"
+      },
+      "measurements": {
+        "count": 1,
+        "sha256": "2457ef73a9e0b3365b0f83cce0e753e19ea0353207976414c46f1a43b33ec8f7"
+      },
+      "preventive_tasks": {
+        "count": 1,
+        "sha256": "77550713b9d4ac0c750b78513d1ed7eecd0f3591cdd4714417161c7ebc1b859f"
+      },
+      "support_requests": {
+        "count": 1,
+        "sha256": "d53c279e1dcd53b0387a72bd17442297ded5b42e8d61da24c0bba120f3ae5716"
+      },
+      "followups": {
+        "count": 1,
+        "sha256": "88856db41ac6e37d3b541de3532e232853bf61c3cbcf4d91a8f8cfc13a14d7be"
+      },
+      "voice_turns": {
+        "count": 36,
+        "sha256": "b7fe759c69d44d52c40045a7a5a228f8a01ad97817c53e2dc16de41173e5e909"
+      },
+      "confirmation_proposals": {
+        "count": 25,
+        "sha256": "df63e92dfe8eb5dd0a88f14fc846080e82a4e0a5c168d7479cb17a63f47406aa"
+      },
+      "uploads": 36
+    },
+    "original_route": {
+      "device_id": "dev_43587ddb28f14a4982d0afd0e88ed869",
+      "generation": 17,
+      "changed_at": "2026-09-28T02:26:23.958956Z"
+    },
+    "scheduled_before": [
+      "parse.dev_43587ddb28f14a4982d0afd0e88ed869.occ_771de8a961ab4d5bbaca4ba396121910.g17",
+      "parse.dev_43587ddb28f14a4982d0afd0e88ed869.occ_a99c7eacc13b4bdbb6a70f6a7576a38f.g17"
+    ]
+  },
+  "failure": "Error: Native control unavailable: Keep pairing"
+}

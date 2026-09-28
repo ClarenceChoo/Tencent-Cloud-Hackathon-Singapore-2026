@@ -7,6 +7,13 @@ const options = {
 // Each value stays small. Eight indexes bound storage; failure stops playback.
 const bucketCount = 8;
 const entryKey = (command: string) => "parse.playback." + command;
+export async function hasPlaybackHistory(): Promise<boolean> {
+  for (let b = 0; b < bucketCount; b++) {
+    if (await SecureStore.getItemAsync("parse.playback-index." + b, options))
+      return true;
+  }
+  return false;
+}
 export async function readPlayback(
   command: string,
 ): Promise<LedgerEntry | null> {

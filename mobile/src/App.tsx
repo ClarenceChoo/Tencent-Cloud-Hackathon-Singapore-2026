@@ -64,6 +64,8 @@ function Button({
 function Companion() {
   const [installation, setInstallation] = useState<Installation | null>(null);
   const [restored, setRestored] = useState(false);
+  const [pairingProblem, setPairingProblem] = useState("");
+  const [pairingReset, setPairingReset] = useState(false);
   const [service, setService] = useState("");
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [reminderContext, setReminderContext] = useState<{
@@ -210,16 +212,27 @@ function Companion() {
     setReminderContext(null);
     return started;
   }
+  async function readSavedPairing() {
+    try {
+      const saved = await loadInstallation();
+      if (!mounted.current) return;
+      setInstallation(saved.installation);
+      setRestored(saved.restored);
+      setService(saved.installation?.service || "");
+      setPairingProblem("");
+    } catch (err) {
+      if (mounted.current)
+        setPairingProblem(
+          err instanceof Error
+            ? err.message
+            : "The saved pairing could not be read.",
+        );
+    } finally {
+      if (mounted.current) setBooting(false);
+    }
+  }
   useEffect(() => {
-    void loadInstallation()
-      .then((saved) => {
-        if (!mounted.current) return;
-        setInstallation(saved.installation);
-        setRestored(saved.restored);
-        setService(saved.installation?.service || "");
-      })
-      .catch(showError)
-      .finally(() => setBooting(false));
+    void readSavedPairing();
   }, []);
   useEffect(() => {
     if (!api) {
@@ -313,6 +326,7 @@ function Companion() {
     }
   }
   async function connect() {
+    if (booting || pairingProblem || installation) return;
     await action(async (valid) => {
       const created = await newInstallation(
         service,
@@ -321,6 +335,7 @@ function Companion() {
       if (!valid()) return;
       setInstallation(created);
       setRestored(false);
+      setPairingReset(false);
     }, "Connecting to Parse…");
   }
   async function stopLocalReminders(after?: () => Promise<void>) {
@@ -436,6 +451,8 @@ function Companion() {
       setCleanupMessage("");
       setReminderContext(null);
       setConnectionProblem(false);
+      if (pairingProblem) setPairingReset(true);
+      setPairingProblem("");
     }, "Stopping audio and removing this phone's access…");
   }
   async function confirm() {
@@ -587,7 +604,45 @@ function Companion() {
               Speak about your day, hear a read-back, and choose what to save or
               share.
             </Text>
-            {accessProblem ? (
+            {pairingProblem ? (
+              <View style={s.card} accessibilityRole="alert">
+                <Text style={s.heading}>Saved pairing needs attention</Text>
+                <Text style={s.body}>{pairingProblem}</Text>
+                <Text style={s.body}>
+                  Retry to keep your existing pairing. If it cannot be
+                  recovered, reset this phone before starting a new pairing.
+                  Saved care records stay in Parse.
+                </Text>
+                <Button
+                  title="Retry saved pairing"
+                  disabled={busy}
+                  onPress={() => {
+                    void action(readSavedPairing, "Reading saved pairing…");
+                  }}
+                />
+                <Button
+                  title="Reset this phone"
+                  secondary
+                  disabled={busy}
+                  onPress={() =>
+                    Alert.alert(
+                      "Reset this phone?",
+                      "This clears local audio, alerts, unfinished recordings and pairing data. Saved care records stay in Parse. The owner must revoke the old phone in the dashboard and finish removing it after this reset.",
+                      [
+                        { text: "Keep pairing", style: "cancel" },
+                        {
+                          text: "Reset",
+                          style: "destructive",
+                          onPress: () => {
+                            void unpair();
+                          },
+                        },
+                      ],
+                    )
+                  }
+                />
+              </View>
+            ) : accessProblem ? (
               <View style={s.card} accessibilityRole="alert">
                 <Text style={s.heading}>Phone access stopped</Text>
                 <Text style={s.body}>{accessProblem}</Text>
@@ -703,6 +758,13 @@ function Companion() {
             ) : (
               <View style={s.card}>
                 <Text style={s.heading}>Connect to Parse</Text>
+                {pairingReset && (
+                  <Text style={s.body}>
+                    This phone's local data has been reset. Ask the care-space
+                    owner to revoke the old phone and choose Finish removing in
+                    the dashboard before selecting a replacement for reminders.
+                  </Text>
+                )}
                 <Text style={s.body}>
                   Use the HTTPS address supplied by your care-space owner. Your
                   private pairing credential stays on this phone.

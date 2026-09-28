@@ -4,6 +4,7 @@ import { Directory, File, Paths } from "expo-file-system";
 import type { Installation, PendingTurn } from "./contracts";
 import { serviceAddress } from "./validation";
 import { PendingTurnJournal } from "./turnRecovery";
+import { clearPlayback, hasPlaybackHistory } from "./reminderStorage";
 
 const options = {
   keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY,
@@ -29,22 +30,60 @@ export function saveTapMode(tap: boolean): Promise<void> {
   return next;
 }
 const marker = () => new File(Paths.document, "parse-installation-v1");
+const resetMarker = () => new File(Paths.document, "parse-reset-required-v1");
+class SavedPairingProblem extends Error {}
 export async function loadInstallation(): Promise<{
   installation: Installation | null;
   restored: boolean;
 }> {
-  const raw = await SecureStore.getItemAsync("parse.installation", options);
-  if (!raw) return { installation: null, restored: false };
-  const installation = JSON.parse(raw) as Installation;
-  if (
-    installation.version !== 1 ||
-    !/^[a-f0-9]{64}$/.test(installation.credential)
-  )
-    throw new Error(
-      "Saved pairing could not be read. Ask the care-space owner to revoke this phone and pair it again.",
+  try {
+    if (resetMarker().exists)
+      throw new SavedPairingProblem(
+        "The previous reset did not finish. Reset this phone again to clear its remaining local data.",
+      );
+    const raw = await SecureStore.getItemAsync("parse.installation", options);
+    if (!raw) {
+      if (
+        marker().exists ||
+        (await SecureStore.getItemAsync("parse.pending-turn", options)) ||
+        (await hasPlaybackHistory())
+      )
+        throw new SavedPairingProblem(
+          "This phone's pairing is missing, but local records from an earlier pairing remain.",
+        );
+      return { installation: null, restored: false };
+    }
+    try {
+      const installation = JSON.parse(raw) as Installation;
+      if (
+        !installation ||
+        installation.version !== 1 ||
+        typeof installation.credential !== "string" ||
+        !/^[a-f0-9]{64}$/.test(installation.credential) ||
+        typeof installation.enrollmentKey !== "string" ||
+        !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(
+          installation.enrollmentKey,
+        ) ||
+        !["ios", "android"].includes(installation.platform) ||
+        typeof installation.displayName !== "string" ||
+        !installation.displayName.trim() ||
+        installation.displayName.length > 120 ||
+        typeof installation.service !== "string"
+      )
+        throw new Error();
+      serviceAddress(installation.service);
+      return { installation, restored: !marker().exists };
+    } catch {
+      throw new SavedPairingProblem(
+        "The saved pairing is incomplete or unreadable. Retry before choosing to reset this phone.",
+      );
+    }
+  } catch (err) {
+    if (err instanceof SavedPairingProblem) throw err;
+    throw new SavedPairingProblem(
+      "Parse could not read this phone's protected pairing. Unlock the phone and try again. Your pairing has not been replaced.",
     );
-  serviceAddress(installation.service);
-  return { installation, restored: !marker().exists };
+  }
 }
 export async function newInstallation(
   service: string,
@@ -70,11 +109,14 @@ export async function newInstallation(
   return installation;
 }
 export async function clearInstallation() {
-  const { clearPlayback } = await import("./reminderStorage");
+  // A killed or failed reset must not reopen the old identity with a partially
+  // erased playback ledger. Remove this barrier only after every delete succeeds.
+  resetMarker().write("v1");
   await clearPlayback();
-  await SecureStore.deleteItemAsync("parse.installation", options);
   await savePending(null);
+  await SecureStore.deleteItemAsync("parse.installation", options);
   if (marker().exists) marker().delete();
+  resetMarker().delete();
 }
 const pendingJournal = new PendingTurnJournal({
   read: async () => {

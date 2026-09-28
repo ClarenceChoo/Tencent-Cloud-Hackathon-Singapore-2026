@@ -1,0 +1,12 @@
+{
+  "at": "2026-09-28T04:03:47.809581+00:00",
+  "observation": "Android Firefox retained previously rendered shared-summary content after the share expired; a fresh unauthenticated server read correctly returned 410. The original page fetched access only once.",
+  "api_status": 410,
+  "api_body": {
+    "detail": "Shared summary is no longer available"
+  },
+  "source_checkpoint": "7897055118b13bd9813492473f7b7dc16de87f7d",
+  "before_frontend_index_sha256": "8ecb375717e55cb2fb22a69c671f973b1f9cee4255453f4d551dd3b09ba38c3e",
+  "hierarchy_sha256": "369c34d44ba879b44cc716ec9904783dcb848b76873356d933d7dc1c2d6156fb",
+  "public_token_in_report": false
+}

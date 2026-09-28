@@ -3,6 +3,7 @@ import { Activity, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronRight,
 import { api, ApiError, Dashboard, label, localDay, niceDate, Patient, Proposal, Row, Session, setCsrf, str, val } from './api';
 
 import DeviceSetup from './DeviceSetup';
+import { useSharedSummary } from './useSharedSummary';
 import { RecordSource, RecordHistory } from './RecordSource';
 import CompanionSelection from './CompanionSelection';
 
@@ -58,8 +59,6 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
   const [omittedSourceIds, setOmittedSourceIds] = useState<string[]>([]);
   const [summaryReviewed, setSummaryReviewed] = useState(false);
   const [toast, setToast] = useState('');
-  const [publicSummary, setPublicSummary] = useState<Row | null>(null);
-  const [publicError, setPublicError] = useState('');
   const refreshInFlight = useRef(false);
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
@@ -74,6 +73,8 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
   }, [onAccessLost]);
   const sharedToken = useMemo(() => window.location.pathname.match(/^\/shared\/summaries\/([^/]+)\/?$/)?.[1] || '', []);
 
+  const publicView = useSharedSummary(sharedToken);
+
   const refreshSession = useCallback(async () => {
     const value = await api.session(); if (!mounted.current) return value; setSession(value); setCsrf(value.csrf_token);
     const selected = value.patients[0]?.id || ''; setPatientId(current => current || selected);
@@ -86,9 +87,8 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
     finally { setLoading(false); }
   }, [accessFailed]);
   useEffect(() => {
-    if (sharedToken) {
-      api.sharedSummary(decodeURIComponent(sharedToken)).then(setPublicSummary).catch(err => setPublicError(err instanceof Error ? err.message : 'This shared summary is no longer available.')).finally(() => setLoading(false));
-    } else if (skipSession) {
+    if (sharedToken) return;
+    if (skipSession) {
       setLoading(false);
     } else {
       refreshSession().then(value=>{if(!value.patients.length)setLoading(false);}).catch(() => {setSession(null);setLoading(false);});
@@ -203,7 +203,7 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
   function beginComposer(kind:string,seed:Record<string,unknown>={}) { setComposerKind(kind); setComposerSeed(seed); setComposer(true); }
   const greeting = view === 'timeline' ? `${displayName(patient)}’s care timeline` : ({overview:'Today’s care', medications:'Medications', care:'Care plan', support:'Support', summary:'Visit summary', settings:'Care preferences'} as Partial<Record<View,string>>)[view];
 
-  if (sharedToken) return <SharedSummaryPublic data={publicSummary} loading={loading} error={publicError} />;
+  if (sharedToken) return <SharedSummaryPublic data={publicView.data} loading={publicView.loading} error={publicView.error} />;
   if (!session) return <Login onSubmit={login} loading={loading || busy} error={loginError} />;
   const d = dashboard;
   return <div className="app-shell">

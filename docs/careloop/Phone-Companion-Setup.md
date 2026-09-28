@@ -194,3 +194,10 @@ The latency metric starts when the confirmation audio upload is sent and ends wh
 The dashboard now removes its entire care view and open dialogs when a refresh returns 401 or 403, and asks the user to sign in again. Late responses from the old view cannot restore records in the new session. Temporary network/server failures preserve the last loaded data with a connection warning; the next successful poll updates it. Revoking an entire grant removes prior explicit note sharing, so regranting dashboard access alone does not reshare old notes.
 
 The supplied Compose stack exposes only Caddy on host ports 80/443. Its private backend sets `FORWARDED_ALLOW_IPS=*` so Uvicorn correctly sees HTTPS and the client address forwarded by that trusted proxy. If changing the network layout or exposing the backend directly, replace that wildcard with the trusted proxy address/range; never trust forwarded headers from arbitrary public clients.
+
+
+## Shared summaries in the phone browser
+
+**Open care dashboard** opens the phone's browser with its own owner/caregiver sign-in. The phone installation credential does not grant browser administration. Summary review and sharing remain separate actions; omitting a source removes its linked statement from the saved review.
+
+An open public summary checks its share access every five seconds while visible. Expired, revoked or invalidated responses clear the displayed content. Hiding the page clears the content and cancels its request; returning, restoring a cached page or focusing the window requires a fresh check. Requests bypass the browser response cache and have a ten-second deadline. A connection failure clears the unverified copy and retries while the page is visible. Late responses cannot restore a copy after suspension or timeout. This controls the current page; it cannot retract information a recipient already read or copied.

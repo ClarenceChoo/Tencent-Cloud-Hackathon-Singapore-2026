@@ -73,7 +73,7 @@ export const api = {
   revokeGrant: (id: string) => request<void>(`/app/grants/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   setNoteSharing: (noteId: string, userIds: string[]) => request<Row>(`/app/notes/${encodeURIComponent(noteId)}/sharing`, { method: 'PUT', body: JSON.stringify({ user_ids: userIds }) }),
   deleteNote: (noteId: string) => request<void>(`/app/notes/${encodeURIComponent(noteId)}`, { method: 'DELETE' }),
-  sharedSummary: (token: string) => request<Row>(`/shared/summaries/${encodeURIComponent(token)}`),
+  sharedSummary: (token: string, signal?: AbortSignal) => request<Row>(`/shared/summaries/${encodeURIComponent(token)}`, { signal, cache: 'no-store' }),
   createMedicationPlan: (patientId: string, payload: Record<string, unknown>) => request<Row>(`/app/patients/${encodeURIComponent(patientId)}/medication-plans`, json('POST', payload)),
 };
 

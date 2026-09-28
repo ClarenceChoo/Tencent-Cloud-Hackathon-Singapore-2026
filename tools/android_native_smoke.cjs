@@ -287,7 +287,7 @@ async function main() {
       return;
     }
     if (recoveryOnly) {
-      await require('./android_native_recovery.cjs')({ arm, find, tap, ui, adb, screenshot, pass, owner, caregiver, restricted, fixture, directory, appId, report, receiptFault });
+      await require('./android_native_recovery.cjs')({ arm, find, tap, tapNode, ui, adb, screenshot, pass, owner, caregiver, restricted, fixture, directory, appId, report, receiptFault });
       save();
       return;
     }

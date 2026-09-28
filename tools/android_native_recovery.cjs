@@ -6,7 +6,7 @@ const { execFile } = require('node:child_process');
 const execute = require('node:util').promisify(execFile);
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-module.exports = async function recovery({ arm, find, tap, ui, adb, screenshot, pass, owner, caregiver, restricted, fixture, directory, appId, report, receiptFault }) {
+module.exports = async function recovery({ arm, find, tap, tapNode, ui, adb, screenshot, pass, owner, caregiver, restricted, fixture, directory, appId, report, receiptFault }) {
   const root = path.resolve(__dirname, '..');
   const readLines = name => {
     const file = path.join(directory, name);
@@ -57,6 +57,15 @@ module.exports = async function recovery({ arm, find, tap, ui, adb, screenshot, 
       wording, share_with_user_ids: [fixture.caregiver_id],
     } });
     await tap('Tap to start recording');
+    const permission = (await ui()).find(n => n['resource-id']?.endsWith('/permission_allow_foreground_only_button'));
+    if (permission) {
+      await tapNode(permission);
+      if (!(await ui()).some(n => n.text === 'Tap to finish')) {
+        await find('Recording did not start. Choose the talk button again when you are ready.');
+        await tap('Tap to start recording');
+      }
+      report.microphone_permission_granted_by_native_dialog = true;
+    }
     await find('Tap to finish', { scroll: false });
     await sleep(1000);
     await tap('Recording. Tap to send.', { scroll: false });
@@ -64,6 +73,7 @@ module.exports = async function recovery({ arm, find, tap, ui, adb, screenshot, 
       .find(e => e.kind === 'accepted_receipt_interrupted' && e.fault === receiptFault), 'Proxy did not intercept an actual accepted upload');
     report.interruption = interrupted;
     await find('Recover response');
+    await find('Discard unfinished recording');
     const feedback = (await ui()).find(n => n['resource-id']?.endsWith('voice-feedback'))?.text;
     assert(feedback && !feedback.includes('Saved.'), 'Failed receipt must not claim the note was saved');
     report.interrupted_feedback = feedback;
@@ -85,6 +95,10 @@ module.exports = async function recovery({ arm, find, tap, ui, adb, screenshot, 
     await adb('shell', 'input', 'keyevent', 'KEYCODE_HOME');
     await adb('shell', 'am', 'start', '-W', '-n', appId + '/sg.parse.companion.MainActivity');
     await find('Have I got that right?');
+    const recoveredUi = await ui();
+    report.recovered_recording_controls = recoveredUi.filter(n =>
+      ['Recover response','Discard unfinished recording'].includes(n['content-desc'])).map(n=>n['content-desc']);
+    assert.deepEqual(report.recovered_recording_controls, [], 'Resolved recording must no longer offer recovery/discard');
     const lookup = await waitFor(() => readLines('fault-events.jsonl').slice(eventCount)
       .find(e => e.kind === 'receipt_lookup' && e.upstream_status === 200 && e.turn_id === interrupted.turn_id),
     'Native restart did not recover the original accepted turn by its receipt key');

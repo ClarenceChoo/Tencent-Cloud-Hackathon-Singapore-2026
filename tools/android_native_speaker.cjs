@@ -84,6 +84,12 @@ with sqlite3.connect('file:'+str(p/'fixture.db')+'?mode=ro',uri=True) as db:
     assert.equal((await cache()).trim(),'');
     const resumedAudio=await audio('native-speaker-resumed-audio');
     assert(!resumedAudio.split('\n').some(line=>line.includes('/'+evidence.player_pid+' ')&&line.includes('state:started')));
+    await find('Tap to start recording');
+    const recoveryUi = await ui();
+    evidence.background_recovery_controls = recoveryUi.filter(n =>
+      ['Recover response','Discard unfinished recording','Discard unreadable recovery data'].includes(n['content-desc'])).map(n=>n['content-desc']);
+    assert.deepEqual(evidence.background_recovery_controls, [], 'Playback interruption must not pretend a recording needs recovery');
+    await screenshot('native-speaker-recovery-controls');
     pass('Backgrounding stops the native speaker check, clears audio and does not resume playback on return');
     await screenshot('native-speaker-resumed');
 

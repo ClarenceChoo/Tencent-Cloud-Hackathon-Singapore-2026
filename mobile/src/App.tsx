@@ -26,6 +26,7 @@ import type { CareRow, Enrollment, Home, Installation } from "./contracts";
 import {
   clearInstallation,
   loadInstallation,
+  loadPending,
   newInstallation,
 } from "./storage";
 import * as Notifications from "expo-notifications";
@@ -78,6 +79,10 @@ function Companion() {
   const [busyMessage, setBusyMessage] = useState("");
   const [testingSpeaker, setTestingSpeaker] = useState(false);
   const [speakerMessage, setSpeakerMessage] = useState("");
+  const [recoveryDetails, setRecoveryDetails] = useState<
+    "checking" | "empty" | "pending" | "unreadable"
+  >("empty");
+  const [recoveryCheck, setRecoveryCheck] = useState(0);
   const speakerRequest = useRef<AbortController | null>(null);
   const [booting, setBooting] = useState(true);
   const interaction = useTalkMode();
@@ -146,6 +151,26 @@ function Companion() {
     refresh,
     !!home && !busy,
   );
+  useEffect(() => {
+    let current = true;
+    if (!api || voice.phase !== "error") {
+      setRecoveryDetails("empty");
+      return;
+    }
+    setRecoveryDetails("checking");
+    // A playback or permission error does not imply an unfinished recording.
+    // Read the protected journal and ignore results from an earlier error/identity.
+    void loadPending()
+      .then((pending) => {
+        if (current) setRecoveryDetails(pending ? "pending" : "empty");
+      })
+      .catch(() => {
+        if (current) setRecoveryDetails("unreadable");
+      });
+    return () => {
+      current = false;
+    };
+  }, [api, voice.phase, voice.message, recoveryCheck]);
   useEffect(() => {
     const cancel = () => speakerRequest.current?.abort();
     const state = AppState.addEventListener("change", (value) => {
@@ -828,10 +853,11 @@ function Companion() {
                 }}
               />
             )}
-            {voice.phase === "error" && (
+            {voice.phase === "error" && recoveryDetails === "pending" && (
               <>
                 <Button
                   title="Recover response"
+                  disabled={busy}
                   onPress={() => {
                     void voice.recover().catch(showError);
                   }}
@@ -839,11 +865,34 @@ function Companion() {
                 <Button
                   title="Discard unfinished recording"
                   secondary
+                  disabled={busy}
                   onPress={() => {
                     void voice.discard().catch(showError);
                   }}
                 />
               </>
+            )}
+            {voice.phase === "error" && recoveryDetails === "unreadable" && (
+              <View style={s.notice}>
+                <Text style={s.body}>
+                  Saved recovery details could not be read. Check them again, or
+                  discard those details. Discarding does not undo care already
+                  saved.
+                </Text>
+                <Button
+                  title="Check recovery details"
+                  disabled={busy}
+                  onPress={() => setRecoveryCheck((value) => value + 1)}
+                />
+                <Button
+                  title="Discard unreadable recovery data"
+                  secondary
+                  disabled={busy}
+                  onPress={() => {
+                    void voice.discard().catch(showError);
+                  }}
+                />
+              </View>
             )}
             {voice.lastReply && (
               <Button

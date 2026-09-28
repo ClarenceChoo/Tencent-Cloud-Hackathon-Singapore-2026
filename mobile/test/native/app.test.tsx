@@ -941,3 +941,125 @@ it("speaker setup explains unavailable speech and handles server failure without
   expect(ports.api.confirm).not.toHaveBeenCalled();
   expect(text()).not.toContain("Saved.");
 });
+
+it("playback failure without a saved recording offers repeat, not recording recovery or discard", async () => {
+  ports.api.testSpeaker = vi.fn(async () => reply("speaker_check"));
+  await mount();
+  await tab("Settings");
+  await press("Test speaker");
+  await act(async () => {
+    ports.players[0].emit({ error: "Native playback failed" });
+    await drain();
+  });
+  expect(text()).toContain("Speech playback was interrupted.");
+  expect(ports.secure.has("parse.pending-turn")).toBe(false);
+  expect(button("Recover response")).toBeUndefined();
+  expect(button("Discard unfinished recording")).toBeUndefined();
+  expect(button("Repeat spoken reply")).toBeTruthy();
+  expect(ports.api.receipt).not.toHaveBeenCalled();
+});
+
+it("microphone denial does not offer recovery for a recording that never started", async () => {
+  ports.checkPermission.mockResolvedValue({ granted: false, status: "denied" });
+  ports.permission.mockResolvedValue({ granted: false, status: "denied" });
+  await mount();
+  await press("Hold to talk", "onPressIn");
+  expect(text()).toContain("Microphone access is off.");
+  expect(button("Recover response")).toBeUndefined();
+  expect(button("Discard unfinished recording")).toBeUndefined();
+  expect(ports.api.upload).not.toHaveBeenCalled();
+});
+
+it("an uncertain upload offers recovery with the original key, then removes those controls after reconciliation", async () => {
+  ports.api.upload.mockRejectedValueOnce(
+    new ApiError(503, "Gateway response unavailable"),
+  );
+  await mount();
+  await press("Hold to talk", "onPressIn");
+  await press("Recording. Release to send.", "onPressOut");
+  const pending = JSON.parse(ports.secure.get("parse.pending-turn")!);
+  expect(button("Recover response")).toBeTruthy();
+  expect(button("Discard unfinished recording")).toBeTruthy();
+  expect(text()).not.toContain("Saved.");
+  ports.api.receipt.mockResolvedValue({ turn_id: "turn_" + "1".repeat(32) });
+  await press("Recover response");
+  expect(ports.api.receipt).toHaveBeenCalledWith(
+    pending.key,
+    expect.any(AbortSignal),
+  );
+  await finishSpeech();
+  expect(ports.secure.has("parse.pending-turn")).toBe(false);
+  expect(button("Recover response")).toBeUndefined();
+  expect(button("Discard unfinished recording")).toBeUndefined();
+  expect(ports.api.upload).toHaveBeenCalledOnce();
+  expect(ports.api.confirm).not.toHaveBeenCalled();
+});
+
+it("a definitive rejected upload clears its journal and does not offer nonexistent receipt recovery", async () => {
+  ports.api.upload.mockRejectedValueOnce(
+    new ApiError(400, "The recording could not be decoded."),
+  );
+  await mount();
+  await press("Hold to talk", "onPressIn");
+  await press("Recording. Release to send.", "onPressOut");
+  expect(text()).toContain("The recording could not be decoded.");
+  expect(ports.secure.has("parse.pending-turn")).toBe(false);
+  expect(button("Recover response")).toBeUndefined();
+  expect(button("Discard unfinished recording")).toBeUndefined();
+});
+
+it("unreadable protected recovery data has an explicit check and discard path without pretending a receipt exists", async () => {
+  ports.secure.set("parse.pending-turn", "{invalid");
+  await mount();
+  expect(text()).toContain("Saved recovery details could not be read.");
+  expect(button("Recover response")).toBeUndefined();
+  expect(button("Discard unfinished recording")).toBeUndefined();
+  expect(button("Check recovery details")).toBeTruthy();
+  expect(ports.api.receipt).not.toHaveBeenCalled();
+  await press("Discard unreadable recovery data");
+  expect(ports.secure.has("parse.pending-turn")).toBe(false);
+  expect(button("Check recovery details")).toBeUndefined();
+  expect(button("Discard unreadable recovery data")).toBeUndefined();
+  expect(ports.api.upload).not.toHaveBeenCalled();
+  expect(ports.api.confirm).not.toHaveBeenCalled();
+});
+
+it("speaker failure still exposes an earlier genuinely pending recording rather than hiding recovery by reply type", async () => {
+  const pending = {
+    key: "00000000-0000-4000-8000-000000000088",
+    createdAt: Date.now(),
+    context: null,
+  };
+  ports.secure.set("parse.pending-turn", JSON.stringify(pending));
+  ports.api.receipt.mockRejectedValue(new ApiError(404, "Receipt not found"));
+  ports.api.testSpeaker = vi.fn(async () => reply("speaker_check"));
+  await mount();
+  await tab("Settings");
+  await press("Test speaker");
+  await act(async () => {
+    ports.players[0].emit({ error: "Native playback failed" });
+    await drain();
+  });
+  expect(text()).toContain("Speech playback was interrupted.");
+  expect(button("Recover response")).toBeTruthy();
+  expect(button("Discard unfinished recording")).toBeTruthy();
+  expect(JSON.parse(ports.secure.get("parse.pending-turn")!)).toEqual(pending);
+  expect(ports.api.upload).not.toHaveBeenCalled();
+});
+
+it("checking unreadable recovery details again can reveal the same saved turn without changing it", async () => {
+  ports.secure.set("parse.pending-turn", "{invalid");
+  await mount();
+  expect(button("Check recovery details")).toBeTruthy();
+  const pending = {
+    key: "00000000-0000-4000-8000-000000000099",
+    createdAt: Date.now(),
+    context: null,
+  };
+  ports.secure.set("parse.pending-turn", JSON.stringify(pending));
+  await press("Check recovery details");
+  expect(button("Recover response")).toBeTruthy();
+  expect(button("Discard unreadable recovery data")).toBeUndefined();
+  expect(JSON.parse(ports.secure.get("parse.pending-turn")!)).toEqual(pending);
+  expect(ports.api.receipt).not.toHaveBeenCalled();
+});

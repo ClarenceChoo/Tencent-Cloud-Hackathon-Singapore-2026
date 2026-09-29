@@ -21,6 +21,7 @@ firmware/managed_components/
 firmware/sdkconfig
 firmware/sdkconfig.old
 firmware/components/careloop_core/test/core_tests
+firmware/components/careloop_core/test/network_poll_tests
 .DS_Store
 runtime/
 *.log

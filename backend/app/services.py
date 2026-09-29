@@ -22,6 +22,7 @@ ALLOWED_REPORT_STATES = {
     "reported_not_yet",
     "reported_uncertain",
 }
+UPDATABLE_REPORT_STATES = {"unconfirmed", "reported_not_yet", "reported_uncertain"}
 PREVENTIVE_STATES = {"planned", "due", "arranged", "completed", "declined", "needs_discussion"}
 EXPLICIT_CONFIRMATIONS = {
     "yes",
@@ -169,13 +170,37 @@ PAYLOAD_MODELS: Dict[str, Type[StrictModel]] = {
 def _browser_record_access(db: Session, patient_id: str, user_id: Optional[str], permitted_user_ids: list[str], proposal_id: Optional[str] = None) -> bool:
     if user_id is None:
         return True
-    grant = db.scalar(select(m.AccessGrant).where(m.AccessGrant.patient_id == patient_id, m.AccessGrant.user_id == user_id, m.AccessGrant.revoked_at.is_(None)))
+    grant = db.scalar(select(m.AccessGrant).where(m.AccessGrant.patient_id == patient_id, m.AccessGrant.user_id == user_id, m.AccessGrant.revoked_at.is_(None)).execution_options(populate_existing=True))
     if not grant or (grant.expires_at and aware(grant.expires_at) <= utcnow()):
         return False
     if "*" in (grant.scopes or []) or user_id in (permitted_user_ids or []):
         return True
     proposal = db.get(m.ConfirmationProposal, proposal_id) if proposal_id else None
     return bool(proposal and proposal.created_by_user_id == user_id)
+
+
+def _followup_source_recipients(db: Session, patient_id: str, related_type: str, related_id: str, user_id: Optional[str]) -> list[str]:
+    """Resolve current source access for both new follow-ups and their outcomes."""
+    if related_type == "health_note":
+        related = db.get(m.HealthNote, related_id, populate_existing=True)
+        if not related or related.patient_id != patient_id or related.deleted_at:
+            raise HTTPException(status_code=422, detail="Related health note is unavailable")
+        recipients = list(related.shared_with_user_ids or [])
+        # Authorship does not retain access after the owner makes a note private.
+        if not _browser_record_access(db, patient_id, user_id, recipients):
+            raise HTTPException(status_code=403, detail="Related health note access is not permitted")
+        return recipients
+    if related_type == "support_request":
+        related = db.get(m.SupportRequest, related_id, populate_existing=True)
+        if not related or related.patient_id != patient_id:
+            raise HTTPException(status_code=422, detail="Related support request is unavailable")
+        if not _browser_record_access(db, patient_id, user_id, [related.recipient_user_id], related.proposal_id):
+            raise HTTPException(status_code=403, detail="Related support request access is not permitted")
+        return [related.recipient_user_id]
+    related = db.get(m.DoseInstance, related_id, populate_existing=True)
+    if not related or related.patient_id != patient_id:
+        raise HTTPException(status_code=422, detail="Related medication report is unavailable")
+    return [user_id] if user_id else []
 
 
 def validate_payload(db: Session, patient_id: str, kind: str, payload: dict, acting_user_id: Optional[str] = None) -> Tuple[dict, Optional[int]]:
@@ -185,7 +210,7 @@ def validate_payload(db: Session, patient_id: str, kind: str, payload: dict, act
     payload = dict(payload)
     derived_fields = {
         "health_note": {"share_with_names"},
-        "medication_report": {"plan_version", "medicine_name", "scheduled_at"},
+        "medication_report": {"plan_version", "medicine_name", "scheduled_at", "previous_report_state", "previous_confirmation_proposal_id"},
         "preventive_task": {"previous_state"},
         "support_request": {"recipient_name", "calling_route", "calling_route_message"},
         "followup": {"previous_resolution_state"},
@@ -202,7 +227,7 @@ def validate_payload(db: Session, patient_id: str, kind: str, payload: dict, act
     clean = parsed.model_dump(mode="json", exclude_none=True)
     plan_version = None
     if kind == "medication_report":
-        dose = db.get(m.DoseInstance, parsed.dose_instance_id)
+        dose = db.get(m.DoseInstance, parsed.dose_instance_id, populate_existing=True)
         if not dose or dose.patient_id != patient_id:
             raise HTTPException(status_code=422, detail="Dose instance is not available for this patient")
         candidates = db.scalars(
@@ -214,6 +239,10 @@ def validate_payload(db: Session, patient_id: str, kind: str, payload: dict, act
         ).all()
         if len(candidates) > 1 and not parsed.dose_instance_id:
             raise HTTPException(status_code=422, detail="Medication reference is ambiguous")
+        if dose.report_state not in UPDATABLE_REPORT_STATES:
+            raise HTTPException(status_code=409, detail="Dose already has a final confirmed report")
+        clean["previous_report_state"] = dose.report_state
+        clean["previous_confirmation_proposal_id"] = dose.confirmation_proposal_id
         plan_version = dose.plan_version
         clean["plan_version"] = plan_version
         clean["medicine_name"] = dose.medicine_name
@@ -273,33 +302,28 @@ def validate_payload(db: Session, patient_id: str, kind: str, payload: dict, act
             clean["calling_route_message"] = patient.calling_route or "No calling route is configured. Use your usual local support or emergency contact method."
     elif kind == "followup":
         if parsed.followup_id:
-            existing = db.get(m.FollowUp, parsed.followup_id)
+            existing = db.get(m.FollowUp, parsed.followup_id, populate_existing=True)
             if not existing or existing.patient_id != patient_id or existing.resolution_state != "open":
                 raise HTTPException(status_code=422, detail="Open follow-up is unavailable")
             if not _browser_record_access(db, patient_id, acting_user_id, existing.permitted_user_ids, existing.proposal_id):
                 raise HTTPException(status_code=403, detail="Follow-up access is not permitted")
+            recipients = _followup_source_recipients(db, patient_id, existing.related_type, existing.related_id, acting_user_id)
+            # Medication follow-ups are private to their original creator;
+            # an owner/device resolving one must not replace that audience.
+            if (existing.permission_scope == "related_recipients"
+                    and existing.related_type != "medication_report"
+                    and set(existing.permitted_user_ids or []) != set(recipients)):
+                raise HTTPException(status_code=409, detail="Related follow-up access changed")
             clean.update({"related_type": existing.related_type, "related_id": existing.related_id, "check_at": iso(existing.check_at), "permission_scope": existing.permission_scope, "permitted_user_ids": existing.permitted_user_ids, "previous_resolution_state": existing.resolution_state})
-        elif parsed.related_type == "support_request":
-            related = db.get(m.SupportRequest, parsed.related_id)
-            if not related or related.patient_id != patient_id:
-                raise HTTPException(status_code=422, detail="Related support request is unavailable")
-            if not _browser_record_access(db, patient_id, acting_user_id, [related.recipient_user_id], related.proposal_id):
-                raise HTTPException(status_code=403, detail="Related support request access is not permitted")
-            clean["permitted_user_ids"] = [related.recipient_user_id] if parsed.permission_scope == "related_recipients" else ([acting_user_id] if acting_user_id else [])
-        elif parsed.related_type == "health_note":
-            related = db.get(m.HealthNote, parsed.related_id)
-            if not related or related.patient_id != patient_id or related.deleted_at:
-                raise HTTPException(status_code=422, detail="Related health note is unavailable")
-            if not _browser_record_access(db, patient_id, acting_user_id, related.shared_with_user_ids, related.proposal_id):
-                raise HTTPException(status_code=403, detail="Related health note access is not permitted")
-            clean["permitted_user_ids"] = list(related.shared_with_user_ids or []) if parsed.permission_scope == "related_recipients" else ([acting_user_id] if acting_user_id else [])
         else:
-            related = db.get(m.DoseInstance, parsed.related_id)
-            if not related or related.patient_id != patient_id:
-                raise HTTPException(status_code=422, detail="Related medication report is unavailable")
-            clean["permitted_user_ids"] = [acting_user_id] if acting_user_id else []
-        if not parsed.followup_id and parsed.permission_scope == "related_recipients" and not clean.get("permitted_user_ids"):
+            recipients = _followup_source_recipients(db, patient_id, parsed.related_type, parsed.related_id, acting_user_id)
+            clean["permitted_user_ids"] = recipients if parsed.permission_scope == "related_recipients" else ([acting_user_id] if acting_user_id else [])
+        if parsed.permission_scope == "related_recipients" and not clean.get("permitted_user_ids"):
             raise HTTPException(status_code=422, detail="Related item has no permitted follow-up recipients")
+        for user_id in clean.get("permitted_user_ids", []):
+            grant = db.scalar(select(m.AccessGrant).where(m.AccessGrant.patient_id == patient_id, m.AccessGrant.user_id == user_id, m.AccessGrant.revoked_at.is_(None)).execution_options(populate_existing=True))
+            if not grant or (grant.expires_at and aware(grant.expires_at) <= utcnow()):
+                raise HTTPException(status_code=422, detail="A follow-up recipient is no longer permitted")
     return clean, plan_version
 
 
@@ -312,8 +336,10 @@ def build_readback(kind: str, payload: dict) -> str:
     if kind == "medication_report":
         wording = payload["report_state"].replace("reported_", "").replace("_", " ")
         taken = (", with the time described as %s" % payload["taken_time_text"]) if payload.get("taken_time_text") else ""
-        return "I will record %s for %s scheduled at %s%s. Is that right?" % (
-            wording,
+        previous = payload.get("previous_report_state", "unconfirmed")
+        action = "record" if previous == "unconfirmed" else "update the previous %s report to" % previous.replace("reported_", "").replace("_", " ")
+        return "I will %s %s for %s scheduled at %s%s. Is that right?" % (
+            action, wording,
             payload["medicine_name"],
             payload["scheduled_at"],
             taken,
@@ -512,18 +538,20 @@ def commit_proposal(db: Session, proposal_id: str, patient_id: Optional[str] = N
         )
         record_type = "health_note"
     elif proposal.kind == "medication_report":
-        dose = db.scalar(select(m.DoseInstance).where(m.DoseInstance.id == payload["dose_instance_id"]).with_for_update())
-        plan = db.get(m.MedicationPlanVersion, dose.plan_id) if dose else None
+        dose = db.scalar(select(m.DoseInstance).where(m.DoseInstance.id == payload["dose_instance_id"]).with_for_update().execution_options(populate_existing=True))
+        plan = db.get(m.MedicationPlanVersion, dose.plan_id, populate_existing=True) if dose else None
         if not dose or dose.patient_id != proposal.patient_id or not plan or not plan.active or dose.plan_version != proposal.plan_version:
             proposal.status = "invalidated"
             proposal.invalidated_reason = "medication_plan_changed"
             db.flush()
             raise HTTPException(status_code=409, detail="Medication plan changed; identify the dose again")
-        if dose.report_state != "unconfirmed" and dose.confirmation_proposal_id != proposal.id:
+        if (dose.report_state not in UPDATABLE_REPORT_STATES
+                or dose.report_state != payload.get("previous_report_state", "unconfirmed")
+                or dose.confirmation_proposal_id != payload.get("previous_confirmation_proposal_id")):
             proposal.status = "invalidated"
-            proposal.invalidated_reason = "dose_already_reported"
+            proposal.invalidated_reason = "dose_report_changed"
             db.flush()
-            raise HTTPException(status_code=409, detail="Dose already has a confirmed report")
+            raise HTTPException(status_code=409, detail="Dose report changed; review its current status again")
         dose.report_state = payload["report_state"]
         dose.report_time = utcnow()
         dose.taken_time_text = payload.get("taken_time_text")
@@ -627,6 +655,17 @@ def commit_proposal(db: Session, proposal_id: str, patient_id: Optional[str] = N
         )
         record_type = "support_request"
     elif proposal.kind == "followup":
+        # The read-back is immutable. If access changed, require a new review
+        # instead of silently committing its old recipients or changing them.
+        try:
+            current, _ = validate_payload(db, proposal.patient_id, "followup", payload, proposal.created_by_user_id)
+            if current != payload:
+                raise HTTPException(status_code=409, detail="Follow-up changed")
+        except HTTPException as exc:
+            proposal.status = "invalidated"
+            proposal.invalidated_reason = "followup_access_changed"
+            db.flush()
+            raise HTTPException(status_code=409, detail="Follow-up access or source changed; review it again") from exc
         if payload.get("followup_id"):
             record = db.scalar(select(m.FollowUp).where(m.FollowUp.id == payload["followup_id"]).with_for_update())
             if not record or record.patient_id != proposal.patient_id or record.resolution_state != "open":

@@ -11,6 +11,7 @@ from .providers import SpeechTooLong
 from .security import aware, iso, utcnow
 from .care_status import status_reply
 from .services import (
+    UPDATABLE_REPORT_STATES,
     build_readback,
     commit_proposal,
     create_proposal,
@@ -111,7 +112,7 @@ def _context(db, device: m.Device, context_id: Optional[str]) -> dict:
                 if checkin:
                     reminder = {"check_in_id": checkin.id, "local_date": iso(checkin.local_date), "type": "daily_check_in"}
     plan = db.scalar(select(m.MedicationPlanVersion).where(m.MedicationPlanVersion.patient_id == device.patient_id, m.MedicationPlanVersion.active.is_(True)))
-    doses = db.scalars(select(m.DoseInstance).where(m.DoseInstance.patient_id == device.patient_id, m.DoseInstance.report_state == "unconfirmed").order_by(m.DoseInstance.scheduled_at).limit(12)).all()
+    doses = db.scalars(select(m.DoseInstance).join(m.MedicationPlanVersion, m.MedicationPlanVersion.id == m.DoseInstance.plan_id).where(m.DoseInstance.patient_id == device.patient_id, m.MedicationPlanVersion.active.is_(True), m.DoseInstance.report_state.in_(UPDATABLE_REPORT_STATES)).order_by(m.DoseInstance.scheduled_at).limit(12)).all()
     recipient_rows = db.execute(
         select(m.User.id, m.User.name)
         .join(m.AccessGrant, m.AccessGrant.user_id == m.User.id)

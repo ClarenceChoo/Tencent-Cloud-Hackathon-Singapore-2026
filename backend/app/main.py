@@ -119,11 +119,19 @@ def _human(request: Request, db: Session):
     return get_browser_session(request, db)
 
 
-def _patient_access(request: Request, db: Session, patient_id: str, *scopes: str):
+def _patient_access(request: Request, db: Session, patient_id: str, *scopes: str, serialize: bool = False):
     user, browser_session = _human(request, db)
     grant, available = grant_scopes(db, user.id, patient_id)
     if scopes:
         require_scope(available, *scopes)
+    if serialize:
+        # Authorize before taking a write lock, then recheck the current grant
+        # after waiting for any sharing/revocation transaction to finish.
+        lock_patient(db, patient_id)
+        db.refresh(grant)
+        grant, available = grant_scopes(db, user.id, patient_id)
+        if scopes:
+            require_scope(available, *scopes)
     return user, browser_session, grant, available
 
 
@@ -333,7 +341,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
 
     @app.post("/v1/app/patients/{patient_id}/proposals", status_code=201)
     def proposal_create(patient_id: str, data: ProposalCreate, request: Request, db: Session = Depends(get_db)):
-        user, row, grant, scopes = _patient_access(request, db, patient_id, "write:care", "write:%s" % data.kind)
+        user, row, grant, scopes = _patient_access(request, db, patient_id, "write:care", "write:%s" % data.kind, serialize=True)
         require_csrf(request, row)
         proposal = create_proposal(db, patient_id, data.kind, data.payload, user_id=user.id)
         db.commit()
@@ -369,8 +377,9 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         previous = db.get(m.ConfirmationProposal, proposal_id)
         if not previous:
             raise HTTPException(status_code=404, detail="Proposal not found")
-        user, row, grant, scopes = _patient_access(request, db, previous.patient_id, "write:care", "write:%s" % previous.kind)
+        user, row, grant, scopes = _patient_access(request, db, previous.patient_id, "write:care", "write:%s" % previous.kind, serialize=True)
         require_csrf(request, row)
+        db.refresh(previous)
         if not _proposal_visible(previous, user.id, scopes):
             raise HTTPException(status_code=403, detail="Proposal access is not permitted")
         proposal = create_proposal(db, previous.patient_id, previous.kind, data.payload, user_id=user.id, replaces=previous)
@@ -382,8 +391,9 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         proposal = db.get(m.ConfirmationProposal, proposal_id)
         if not proposal:
             raise HTTPException(status_code=404, detail="Proposal not found")
-        user, row, grant, scopes = _patient_access(request, db, proposal.patient_id, "write:care", "write:%s" % proposal.kind)
+        user, row, grant, scopes = _patient_access(request, db, proposal.patient_id, "write:care", "write:%s" % proposal.kind, serialize=True)
         require_csrf(request, row)
+        db.refresh(proposal)
         if not _proposal_visible(proposal, user.id, scopes):
             raise HTTPException(status_code=403, detail="Proposal access is not permitted")
         try:
@@ -503,8 +513,13 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         note = db.get(m.HealthNote, note_id)
         if not note or note.deleted_at:
             raise HTTPException(status_code=404, detail="Health note not found")
-        user, row, grant, scopes = _patient_access(request, db, note.patient_id, "delete:notes", "write:care")
+        user, row, grant, scopes = _patient_access(request, db, note.patient_id, "delete:notes", "write:care", serialize=True)
         require_csrf(request, row)
+        db.refresh(note)
+        if note.deleted_at:
+            raise HTTPException(status_code=404, detail="Health note not found")
+        if "*" not in scopes and user.id not in (note.shared_with_user_ids or []):
+            raise HTTPException(status_code=403, detail="Health note access is not permitted")
         note.deleted_at = utcnow()
         related_followups = db.scalars(select(m.FollowUp).where(m.FollowUp.patient_id == note.patient_id, m.FollowUp.related_type == "health_note", m.FollowUp.related_id == note.id)).all()
         for followup in related_followups:
@@ -517,8 +532,11 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         note = db.get(m.HealthNote, note_id)
         if not note or note.deleted_at:
             raise HTTPException(status_code=404, detail="Health note not found")
-        user, row, grant, scopes = _patient_access(request, db, note.patient_id, "manage:sharing")
+        user, row, grant, scopes = _patient_access(request, db, note.patient_id, "manage:sharing", serialize=True)
         require_csrf(request, row)
+        db.refresh(note)
+        if note.deleted_at:
+            raise HTTPException(status_code=404, detail="Health note not found")
         if len(set(data.user_ids)) != len(data.user_ids):
             raise HTTPException(status_code=422, detail="Sharing recipients must be unique")
         for target_user_id in data.user_ids:
@@ -537,7 +555,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
 
     @app.post("/v1/app/patients/{patient_id}/grants", status_code=201)
     def grant_create(patient_id: str, data: GrantCreate, request: Request, db: Session = Depends(get_db)):
-        user, row, owner_grant, scopes = _patient_access(request, db, patient_id, "manage:sharing")
+        user, row, owner_grant, scopes = _patient_access(request, db, patient_id, "manage:sharing", serialize=True)
         require_csrf(request, row)
         target = db.get(m.User, data.user_id)
         if not target or not target.active:
@@ -546,6 +564,8 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         if forbidden.intersection(data.scopes):
             raise HTTPException(status_code=422, detail="Delegated scopes cannot grant owner privileges")
         grant = db.scalar(select(m.AccessGrant).where(m.AccessGrant.patient_id == patient_id, m.AccessGrant.user_id == data.user_id))
+        if grant and (grant.relationship == "owner" or forbidden.intersection(grant.scopes or [])):
+            raise HTTPException(status_code=409, detail="Owner access cannot be replaced with a delegated grant")
         if grant:
             grant.scopes, grant.expires_at, grant.revoked_at = data.scopes, data.expires_at, None
         else:
@@ -559,8 +579,9 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         target = db.get(m.AccessGrant, grant_id)
         if not target:
             raise HTTPException(status_code=404, detail="Grant not found")
-        user, row, owner_grant, scopes = _patient_access(request, db, target.patient_id, "manage:sharing")
+        user, row, owner_grant, scopes = _patient_access(request, db, target.patient_id, "manage:sharing", serialize=True)
         require_csrf(request, row)
+        db.refresh(target)
         if target.user_id == user.id:
             raise HTTPException(status_code=409, detail="Owner cannot revoke their current access grant")
         target.revoked_at = utcnow()

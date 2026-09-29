@@ -56,3 +56,16 @@ Live use still requires the existing server's speech-provider configuration and 
 - Layout checks passed at 320, 390, 768 and 1440 pixels. Mobile and caregiver screenshots were visually reviewed. Safari, physical-phone audio and closed-browser delivery were not tested by this web run.
 
 See the [browser evidence](evidence/web-companion-ui-2026-09-29.json), [mobile screenshot](evidence/web-companion-mobile-2026-09-29.png), and [caregiver screenshot](evidence/web-companion-caregiver-2026-09-29.png). Source and served-build hashes are included in the evidence.
+
+## Captioned product demo
+
+[Watch the 60-second browser companion demo](demo/parse-web-companion-demo.mp4). It shows the companion beside the caregiver dashboard: owner pairing, a recorded note, explicit confirmation and the resulting timeline update, followed by a medication report. Captions are burned into the video; there is no narration or audio track. The film continuously labels its fictional data and simulated speech.
+
+To reproduce the recording, build the frontend and start a fresh fixture at port 5191:
+
+```sh
+backend/.venv/bin/python tools/web_companion_fixture.py \
+  --data-dir runtime/web-demo-20260929/fixture --port 5191
+```
+
+In another terminal, run `node tools/record_web_companion.cjs`, then `python3 tools/compose_web_demo.py`. Set `PLAYWRIGHT_MODULE` if using a bundled Playwright installation. The compositor requires FFmpeg/FFprobe with `drawtext` and currently uses the macOS Arial font path declared at the top of the script. Outputs remain in `runtime/web-demo-20260929/`; only the reviewed final MP4 is copied into this document's `demo/` directory. Use a fresh child fixture directory and `PARSE_WEB_FIXTURE_DIR` when recording again.

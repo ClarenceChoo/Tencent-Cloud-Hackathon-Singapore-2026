@@ -620,3 +620,5 @@ input[type=checkbox] { accent-color:var(--accent); min-height:20px; width:18px; 
 .pairing-help li { padding:4px 0; }
 .pairing-help p { color:var(--muted);max-width:740px; }
 @media(max-width:700px) { .pairing-steps { grid-template-columns:1fr; }.pairing-steps li { padding:14px 0; }.pairing-service { grid-template-columns:1fr;gap:10px; }.pairing-facts { grid-template-columns:1fr 1fr; }.pairing-card .inline-field { flex-wrap:wrap; }.pairing-card .inline-field input { width:100%;flex-basis:100%; }.paired-device-title { align-items:flex-start; } }
+
+.record-source{font-size:12px;line-height:1.7;color:var(--muted,#78695e);margin-top:5px}.record-history{margin-top:10px;font-size:13px}.record-history summary{min-height:48px;display:flex;align-items:center;cursor:pointer;text-decoration:underline;text-underline-offset:3px}.record-history ol{margin:0;padding-left:22px}.record-history li{padding:8px 0}.record-history li p{margin:0}

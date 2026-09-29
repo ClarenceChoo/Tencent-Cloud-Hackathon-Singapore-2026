@@ -6,7 +6,7 @@ The software includes a working dashboard, backend, device API and guided hardwa
 
 The dashboard opens on a dated care timeline, with medication, note and reading filters, expandable records, and a side panel for upcoming doses, arranged visits and permitted care members. Its ivory and terracotta interface adapts to desktop and mobile. Scheduled doses remain separate from reported medication history; adding or correcting a care record still requires review and confirmation.
 
-**Next build: phone companion.** The [phone companion PRD](docs/careloop/Phone-Companion-PRD.md) and [implementation handoff](docs/careloop/Phone-Companion-Handoff.md) specify an installable iPhone/Android alternative to the physical pendant, sharing this backend and dashboard. This is a new implementation task; the existing website alone does not yet provide native voice capture or background phone reminders.
+**In development: phone companion.** The [phone companion PRD](docs/careloop/Phone-Companion-PRD.md) and [implementation handoff](docs/careloop/Phone-Companion-Handoff.md) specify an installable iPhone/Android alternative to the physical pendant, sharing this backend and dashboard. Native source now lives in `mobile/`; see the [setup guide](docs/careloop/Phone-Companion-Setup.md) and [verification ledger](docs/careloop/Phone-Companion-Verification.md). Phone enrollment, real-format audio transport and shared confirmation APIs are implemented. Physical-phone verification, active routing and background reminders are unfinished.
 
 ## Start the software demo
 

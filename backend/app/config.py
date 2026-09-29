@@ -4,7 +4,7 @@ import re
 from urllib.parse import urlsplit
 from typing import Annotated, List
 
-from pydantic import Field, field_validator
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -45,6 +45,8 @@ class Settings(BaseSettings):
     audio_retention_hours: int = 24
     scheduler_interval_seconds: int = 5
     scheduler_enabled: bool = True
+    expo_push_enabled: bool = False
+    expo_push_access_token: SecretStr = SecretStr("")
 
     @field_validator('public_base_url')
     @classmethod

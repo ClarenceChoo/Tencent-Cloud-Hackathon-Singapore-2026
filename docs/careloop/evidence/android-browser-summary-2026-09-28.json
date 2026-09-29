@@ -1,0 +1,133 @@
+{
+  "at": "2026-09-28T04:11:39.832385+00:00",
+  "nativeBrowser": true,
+  "physicalPhone": false,
+  "checkpoint_sha256": "2f878a8d17e15c7fdda0c3c593857d6a827aa78a6e047e26b7071e2b6b841fe4",
+  "inherited_checks": [
+    {
+      "name": "Native dashboard button opens Firefox with separate browser sign-in, without inheriting device authority",
+      "passed": true
+    },
+    {
+      "name": "Owner omits a phone-sourced note; Share remains disabled until the deliberate review is saved",
+      "passed": true
+    },
+    {
+      "name": "Android Firefox renders the shared read-only summary; unauthenticated public response retains the selected note and excludes the omitted statement",
+      "passed": true
+    },
+    {
+      "name": "Owner revokes in Android Firefox; reopening the original public link shows unavailable",
+      "passed": true
+    },
+    {
+      "name": "An open Android Firefox summary automatically clears after actual server-clock expiry, without reload or navigation",
+      "passed": true
+    }
+  ],
+  "inherited_source_sha256": {
+    "tools/android_browser_summary.py": "7dd4f4dcf098f07bc145d59ed925d6716f50f9feeb37e210d3977acc2808ef89",
+    "mobile/src/App.tsx": "07ecfcafb6316ab8a5ec8bc2d09fe473d67573ec1fc0388cb0f526359dc98c6f",
+    "frontend/src/App.tsx": "58c23f29c9a10841680efe175675262276245016bb26d996395e88bf4fb8da0f",
+    "frontend/src/api.ts": "91f10a9f3e862e377959af5f4ce160b2d5c2a6416f327e988c919076b6c73180",
+    "frontend/src/useSharedSummary.ts": "9af8c14187f9163e580f51c441ce47d2a549befd0974daf24d22f1384d1f35ed",
+    "frontend/src/__tests__/public-summary-access.test.tsx": "7bc555caf4a241e84b6db97bd5adadcc824d3c22059c51f9e92cd75e3ae5e155",
+    "frontend/src/styles.css": "c03c59cfed6aa33431af1a9179b5e55864a51e8342f984daf863c5b76b3962c9",
+    "backend/app/main.py": "609cb916a6143585757b1d44c7f6667ed19c0bc4e591bece7e4405058f9898e4",
+    "backend/app/services.py": "96fd030b2df1408ccdbc1f5cbdac9d8f67e031cc136b2dd4a1f26229e31f2247",
+    "tools/android_native_fixture.py": "02f47605eb96b79595ccfb991cd8c2ecf72808bc3680386853d97b2113b75271"
+  },
+  "source_sha256": {
+    "tools/android_browser_restricted.py": "ff815ec1b2d755f255649d39d38773cb8908bd494cb3dedbe567c8558934bbd1",
+    "tools/android_browser_summary.py": "5f08171c32b218de91e9b5aeb11e9644dcc287b17f1797efb0ca762c8f9abbd2",
+    "frontend/src/App.tsx": "58c23f29c9a10841680efe175675262276245016bb26d996395e88bf4fb8da0f",
+    "frontend/src/useSharedSummary.ts": "9af8c14187f9163e580f51c441ce47d2a549befd0974daf24d22f1384d1f35ed",
+    "frontend/src/api.ts": "91f10a9f3e862e377959af5f4ce160b2d5c2a6416f327e988c919076b6c73180"
+  },
+  "before": {
+    "records": {
+      "health_notes": {
+        "count": 8,
+        "sha256": "9234dda4d94811766ded432d680b094f21d050f508b3e7712e0f6f1ca37a9622"
+      },
+      "measurements": {
+        "count": 1,
+        "sha256": "2457ef73a9e0b3365b0f83cce0e753e19ea0353207976414c46f1a43b33ec8f7"
+      },
+      "preventive_tasks": {
+        "count": 1,
+        "sha256": "77550713b9d4ac0c750b78513d1ed7eecd0f3591cdd4714417161c7ebc1b859f"
+      },
+      "support_requests": {
+        "count": 1,
+        "sha256": "d53c279e1dcd53b0387a72bd17442297ded5b42e8d61da24c0bba120f3ae5716"
+      },
+      "followups": {
+        "count": 1,
+        "sha256": "88856db41ac6e37d3b541de3532e232853bf61c3cbcf4d91a8f8cfc13a14d7be"
+      },
+      "voice_turns": {
+        "count": 36,
+        "sha256": "b7fe759c69d44d52c40045a7a5a228f8a01ad97817c53e2dc16de41173e5e909"
+      }
+    },
+    "routes": [
+      {
+        "patient_id": "pat_6bb82a74d287477bbf8dfc4700d4b146",
+        "active_device_id": "dev_43587ddb28f14a4982d0afd0e88ed869",
+        "generation": 17,
+        "changed_at": "2026-09-28 02:26:23.958956"
+      }
+    ],
+    "uploads": 36
+  },
+  "checks": [
+    {
+      "name": "Restricted caregiver signs in through Android Firefox, has no summary preparation/sharing controls, and signs out",
+      "passed": true
+    },
+    {
+      "name": "All care-record and voice-turn hashes, upload count and reminder route remain unchanged across the full checkpoint and continuation",
+      "passed": true
+    }
+  ],
+  "limits": "Continuation of a documented Android emulator checkpoint. Initial email injection failed; no restricted login succeeded in that run. Physical phones and iOS remain unverified.",
+  "after": {
+    "records": {
+      "health_notes": {
+        "count": 8,
+        "sha256": "9234dda4d94811766ded432d680b094f21d050f508b3e7712e0f6f1ca37a9622"
+      },
+      "measurements": {
+        "count": 1,
+        "sha256": "2457ef73a9e0b3365b0f83cce0e753e19ea0353207976414c46f1a43b33ec8f7"
+      },
+      "preventive_tasks": {
+        "count": 1,
+        "sha256": "77550713b9d4ac0c750b78513d1ed7eecd0f3591cdd4714417161c7ebc1b859f"
+      },
+      "support_requests": {
+        "count": 1,
+        "sha256": "d53c279e1dcd53b0387a72bd17442297ded5b42e8d61da24c0bba120f3ae5716"
+      },
+      "followups": {
+        "count": 1,
+        "sha256": "88856db41ac6e37d3b541de3532e232853bf61c3cbcf4d91a8f8cfc13a14d7be"
+      },
+      "voice_turns": {
+        "count": 36,
+        "sha256": "b7fe759c69d44d52c40045a7a5a228f8a01ad97817c53e2dc16de41173e5e909"
+      }
+    },
+    "routes": [
+      {
+        "patient_id": "pat_6bb82a74d287477bbf8dfc4700d4b146",
+        "active_device_id": "dev_43587ddb28f14a4982d0afd0e88ed869",
+        "generation": 17,
+        "changed_at": "2026-09-28 02:26:23.958956"
+      }
+    ],
+    "uploads": 36
+  },
+  "default_browser_restored": "org.chromium.webview_shell"
+}

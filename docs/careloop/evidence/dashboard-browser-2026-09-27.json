@@ -1,0 +1,51 @@
+{
+  "at": "2026-09-27T09:10:33.940Z",
+  "origin": "http://127.0.0.1:5175",
+  "evidence": [
+    {
+      "name": "Sign in through real cookie/CSRF API",
+      "passed": true
+    },
+    {
+      "name": "Care note remains a proposal until explicit confirmation",
+      "passed": true
+    },
+    {
+      "name": "External reading correction commits only revised values",
+      "passed": true
+    },
+    {
+      "name": "Create a checked medication plan and confirmed dose report",
+      "passed": true
+    },
+    {
+      "name": "Preventive task moves due → arranged → completed through confirmations",
+      "passed": true
+    },
+    {
+      "name": "Private note sharing is deliberate and revocable",
+      "passed": true
+    },
+    {
+      "name": "Support request and follow-up preserve explicit acknowledgement and outcome",
+      "passed": true
+    },
+    {
+      "name": "Observed dashboard refresh",
+      "milliseconds": 289
+    },
+    {
+      "name": "External committed note refreshes an already-open dashboard",
+      "passed": true
+    },
+    {
+      "name": "Reviewed summary contains record text and sources; sharing is revocable",
+      "passed": true
+    },
+    {
+      "name": "Mobile viewport has no page overflow and exposes navigation",
+      "passed": true
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,26 @@
+{
+  "at": "2026-09-27T12:23:04.511Z",
+  "physicalPhone": false,
+  "nativeBrowser": false,
+  "environment": "Desktop headless Chrome with a 390x844 mobile/touch viewport; isolated local HTTPS fixture; real previously confirmed phone-sourced care records.",
+  "browser": "153.0.8010.54",
+  "checks": [
+    {
+      "name": "Phone viewport navigation exposes the summary; restricted caregiver has no prepare/share controls",
+      "passed": true
+    }
+  ],
+  "source_sha256": {
+    "tools/browser_phone_summary.cjs": "c8b45f0157f12f00436797a04581e83f1c7ac6216c376aeb22e0ec8eafa06ced",
+    "frontend/src/App.tsx": "a3abad59209d9e7c51bc9c2984d7b521211b25a80a7988109a948744d87cc65a",
+    "frontend/src/api.ts": "887f301eb20bd698aa73ea04478d90874b56123b62c1de29180ab1e0e3a51120",
+    "backend/app/main.py": "e6caaaed8b78023dc2f64e1951908303d3707b60991072a66c99b48dd0bd2681",
+    "backend/app/services.py": "96fd030b2df1408ccdbc1f5cbdac9d8f67e031cc136b2dd4a1f26229e31f2247"
+  },
+  "source_notes": {
+    "omitted": "note_e3cac52e3601453bba0eab7c2746ba6e",
+    "retained": "note_274df94653ac4332aeb5e10c1add1a14",
+    "provenance": "phone"
+  },
+  "failure": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByText('Fictional native left knee concern').first() to be visible\u001b[22m\n"
+}

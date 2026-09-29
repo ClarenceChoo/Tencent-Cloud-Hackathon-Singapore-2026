@@ -1,0 +1,7 @@
+{
+  "method": "DELETE",
+  "path": "/v1/phone/installation",
+  "authentication": "no credential supplied",
+  "status": 401,
+  "expected": "forwarded upstream and rejected by normal authentication"
+}

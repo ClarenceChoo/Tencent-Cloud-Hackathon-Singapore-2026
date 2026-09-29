@@ -1,6 +1,6 @@
 # Developer checks
 
-These tools exercise implementation contracts with fictional data. The product voice client remains the ESP32 cardholder.
+These tools exercise implementation contracts with fictional data. Parse has an ESP32 cardholder and a native phone companion under `mobile/`, using the same backend and care records. See the [phone setup guide](../docs/careloop/Phone-Companion-Setup.md) and [verification ledger](../docs/careloop/Phone-Companion-Verification.md) for the platform evidence and remaining acceptance work. Developer fixtures do not establish physical hardware or live speech behavior.
 
 ## Software demo
 
@@ -61,6 +61,12 @@ After the main scenario, `node tools/browser_settings.cjs` checks saved profile 
 To include device claim/revocation, provision a fresh fictional device with the backend admin CLI against that same local database. Save the command's output in a private file under `runtime/` and set `CARELOOP_TEST_DEVICE_FILE` to its path. The runner reads the one-time code and credential without printing them. It verifies authenticated API access before and after dashboard revocation and leaves the test device revoked. This verifies access control only; it does not simulate microphone, speaker, battery or physical Wi-Fi behavior.
 
 `node tools/browser_latency.cjs` measures 30 confirmed fictional-note updates in the already-open dashboard. It records each confirmation-request-start to visible-entry duration, p50, p95 and maximum under `runtime/dashboard-latency.json`, and fails if the local p95 exceeds two seconds. This conservative local baseline includes request/commit time; it does not verify a real phone, cloud deployment or demo network. The same optional browser environment settings apply.
+
+## Native Android sequence checks
+
+`android_native_sequence.py` exercises the installed verification package on the dedicated rooted Android emulator. It requires the existing fictional native TLS fixture and its loopback fault proxy; it refuses other packages, origins and an unexpected APK digest. See [the native build guide](../docs/careloop/Phone-Companion-Native-Build.md#native-android-reply-order-and-expiry) for the recorded setup and evidence.
+
+An optional fixture-only `sequence-tone.json` forces the production speech splitter to generate distinct PCM tones. The runner observes protected clip downloads, native playback state and cache hashes, then stalls a freshness request across a shortened reply deadline. It restores the proxy configuration and direct fixture connection in `finally`, and checks that care records, proposals, voice turns, uploads and routing are unchanged. This verifies emulator media behavior, not speech intelligibility or physical audibility. Use a unique `--run-suffix` to retain a second run without overwriting earlier evidence.
 
 ## Hardware pairing checks
 

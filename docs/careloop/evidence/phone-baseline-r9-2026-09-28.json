@@ -1,0 +1,308 @@
+{
+  "date": "2026-09-28",
+  "commit": "3beae5ea1be929722352757859601678c24fb0bf",
+  "gate": "E01 software baseline compatibility",
+  "scope": "Existing backend/database suites, current dashboard production build and component tests, actual desktop browser care/settings journeys, pendant core and transport. No physical hardware, native iOS, live speech, push or deployed-network acceptance.",
+  "fresh_runs": {
+    "dashboard": {
+      "care": {
+        "at": "2026-09-28T04:43:27.060Z",
+        "origin": "http://127.0.0.1:5185",
+        "evidence": [
+          {
+            "name": "Sign in through real cookie/CSRF API",
+            "passed": true
+          },
+          {
+            "name": "Care note remains a proposal until explicit confirmation",
+            "passed": true
+          },
+          {
+            "name": "External reading correction commits only revised values",
+            "passed": true
+          },
+          {
+            "name": "Create a checked medication plan and confirmed dose report",
+            "passed": true
+          },
+          {
+            "name": "Preventive task moves due \u2192 arranged \u2192 completed through confirmations",
+            "passed": true
+          },
+          {
+            "name": "Private note sharing is deliberate and revocable",
+            "passed": true
+          },
+          {
+            "name": "Support request and follow-up preserve explicit acknowledgement and outcome",
+            "passed": true
+          },
+          {
+            "name": "Observed dashboard refresh",
+            "milliseconds": 288
+          },
+          {
+            "name": "External committed note refreshes an already-open dashboard",
+            "passed": true
+          },
+          {
+            "name": "Reviewed summary contains record text and sources; sharing is revocable",
+            "passed": true
+          },
+          {
+            "name": "Mobile viewport has no page overflow and exposes navigation",
+            "passed": true
+          }
+        ],
+        "errors": []
+      },
+      "settings": {
+        "at": "2026-09-28T04:43:57.957Z",
+        "evidence": [
+          {
+            "name": "Profile preferences persist; original preferences restored",
+            "passed": true
+          },
+          {
+            "name": "A separately created proposal appears and requires dashboard confirmation",
+            "passed": true
+          },
+          {
+            "name": "Edited medication instructions need a fresh check and create a new plan version",
+            "passed": true
+          },
+          {
+            "name": "Claim and revoke change device API access; replacement claim stays available",
+            "passed": true
+          }
+        ]
+      }
+    },
+    "dashboard_checks_passed": 14,
+    "served_production_index_sha256": "59ffcfafa53cb18be524331f2c6a3d0e7620fa6854e71d900c45bb3533a99824",
+    "browser_logs_sha256": {
+      "smoke": "164158291175c602d16be1e811c6d18652ef1ed60b33f64964894748d4f79845",
+      "settings": "2e7109d5c8c4ad2cc29418cbfb244b0ab2ef38b511890c27052e4ccf0895706d"
+    },
+    "firmware_core": {
+      "passed": true,
+      "log_sha256": "a6915169b4945149d39ebfda2348594b922b5382d2709f0cf366f4aa26d97bc2"
+    },
+    "pendant_transport": {
+      "passed": 8,
+      "log_sha256": "5e67a91340f268a8fe6b96beb68596af1f62cab74c4326f63ea82ed4f4cd7bf0"
+    }
+  },
+  "reused_verified_evidence": {
+    "backend": {
+      "reference": "phone-speaker-validation-2026-09-28.json",
+      "sqlite_passed": 142,
+      "postgres_passed": 142,
+      "source_unchanged_since": "898dc4137a8578816e95e3fc7d20077d7da09ce0",
+      "verification": "Entire tracked backend tree has no diff since that checkpoint; original log hashes match the recorded reports. Backend tests were not rerun in this audit."
+    },
+    "frontend": {
+      "reference": "public-summary-validation-2026-09-28.json",
+      "tests_passed": 31,
+      "build": "passed",
+      "source_unchanged_since": "7c892eb850b9229d9361ce5790d4b272e27a0439",
+      "verification": "Entire frontend tree is unchanged; recorded changed-source hashes and original validation log match. The new browser run served the exact production index."
+    },
+    "mobile": {
+      "reference": "phone-pairing-recovery-validation-2026-09-28.json",
+      "tests_passed": 140,
+      "verification": "Source and original full-suite log hashes match the r9 checkpoint; tests were not repeated."
+    }
+  },
+  "source_sha256": {
+    "backend/.env.example": "a058bde0198e88ad1798570a52d999a59a3d89244997a9559de80b8037737405",
+    "backend/app/__init__.py": "a25ff3395d4375b2a25feda5f496e75adacd3fc0a5d0ce1e10dc227dc8310f65",
+    "backend/app/admin.py": "4e2a96890853250631ab6a90f3b5483dff76afa9222aef6debff3e6ca69403c6",
+    "backend/app/audio_subprocess.py": "62af1da5b0234afddd09ca99c4c85a71b31d058d484b22df388fc13ed207eca5",
+    "backend/app/care_status.py": "3c7f60ac315ddf39d60d6da5a7b0613eb009bf60fb75d12198df6de055da3b63",
+    "backend/app/config.py": "6e1856ae28af6c068ee11bd92fb78f2176b496ae11f5d95e9491dc3952de35f5",
+    "backend/app/database.py": "73fed4cd44eaeed7952cc488cf39ebf67a950a45ae4bc1b35cac69c54554b130",
+    "backend/app/device_setup.py": "c63baa3029fa9d310dc91d78b7417b3da79dd70a002234702afa6791f4b868dd",
+    "backend/app/main.py": "609cb916a6143585757b1d44c7f6667ed19c0bc4e591bece7e4405058f9898e4",
+    "backend/app/migrate.py": "4cacd5cdd7e044812a1bd3b1cbe3754ad811eb5621efbab2fd38030546e67a6b",
+    "backend/app/models.py": "6746f022d50c48683b72e475e884246c876109aad3b5eae3101034a81361e773",
+    "backend/app/notification_api.py": "4ba13411826785186110cfeb16cf8218c1cc534288fd6a81f73cb674f7c6cd92",
+    "backend/app/notifications.py": "2e456b7bd692dac229ded4fc1d3edf08c49cb3f44ad87e51bf64e75265494db2",
+    "backend/app/phone.py": "82d9f695c01efc446a0c9b19fcf79c63824ad63e9a6b41b646ad8452c887a4d9",
+    "backend/app/phone_audio.py": "f1f3dd876ac73b9b5288dc0a7d177b16c36dce859579da54bba02fbb5539fe98",
+    "backend/app/provenance.py": "ec28cde06cc9a24660e770b23fb5f7970e0f534c97092b6ecb7ad7ee6f85ea95",
+    "backend/app/providers.py": "3ed0d151b1847411a0f049b88c43a8e9335b9589049976cf829a35ac7e0c7a64",
+    "backend/app/provisioning.py": "a71d94221f3787888060141e1fa7c170a61127e6fb8d94320e23e4d87ff81de4",
+    "backend/app/reminders.py": "686556f4fb6865b4db91dcb1986dcd8ecef2433c2b12f545737b5c9d50987a63",
+    "backend/app/routing.py": "fb5c959ac5d56ac54778381bb1bd3b2b805280a7c726c9ada99b091f4d83bc07",
+    "backend/app/schemas.py": "c36a91131e91da6b436192dd3b65067d8fdfddd74eacb499b9ba10f1a4f37568",
+    "backend/app/security.py": "c8a26db3dc8c9b8d51ce2e33ffac1454622de2d70e8a4504ae67dd203c4de87d",
+    "backend/app/seed.py": "ed645cf432b61a11cf213e7a9fb76f7ef8fb1754cf5c9d52bbeabc10b5eaa190",
+    "backend/app/services.py": "96fd030b2df1408ccdbc1f5cbdac9d8f67e031cc136b2dd4a1f26229e31f2247",
+    "backend/app/turns.py": "fa51ecab9766dc7b5f7ce930a302a65057a4930a7018884f63c00ee6fd140a1e",
+    "backend/app/worker.py": "c8f8f395f02039502b8f562da72f4afc9ba7848aea3410fb2dd2de7850641664",
+    "backend/migrations/env.py": "5b8d5a3af92d7a1f4e11d1bd675e500a7182ecba7dfbe5e03cb07b3c0d90c9f0",
+    "backend/migrations/legacy_columns.json": "c207fd88b7885f2a007711b025ae70650af42bcc086bb427d55634e8e26900fa",
+    "backend/migrations/versions/0001_existing_care.py": "ef21f7fc8cfd8f3e98aaeb5e7ae23380a4c8aa6a5ddd44f185a5b66a2a200dea",
+    "backend/migrations/versions/0002_phone_identity.py": "fd229c64cc9358fa0364a9ca0e1921abb2bba714d59ab1ac924c505c30775a85",
+    "backend/migrations/versions/0003_reminder_routes.py": "1ca7d677cfa72fe265c719c07b109c6499f284151e9a1faa396227cccf3c9d9e",
+    "backend/migrations/versions/0004_phone_notifications.py": "66a35f7a1dba2c9b8afb3d1cb5244caa0ffbd235f0d1c4dba3adc14c95e2254a",
+    "backend/pyproject.toml": "16db9a060a5013783155b2fd60b8bb3ae48d2684a249f3d63a676952e7836f9e",
+    "backend/tests/conftest.py": "9e1e78cda757298b2801816e23ff97741ce88c008dc3fa00786561fc943fa58d",
+    "backend/tests/test_config.py": "2f7c91966aed9f7d0dcfa8662e317d52684f98eab7ba6c074a865e15de382304",
+    "backend/tests/test_device_protocol.py": "32e313e6ef093fecbf89fd75c529d137489e0f9cee01b53977900e3dd3298164",
+    "backend/tests/test_migrations.py": "8d4abf2883ddf4b2c2f77a1f7c4029234fb1107a56ed9a86adf277df2faf0bb4",
+    "backend/tests/test_pairing.py": "4bc0ca7095ef7694961acfb3d784531e4b025d27ec245cd437fe0dfe80c60c37",
+    "backend/tests/test_phone_audio.py": "0f74ef528173c2e64db9a84e6be6a1b38540021a63b6c0ed51ca029a74d99245",
+    "backend/tests/test_phone_care_journeys.py": "b303f8cc80731440fc227d6144104c91b1ddcda3b091463961bc5f9940d2433f",
+    "backend/tests/test_phone_identity.py": "dc8964ce01ddf330d38e282954b5383383f18eee6989cea25b5dce22b5748adb",
+    "backend/tests/test_phone_notifications.py": "7db5d1a26eba47e902bcccd38966824ccc1e9aa4f58042c0732832f9110797d5",
+    "backend/tests/test_phone_recovery.py": "190d2750a1455e9054b804a4dc6305545f8c14a390fb77b8452a1614bb861fb8",
+    "backend/tests/test_phone_reinstall.py": "dea1fc21bdb8aa2d8afbd393aabd5f2eb05196f95722ca9252411c3d242adb1f",
+    "backend/tests/test_phone_speaker.py": "0e30e8aca0a223b191277f7b9e4c79ee51660f142c492c3e3fca5dfe5cb1f305",
+    "backend/tests/test_providers.py": "8897e6c8b517135a516ea7f8903f029034c88ce33b00449e3e8455a45f67d078",
+    "backend/tests/test_reminder_routing.py": "a43acfaecd859637c0e963d3d7dc4725a7191655b1ba54aedf2aee8bc879c7a4",
+    "backend/tests/test_security_and_care.py": "e0fa8743c80ac2232ed5613aa95daa357b48180c69f9ad946c54ffcda36bebaa",
+    "backend/uv.lock": "95396e8d08aa431ec4675f7f0cbe3e787608b7b2724f273c3f78d04de75791a3",
+    "deploy/.env.example": "bc62090f165bb68ded59ebeffb64de489dd7442ac99e3d96490a8a153a8d694c",
+    "deploy/Caddyfile": "2731e5f47b44e863ab30da848a550f4ba8fae448b03d3bbf5cf23014e0fcc12e",
+    "deploy/backend.Dockerfile": "10f040df8e02b2add0424f54584a90ff2fd5b562618c4ea798ebce1db1d4c9c7",
+    "deploy/requirements.lock": "f76bb9641ddc0b3bfb0b1d418fd56cde36afea6c9ba241367b8f3392c7446b63",
+    "deploy/web.Dockerfile": "83849590be481d155a99a927ba0ba7f576a751d8c8370a68ce11d863014ced65",
+    "firmware/CMakeLists.txt": "3cbe7225c63625c1ab41e37550d9ffe280bfded14923d94007ba8e2b969f8592",
+    "firmware/Kconfig.projbuild": "981fa7558e6493e6b8a9a05c04607c701e33cb0adc8088b44e32fe732e1acf5d",
+    "firmware/components/careloop_core/CMakeLists.txt": "647a0ff1f878299df95927198b1ecde05291fc179729b416fb5ed929cdb9567d",
+    "firmware/components/careloop_core/careloop_protocol.c": "315e4430fa77a817398407191a90938350fdf6b868b21b9b2cf5071261eac6d6",
+    "firmware/components/careloop_core/careloop_state.c": "bcdef716d6fca3580a2db32c2c79004ef05c9a5c97fdab16006b216582298a43",
+    "firmware/components/careloop_core/careloop_wav.c": "b66099f85a38b3ff59d710fe66d318e6816c96ad0687dd6cd391051db3c4c237",
+    "firmware/components/careloop_core/include/careloop_protocol.h": "4baede94ee64d4d96705d4a552c51c39bc4252248d8991c4c8e9069af9823869",
+    "firmware/components/careloop_core/include/careloop_state.h": "710ae95b51aa8f029fb5860c1f811aeb97d5407126a1020e3e172e4bccab5070",
+    "firmware/components/careloop_core/include/careloop_wav.h": "c242d08001ee1bc4d806aed292c24e0ef66e1d51a830e61f7a62d1377403b4e3",
+    "firmware/components/careloop_core/test/Makefile": "bbbcf4efa4426499fdb05f37647362327c8d64d5e3923f971e1436966c083134",
+    "firmware/components/careloop_core/test/test_core.c": "23a2c0608c66b5779ca0f2a3ba0a28b1598a85b1383527f295121ddda6e58e3b",
+    "firmware/dependencies.lock": "77df8a791823d60e1c7dbe63b056ac15632e26c75900ae1d95216b807a0207b4",
+    "firmware/idf_component.yml": "2e95a94ef6aee26826af42394dc4c0ed720c754143e9e902a9e330d9a40ad7aa",
+    "firmware/main/CMakeLists.txt": "4bc6e604563f2e7969f29c271fecef9fd16747bba7b262767381ef94e21319d8",
+    "firmware/main/Kconfig": "1126e30431aebdd29ac14c6c3d4faf4af9c50cb44830b13de08bb1f23f96821e",
+    "firmware/main/Kconfig.projbuild": "4d1b4d2fba2d6e5e191d8ce63f0a9c036fe6a0a94e39123f4222e0ea9e9f453f",
+    "firmware/main/app_main.c": "ffb3a263ecf7bd2ac777a55b31187381121b17bf10375314817b9993632a0483",
+    "firmware/main/assets/low_battery.wav": "a62cdbfb90289f9f9cbf267e7153fd3cc75bda33346797da3f7ab1caf016d7f6",
+    "firmware/main/assets/not_connected.wav": "d02142663289b8ba845ef32ea0f48e78461d8ca253100c007a7ccec548576224",
+    "firmware/main/assets/not_sent.wav": "3ddb595d7f8b1811aefbf612f62ef24afc6ee5523b1d27efcdc9161fb895464a",
+    "firmware/main/assets/processing_failed.wav": "e525c5823f123358a71f150d0e6224ba9144bcd2cf11d2a8cf359450aa5ef12c",
+    "firmware/main/assets/receipt_unconfirmed.wav": "ea119e239ead163836a80848e6fb6cd8129242d82c2627ff65b9600cbcd5164d",
+    "firmware/main/assets/saved.wav": "314ebff37f994ca0242a83456fdca66e655063c3c444531af3ef70affd102848",
+    "firmware/main/board_audio.c": "dbae225d512d649506d76ba707fe4af9209b7536b16cba0760f4ca86340ac1d4",
+    "firmware/main/device_network.c": "c1e789e3f420429b106ac0ed4546d3edcde00646251e1a5341f16d1421ba0150",
+    "firmware/main/idf_component.yml": "2e95a94ef6aee26826af42394dc4c0ed720c754143e9e902a9e330d9a40ad7aa",
+    "firmware/main/include/careloop_app.h": "6dd20d6617b77b4b2eb1e4bf575ca4a7ce0e14b71c26c58024a03ebb705eae6a",
+    "firmware/main/local_prompts.c": "e2cc6ffe3afd316b30e8f0481610dbdf0b322a214e207210c20a7d34c591f93a",
+    "firmware/main/settings.c": "43eed1e71e0d8f1a9aaec70eb926153cf8cb1f9453b18627138e2d4507fc2329",
+    "firmware/main/wifi_setup.c": "9e8f5cb2a0fb456b749afedb028d284af106079e55000a5b7dd47c366a7fd388",
+    "firmware/partitions.csv": "67a871346f9dfc1e27b38b9ed45b814835468913e0ead8ac7a924d798cf2adbb",
+    "firmware/sdkconfig.careloop.example": "134e0ba360b27fdfd8c29ba3d37875ba57aeaf5c2d18b8ffeb4c663f9742b262",
+    "firmware/sdkconfig.defaults": "bbe6a3521fc04c2d61051b3e230f696c2caefa468d6942fe9618c09ca4b33e17",
+    "frontend/index.html": "557a7932ef1b5ad96c12e5b739f375865fe4f1018d637b7acae59da57226ced2",
+    "frontend/package-lock.json": "5be39d9b55d6b0a7a0a724e2104098f63ad0a33c25a2d5a3950990d5bd447da6",
+    "frontend/package.json": "3b673c9f4460d7186a0df54ba12f8edb2137acd74b7db75b4837ac4c49d2e09b",
+    "frontend/src/App.tsx": "58c23f29c9a10841680efe175675262276245016bb26d996395e88bf4fb8da0f",
+    "frontend/src/CompanionSelection.tsx": "c561a4f26dbaf1c0d9e69f0efadcad95d29d6d1c9e100b3174413b34b9d5cee1",
+    "frontend/src/DeviceSetup.tsx": "f30e95be7126449f9c999014e2972a82b01a062f7a9468fbf1985eee76aae53f",
+    "frontend/src/RecordSource.tsx": "8ea6a5c1d921be4b61917d0cab82080ef4053528f32239587ce57c95282f3817",
+    "frontend/src/__tests__/api-errors.test.ts": "586b0e1e7e45003fc9856b39b35ae993e62193c3fb4cedd49fdfea25f2a7c2e8",
+    "frontend/src/__tests__/companion-selection.test.tsx": "4941b573f0a7f02669f78cfd007f95b0ee153ddcf22ec66b43c53c0ba60ae5e1",
+    "frontend/src/__tests__/confirmation.test.tsx": "fd3051d24f4b5dfe5f7a656c7e7b0ea6e3a41d0a84338a26c3cb79de2a59b636",
+    "frontend/src/__tests__/dashboard-access.test.tsx": "822b58148aeeab56e093f233ac9d15727a6268e538a810fc4d85a9276de5d54c",
+    "frontend/src/__tests__/dates.test.ts": "6f00a0b2423bc50c5dff9853bd7c12bcbb336c0b948f19f623d22fdbe22a7b5d",
+    "frontend/src/__tests__/pairing.test.tsx": "2dbff0f85253dcbdedfed5111b01ebbf11bf6fb74f38e65ef8b9e329681e2649",
+    "frontend/src/__tests__/public-summary-access.test.tsx": "7bc555caf4a241e84b6db97bd5adadcc824d3c22059c51f9e92cd75e3ae5e155",
+    "frontend/src/__tests__/record-source.test.tsx": "d68eb8a41d87837c2bac8607a4a85dafa18b8cf6334299bd950b7895d9710679",
+    "frontend/src/__tests__/timeline-controls.test.tsx": "d17bf1782faf91f9b0bacf563419000cf110abf5c3bebd5d1972acaf4f77baf1",
+    "frontend/src/__tests__/timeline.test.tsx": "98db8055ce6159838642f61936d3d4af33c41e645ad6c83616cb1910fc41250e",
+    "frontend/src/api.ts": "91f10a9f3e862e377959af5f4ce160b2d5c2a6416f327e988c919076b6c73180",
+    "frontend/src/main.tsx": "fc400cf6024a7aaa373ad3ad5f17352466a4912ebe94150119bd3476e52d1806",
+    "frontend/src/styles.css": "c03c59cfed6aa33431af1a9179b5e55864a51e8342f984daf863c5b76b3962c9",
+    "frontend/src/useSharedSummary.ts": "9af8c14187f9163e580f51c441ce47d2a549befd0974daf24d22f1384d1f35ed",
+    "frontend/src/vite-env.d.ts": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
+    "frontend/tsconfig.json": "db2f637dbbed1ec1bb8a0011466d7349e953e60bab42734f93d5bc59d30f1d89",
+    "frontend/vite.config.ts": "c987a52b3b7366f0f4b1bb53039771f41894e9bbecb57b4b1b2679c7031cad1e",
+    "frontend/vitest.config.ts": "af18df7d284d939abecec58da8bd3f42d4dda3fcc4342f7264d0f67f3cd57c61",
+    "mobile/.env.example": "667cb3bbf82864f26008c242ea6599b0798c162b2a9241687d3f20f17cec57b7",
+    "mobile/.gitignore": "c6cec11937eb6fb223fa094a1022b6a5acbdc023a0a53f53717f520742c226af",
+    "mobile/app.config.ts": "c58c0d2aa7065a6955898c255c9c6b539f633a920d60b1f62849acc92b73c10c",
+    "mobile/index.ts": "e7a30a7d0ca6f8f397b430bca465368a0e55e5ce7265025875af60be28e67deb",
+    "mobile/package-lock.json": "ff3a2b51b22f99531ee2c8a2b66c0773e42cf608511197228da2d3fcbc862c3d",
+    "mobile/package.json": "4a5c5d22e7e91e66ac28f01e02f21c449a6f9d4c656b576a340f8a70c32862fc",
+    "mobile/src/App.tsx": "a84714d87377a775cf5f7617f2a38ff5fb2d6faf10c74ecfc8b8bc47b9a4b3c8",
+    "mobile/src/CareOrigin.tsx": "ee159a5cb59aee0c506d03d1db23f1df4246f3e241ab9982750c18d326ceee3b",
+    "mobile/src/alertSchedule.ts": "1c3f4f23ea35da5981b6fb4642e668444085f6120476238c101c6b1a477c051e",
+    "mobile/src/api.ts": "8c7bc2a0d324246701885082d83b6db3ac8ce0cb52ab6d394ae2861c12c8fab0",
+    "mobile/src/contracts.ts": "ce346ef36a1c2c506a013c8874c6c3b06ef2aa80963f53ee5592c2e6ab228e0a",
+    "mobile/src/errors.ts": "948d25647472001eb7a971fb23f2fbb99400ab0835eaf77108bdf5ae6468da5c",
+    "mobile/src/operations.ts": "6bcf607f734d36bbfb2a3ea2a415287fe6adee14108cede3a4f3ad68c3089940",
+    "mobile/src/pushRegistration.ts": "128ffe5ee2a4d03b155c00b68b640d1b1da77c112693aaaa5203a65d53e75e0d",
+    "mobile/src/reminderDelivery.ts": "40da7c0b80ea1979e350bdfd15082164c5b53d0c4c1017dff81c28547f49c568",
+    "mobile/src/reminderStorage.ts": "269e672e8ca0bfa0ef3a5bd57cc8dbaccf4291eaf797af3fb24b10fd0e4de208",
+    "mobile/src/storage.ts": "3ae16c0c4109a331b28f8dc3601a7453bf07947626651728ca03d999bb2b8fe3",
+    "mobile/src/turnRecovery.ts": "b9f407aa9b2f6f0ddfceb6e0c2555035585f24950d014f4279ea2d708d33958e",
+    "mobile/src/useReminders.ts": "ace3aff6d600a44a73aa5a7384cb15ee616624e42d17d42e13930aa2960ce269",
+    "mobile/src/useTalkMode.ts": "c159dcedbad3b79d5a76b7238391bf7a4cc9d310b2b02bfae4aabef7ab1cc941",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "mobile/src/validation.ts": "2cbfce96cf047203923895af73e11ce214d3eb4ac275272e85c5522c5c7162b5",
+    "mobile/test/native/app.test.tsx": "c913a568b87dcc638de2758edab6a1023829e44ec263316d87001abdca4d21fc",
+    "mobile/test/native/audio-api.test.ts": "0b8b925d574b0acefdf046b45368af055ac0ebbd424cb4101877c98cec62d783",
+    "mobile/test/native/audio-storage.test.ts": "7acc1641f37a338bd34237698b2a705f60ec82aa61389e3ebc4bd119ee104448",
+    "mobile/test/native/notifications.test.tsx": "50640c5291b6acc24d692c1c89fd4272bf502e3e3dd8c26ff374b958b84c0022",
+    "mobile/test/native/voice.test.tsx": "1635930d27e160c5e4931169c0283023e89f21fec97c2ab2e00fc235ba7f9f6d",
+    "mobile/test/operations.test.ts": "ac1f10f54b297bcd16b58fa3831bee606345c9e8be7e1f69eff81f3baa0cb0ae",
+    "mobile/test/recovery.test.ts": "f77298c4cd20fd649418debba13c06b2875eaeaa29790316e3eea5f6bbc47cfc",
+    "mobile/test/reminders.test.ts": "ed9d997870eafb8a2868865c04f1cfed35bba8cc97b8b7ceb859eedc178e488a",
+    "mobile/test/validation.test.ts": "96bbc61ca33d30292f8ce326c78b58814884adea5fdaaaeab6ccc34668139779",
+    "mobile/tsconfig.json": "3f33975a37f151d18789ae73903bd9c55d0facd55081549762ac53da15a40b68",
+    "mobile/vitest.config.mts": "2f714468a6a1b87b7ea0dd8a771a2556ffa3fd98d74d546dc9c6a29c304e2b76",
+    "tools/android_browser_restricted.py": "ff815ec1b2d755f255649d39d38773cb8908bd494cb3dedbe567c8558934bbd1",
+    "tools/android_browser_summary.py": "5f08171c32b218de91e9b5aeb11e9644dcc287b17f1797efb0ca762c8f9abbd2",
+    "tools/android_emulator_touch.c": "e9a1d5c8edbc18796d206a1241734bd7dc20535787282c2a8aa64152b5741c8e",
+    "tools/android_native_alert_lifecycle.cjs": "15a98d3d900ed27b05db7541679f3bdaa1fe5fc8f8cefb9b05ffd8305effecca",
+    "tools/android_native_battery.cjs": "f592d8bce1bb9bd81bd0d548c9c255b6ef883f64c8a35a76d597948778a1e75a",
+    "tools/android_native_calls.cjs": "e382353f98c54a698c632d5663bb0bc9212ea8210e42c516ab2b9ec8360dc337",
+    "tools/android_native_care.cjs": "48be6db43584dba70abb17294f000c2e29741f389a531b2ba656b4373bf2897b",
+    "tools/android_native_clock.cjs": "84af7a05fdc69af4bbb69a4dadf4644b0e1b7c49432060ba4c55fac0a838d2fd",
+    "tools/android_native_connection.cjs": "c86c673505dab7ad31bf42352ede738de7f307a64eef4a9e9bb0440dc385a176",
+    "tools/android_native_control.py": "868f5d6fc4867f05fa625e9ddb089bea4845be0af3799d9ada76cf0e87187f35",
+    "tools/android_native_dnd.cjs": "903ba042a21da015f188eb8455523fea61979ee84d3ff070cf09717b948e72dd",
+    "tools/android_native_fault_proxy.py": "8619dd07b52ca3a888d8126e4885d506a44fde5988c71a5bd75b6bea6ef2e7dd",
+    "tools/android_native_fixture.py": "02f47605eb96b79595ccfb991cd8c2ecf72808bc3680386853d97b2113b75271",
+    "tools/android_native_large_text.cjs": "8a4505363548c9f61605d3cf57e2dc28ca30a58e2891dba86a75eb525a4ad00b",
+    "tools/android_native_lifecycle.cjs": "af4e5c18691845ab9e56250399e320a90cc6d3d432aa4137cd025ffd9f073c8e",
+    "tools/android_native_pairing_recovery.cjs": "ee7d379981321569c2ed3aff701cf89a7f3f2dc557fcaffc0febc31c6fa84728",
+    "tools/android_native_power.cjs": "6aec1e672db88eb18290ab7b5bf4f607cc67d960f5610eb860982f4227b57d8a",
+    "tools/android_native_recents.cjs": "eef9f221def72525de405238ffdd242819e69eb4826abd9f9b52c12eb16b896b",
+    "tools/android_native_recovery.cjs": "3cf03ab4659416ef52df557b1db07c784ff8343c4579b3d4be8d88dbcd85aa4b",
+    "tools/android_native_reinstall.cjs": "cd36041fff13fa533a0fa0174a76da604f8e9ba987d18403b68d0fbebc9364b3",
+    "tools/android_native_reminders.cjs": "bb9c08c2ad06b9a0cc4a91aa018494541a057731dc71065cb1f812e2c00040be",
+    "tools/android_native_revocation.cjs": "635bcd81c0f108720e78f95117035c96dbb77bf28534b81b8cf25a9a74ef1435",
+    "tools/android_native_secure_lock.cjs": "16f893fd4a3eaee3955b9ac343fe35cde08ff9556ffb121f80ec43216da7bfd2",
+    "tools/android_native_smoke.cjs": "47a340a710ac9ba3366cd19dee6e2d837b4aab0b26efd0060f6a2f3aafc91b99",
+    "tools/android_native_speaker.cjs": "ef175c1c0efac544278f2a92ea63efa8734239c2a32296a929005200987f0b63",
+    "tools/android_native_talkback_care.py": "1b410dde493450c59fc797fb176404829952e8979d9bdd71eb64dce77e5d7abe",
+    "tools/android_native_talkback_probe.py": "a5f2b97ea5130ce3e5223bb8bc020566f9b309e9446c2c250f6ea9b0f67cc15f",
+    "tools/android_talkback_dashboard.cjs": "f08141a8d5bcdec9962b66e9d965b29c21253becdf707d7012d88a78afa4c61f",
+    "tools/browser_latency.cjs": "125ddd12f1a5d6759d70f5945388b8fe3b261574f55e5c3b9d755fa710c5fa49",
+    "tools/browser_pairing.cjs": "585fe870f2cada2cd7f8255bf7964159b118c94e81e08145692bdd761b4d5eda",
+    "tools/browser_phone.cjs": "c4a051737887fce89af5d2d0f7aba2219f701f6a74c7915fb3a7c756c7cbaa53",
+    "tools/browser_phone_summary.cjs": "36f76dc3c49b771dfdb45e49ede43c89620a557dc8d01e5f34da28de405c5d70",
+    "tools/browser_settings.cjs": "8e0c12d26ad6db08edd34666cd44dadaa5d0aab387432c49e7790f03272826a0",
+    "tools/browser_smoke.cjs": "2993cb64fe7cd12caebf0bb230583eeba3738b27e912d582bde6e17ff7f378ed",
+    "tools/check_hardware_ready.py": "d6adaf23dbbed2320a60264735fe0d5e7d04895ae71485f097fa9a05f35c2064",
+    "tools/device_harness.py": "6c717c58c0422db3c6865133a69be726b1062a28d0cec6e1e7b11ce148717e1c",
+    "tools/package-lock.json": "19e4d5d2df33be71902ab2c930090041ee0b6c8d7fd1dec288b4c3afb29ffbb0",
+    "tools/package.json": "dd18e767af42b71fcf303944f24f30d98eb38462e687dfac0af11058722e6a28",
+    "tools/pairing_fixture_server.py": "9d8a2fbe4b4581a0964fba64be14251eec0037ab68e63e76ef78b87749773d80",
+    "tools/phone_browser_fixture.py": "44d8e3a2e7f028b2f5f90cfbf2f9117b62ef39c118c9b72c502440c5dd63781d",
+    "tools/postgres_test.py": "3aef24459722c3187f412c067b54fcfa14b5dd9ca32781e59f08d6fdc6bc6397",
+    "tools/run_demo.py": "b5edd949160a213881ce4a5c6a83706e50dae0f27b4a1b72cde7a76666f0a1e4",
+    "tools/test_device_harness.py": "1a7ed14c110fef33050da662d48f78eee7229c9f8b3422120790eb0717de1799",
+    "tools/test_hardware_ready.py": "c15981a1c58cc6a430cef0d3cda822ce7712af43b00d85861217eae94c544f72"
+  }
+}

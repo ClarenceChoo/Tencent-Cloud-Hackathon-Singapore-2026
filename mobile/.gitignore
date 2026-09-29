@@ -1,0 +1,10 @@
+.expo/
+android/
+ios/
+dist/
+*.jks
+*.keystore
+*.mobileprovision
+*.p12
+google-services.json
+GoogleService-Info.plist

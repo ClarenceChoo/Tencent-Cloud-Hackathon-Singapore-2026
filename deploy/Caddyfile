@@ -6,7 +6,12 @@
         X-Frame-Options DENY
         Permissions-Policy "camera=(), microphone=(), geolocation=()"
     }
-    request_body {
+    @phoneAudio path /v1/phone/turns
+    request_body @phoneAudio {
+        max_size 2097152
+    }
+    @otherBody not path /v1/phone/turns
+    request_body @otherBody {
         max_size 1MB
     }
     handle /v1/* {

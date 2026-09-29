@@ -1,0 +1,61 @@
+{
+  "at": "2026-09-28T03:52:48.697514+00:00",
+  "physicalPhone": false,
+  "nativeBrowser": true,
+  "liveSpeech": false,
+  "checks": [],
+  "environment": "Firefox Android in the Android 16 ARM64 emulator; existing fictional native care records and local HTTPS. Browser-only exception for the fixture certificate; no release TLS change.",
+  "source_sha256": {
+    "tools/android_browser_summary.py": "223091a7eca1cbf33246a1231771802cc6b75e536e0ca8586eec0bb643d8a1df",
+    "mobile/src/App.tsx": "07ecfcafb6316ab8a5ec8bc2d09fe473d67573ec1fc0388cb0f526359dc98c6f",
+    "frontend/src/App.tsx": "dcdc8a2e6c6626b87ae77fe1e95926fa737e44608269efac676a658d9fec6492",
+    "frontend/src/api.ts": "d7857850b0cd789216be9b27815073eca7ce0755fb2a9e38d6f348c9c5f45365",
+    "frontend/src/styles.css": "c03c59cfed6aa33431af1a9179b5e55864a51e8342f984daf863c5b76b3962c9",
+    "backend/app/main.py": "609cb916a6143585757b1d44c7f6667ed19c0bc4e591bece7e4405058f9898e4",
+    "backend/app/services.py": "96fd030b2df1408ccdbc1f5cbdac9d8f67e031cc136b2dd4a1f26229e31f2247",
+    "tools/android_native_fixture.py": "02f47605eb96b79595ccfb991cd8c2ecf72808bc3680386853d97b2113b75271"
+  },
+  "before": {
+    "records": {
+      "health_notes": {
+        "count": 8,
+        "sha256": "9234dda4d94811766ded432d680b094f21d050f508b3e7712e0f6f1ca37a9622"
+      },
+      "measurements": {
+        "count": 1,
+        "sha256": "2457ef73a9e0b3365b0f83cce0e753e19ea0353207976414c46f1a43b33ec8f7"
+      },
+      "preventive_tasks": {
+        "count": 1,
+        "sha256": "77550713b9d4ac0c750b78513d1ed7eecd0f3591cdd4714417161c7ebc1b859f"
+      },
+      "support_requests": {
+        "count": 1,
+        "sha256": "d53c279e1dcd53b0387a72bd17442297ded5b42e8d61da24c0bba120f3ae5716"
+      },
+      "followups": {
+        "count": 1,
+        "sha256": "88856db41ac6e37d3b541de3532e232853bf61c3cbcf4d91a8f8cfc13a14d7be"
+      },
+      "voice_turns": {
+        "count": 36,
+        "sha256": "b7fe759c69d44d52c40045a7a5a228f8a01ad97817c53e2dc16de41173e5e909"
+      }
+    },
+    "routes": [
+      {
+        "patient_id": "pat_6bb82a74d287477bbf8dfc4700d4b146",
+        "active_device_id": "dev_43587ddb28f14a4982d0afd0e88ed869",
+        "generation": 17,
+        "changed_at": "2026-09-28 02:26:23.958956"
+      }
+    ],
+    "uploads": 36
+  },
+  "parse_apk_sha256": "a9e5cb595c208fb461c77cfba98cc57630d3f4bdcd2ce305fa8867f24846b815",
+  "browser_apk_sha256": "a37ac4de7b61c79dad5c1b639d9bd3afbe18f6b781a56759dbb8bb0d394f8957",
+  "browser": "Firefox Android 156.0.1 (2016185922), official Mozilla ARM64 APK",
+  "firefox_tip_dismissed": true,
+  "failure": "Control unavailable: Dismiss",
+  "default_browser_restored": "org.chromium.webview_shell"
+}

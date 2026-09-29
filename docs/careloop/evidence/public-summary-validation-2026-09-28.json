@@ -1,0 +1,32 @@
+{
+  "date": "2026-09-28",
+  "change": "Revalidate shared-summary access in an open or restored browser tab",
+  "frontend": {
+    "tests": 31,
+    "new_regression_cases": 6,
+    "production_build": "passed",
+    "log_sha256": "167c5f0b5738ef56f7eb253fab8d4ec3805d0229bd372560c0a462de27e5c328"
+  },
+  "before_fix": {
+    "regression_cases_failed": 6,
+    "log_sha256": "5e61bb6da2d0af30d75adfefbb526a8748ef1d9bd54bad6121573cb421b47788",
+    "native_reproduction": "android-browser-expiry-reproduction-2026-09-28.json"
+  },
+  "source_sha256": {
+    "frontend/src/App.tsx": "58c23f29c9a10841680efe175675262276245016bb26d996395e88bf4fb8da0f",
+    "frontend/src/api.ts": "91f10a9f3e862e377959af5f4ce160b2d5c2a6416f327e988c919076b6c73180",
+    "frontend/src/useSharedSummary.ts": "9af8c14187f9163e580f51c441ce47d2a549befd0974daf24d22f1384d1f35ed",
+    "frontend/src/__tests__/public-summary-access.test.tsx": "7bc555caf4a241e84b6db97bd5adadcc824d3c22059c51f9e92cd75e3ae5e155"
+  },
+  "behavior": {
+    "foreground_poll_seconds": 5,
+    "request_timeout_seconds": 10,
+    "background": "clear visible content and abort request",
+    "resume": "visibility/pageshow/focus require a fresh access check",
+    "terminal_denial": "clear content and stop periodic retry until explicit resume",
+    "network_failure": "clear content and retry while visible",
+    "stale_response": "ignored after suspension, timeout, replacement request or unmount",
+    "cache": "no-store"
+  },
+  "limits": "Component tests control fetch and browser lifecycle events. Actual Android browser evidence is reported separately. Physical devices, iOS and live speech remain unverified."
+}

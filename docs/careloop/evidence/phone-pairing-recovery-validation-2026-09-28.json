@@ -1,0 +1,38 @@
+{
+  "date": "2026-09-28",
+  "scope": "P02/P13 saved pairing and token-loss recovery; component fixtures, not native or live-provider acceptance",
+  "before": {
+    "full_app_passed": 30,
+    "new_cases_failed": 14,
+    "log_sha256": "87e7f66aabe36ad8595a2b6a9170db278b348e1edadcb23c3e3a1f5976eb4ef8"
+  },
+  "after": {
+    "typecheck": "passed",
+    "unit_passed": 25,
+    "adapter_app_passed": 115,
+    "full_app_passed": 44,
+    "total_passed": 140,
+    "log_sha256": "73ba7e5b7a4a35f43c354a6706b001c308ed44d5f178c1e799d9a8c6c1706005"
+  },
+  "cases": [
+    "invalid JSON/null/credential/enrollment/platform/service/display name block setup and patient access",
+    "missing credential plus installation marker, pending journal or playback index stays gated",
+    "temporary protected-storage failure retries the same identity",
+    "reset waits for native audio and alert cleanup before deleting local identity/journal/history",
+    "remaining alerts prevent reset completion until explicit retry",
+    "interrupted reset retains durable barrier across restart even with a valid original credential",
+    "fresh pairing does not recover or upload old pending care"
+  ],
+  "source_sha256": {
+    "mobile/src/App.tsx": "a84714d87377a775cf5f7617f2a38ff5fb2d6faf10c74ecfc8b8bc47b9a4b3c8",
+    "mobile/src/storage.ts": "3ae16c0c4109a331b28f8dc3601a7453bf07947626651728ca03d999bb2b8fe3",
+    "mobile/src/reminderStorage.ts": "269e672e8ca0bfa0ef3a5bd57cc8dbaccf4291eaf797af3fb24b10fd0e4de208",
+    "mobile/test/native/app.test.tsx": "c913a568b87dcc638de2758edab6a1023829e44ec263316d87001abdca4d21fc"
+  },
+  "ios_javascript_export": {
+    "passed": true,
+    "bundle_sha256": "a67b0ad9e70975ac0ed44eeedadd59e710b052083871ecca77b788bb6c54b8fa",
+    "log_sha256": "77f73cddf0127fabbc6a1b5e8632a6787539fff63fb971048e56a187f3974e7c",
+    "scope": "Hermes JavaScript export only; no iOS native compilation/install or device validation"
+  }
+}

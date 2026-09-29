@@ -1,0 +1,62 @@
+{
+  "at": "2026-09-27T13:09:11.749Z",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "environment": "Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and fixture tone replies. No real speech or acoustic audibility evidence.",
+  "source_sha256": {
+    "mobile/src/App.tsx": "040650c4ba7d61a35e2c5926c616a0f09a051f03da778766a3241dcd2ccdb275",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "mobile/src/api.ts": "c47f9fd49c83ec14df83d1939a941d6a2b48cddd8548807d123941b523b328cf",
+    "mobile/src/storage.ts": "d617df7a010d6cc68f0cd5dc6e3dfac021b1684bc6e10bc5fa50963871f3d99f",
+    "tools/android_native_fixture.py": "02f47605eb96b79595ccfb991cd8c2ecf72808bc3680386853d97b2113b75271",
+    "tools/android_native_smoke.cjs": "5d752505c8b2727f28188126df5ae11917fd960b873174c168cf2bdf97443e50",
+    "tools/android_native_care.cjs": "48be6db43584dba70abb17294f000c2e29741f389a531b2ba656b4373bf2897b",
+    "tools/android_native_calls.cjs": "e8b0313f45f19e77ab9013d346ef74a13cf6ba7e4000220b2cb1f382e5d6bc4f",
+    "tools/android_native_control.py": "1eb84875cdf78321e5ba6cd2f796e6533f2a23bd828ef62208994e8b414f8980"
+  },
+  "checks": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    },
+    {
+      "name": "An incoming simulated call stops native recording, deletes its cache file and returns without uploading or restarting capture",
+      "passed": true
+    }
+  ],
+  "installed_apk_sha256": "6b774f9ae08a14e32a0c089ae469c6d649bae2f06f1f82d54360c1b7702a2c0f",
+  "mode": "calls",
+  "enrollmentCreatedInThisRun": false,
+  "initial_upload_count": 30,
+  "initial_note_ids": [
+    "note_274df94653ac4332aeb5e10c1add1a14",
+    "note_da2714b3ddfa45ed87cef8c72046e6e4",
+    "note_e3cac52e3601453bba0eab7c2746ba6e",
+    "note_e880d910db694a28b93939f9a3e6e37f"
+  ],
+  "calls": [
+    {
+      "stage": "recording",
+      "ringing": {
+        "call": 1,
+        "ringing": 5,
+        "foreground": 0
+      },
+      "active": {
+        "call": 2,
+        "ringing": 0,
+        "foreground": 1
+      }
+    }
+  ],
+  "call_simulation": "Android emulator GSM modem and native dialer; no external call, physical handset or acoustic audibility evidence",
+  "call_tone_seconds": 18,
+  "call_reminder": {
+    "id": "cmd_78e1cb0c50e94afb885fdb28e321d343",
+    "dose_id": "dose_9afb0defbdf24ec899f6c5f25e72b9a4"
+  },
+  "players_before_call": [
+    "  AudioPlaybackConfiguration piid:1095 deviceIds:[2] type:android.media.AudioTrack u/pid:10153/31247 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null sessionId:1305 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=16000}"
+  ],
+  "failure": "Error: Native dialer did not answer the simulated incoming call"
+}

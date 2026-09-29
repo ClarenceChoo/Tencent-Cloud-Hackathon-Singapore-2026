@@ -51,3 +51,29 @@ it('requires explicit revocation and hides device controls for caregivers',async
   expect(screen.queryByLabelText('One-use device code')).toBeNull();
   expect(screen.queryByRole('button',{name:'Revoke device access'})).toBeNull();
 });
+
+it('approves an expiring phone code through the phone flow and labels phone identity', async()=>{
+  const user=userEvent.setup();const claim=vi.fn(async()=>{});
+  render(<DeviceSetup data={{...data,devices:[{id:'phone1',device_type:'phone',platform:'ios',display_name:'Mei iPhone',status:'awaiting_connection'}]}} canManage onClaim={claim} onRevoke={vi.fn()}/>);
+  await user.selectOptions(screen.getByLabelText('Companion type'),'phone');
+  await user.type(screen.getByLabelText('One-use device code'),'p-abcde-12345');
+  await user.click(screen.getByRole('button',{name:'Approve phone'}));
+  expect(claim).toHaveBeenCalledExactlyOnceWith('P-ABCDE-12345','phone');
+  expect(screen.getByText('Parse phone · Mei iPhone')).toBeTruthy();
+  expect(screen.getByText(/code expires after ten minutes/)).toBeTruthy();
+  expect(screen.getByText(/app connects using Wi-Fi or mobile data/)).toBeTruthy();
+  expect(screen.queryByText('How to connect the cardholder to Wi-Fi')).toBeNull();
+});
+
+it('separates saved push registration from foreground presence and local alert coverage',()=>{
+  const props={canManage:true,onClaim:vi.fn(),onRevoke:vi.fn()};
+  const phone={id:'phone1',device_type:'phone',platform:'ios',display_name:'Mei iPhone',status:'stale',phone_presence:{foreground_ready:false,last_reported_lifecycle:'background',notification_permission:'granted',background_alerts_enabled:true,scheduled_until:'2026-09-28T00:00:00Z',push_registered:false}};
+  const {rerender}=render(<DeviceSetup data={{...data,devices:[phone]}} {...props}/>);
+  expect(screen.getByText('Last reported in background')).toBeTruthy();
+  expect(screen.getByText('Enabled · delivery subject to OS settings')).toBeTruthy();
+  expect(screen.getByText('Not registered')).toBeTruthy();
+  expect(screen.queryByText('Online',{selector:'.pairing-state'})).toBeNull();
+  rerender(<DeviceSetup data={{...data,devices:[{...phone,phone_presence:{...phone.phone_presence,push_registered:true}}]}} {...props}/>);
+  expect(screen.getByText('Registered · delivery depends on phone settings')).toBeTruthy();
+  expect(screen.queryByText('Online',{selector:'.pairing-state'})).toBeNull();
+});

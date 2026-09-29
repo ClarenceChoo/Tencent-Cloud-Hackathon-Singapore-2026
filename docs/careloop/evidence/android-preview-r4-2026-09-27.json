@@ -1,0 +1,18 @@
+{
+  "path": "runtime/releases/parse-companion-android-arm64-preview-2026-09-27-r4.apk",
+  "bytes": 31318447,
+  "sha256": "dfd18427a243ba9eb7012c14b86fb240f88fa338480e4cf860c01058f2f9329d",
+  "local_fixture_resources": false,
+  "signing": "standard Android debug key",
+  "source_sha256": {
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0"
+  },
+  "signature_verified": true,
+  "installed_on": "AOSP Android 16 ARM64 emulator-5580",
+  "install_result": "Success",
+  "cold_launch_verified": true,
+  "installed_apk_sha256": "dfd18427a243ba9eb7012c14b86fb240f88fa338480e4cf860c01058f2f9329d",
+  "launch": "Starting: Intent { cmp=sg.parse.companion/.MainActivity }\nStatus: ok\nLaunchState: COLD\nActivity: sg.parse.companion/.MainActivity\nTotalTime: 481\nWaitTime: 484\nComplete",
+  "initial_screen": "Connect to Parse",
+  "scoped_errors_observed": false
+}

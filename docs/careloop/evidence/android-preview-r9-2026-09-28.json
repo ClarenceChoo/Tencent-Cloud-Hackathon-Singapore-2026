@@ -1,0 +1,30 @@
+{
+  "date": "2026-09-28",
+  "preview": "r9",
+  "apk": "runtime/releases/parse-companion-android-arm64-preview-2026-09-28-r9.apk",
+  "sha256": "f4f3517caf97e1b37f0bc5fd2dc27ce819cad6c1537d8f43b00be5fa160871ed",
+  "bytes": 31328003,
+  "installed_digest_matches": true,
+  "package": "sg.parse.companion",
+  "cold_launch": "Starting: Intent { cmp=sg.parse.companion/.MainActivity }\nStatus: ok\nLaunchState: COLD\nActivity: sg.parse.companion/.MainActivity\nTotalTime: 268\nWaitTime: 273\nComplete\n",
+  "pairing_screen_verified": true,
+  "fixture_trust_resources": false,
+  "signature": "Verified Android debug key, v2 signature; not a distribution release",
+  "verification_apk_sha256": "9829db43036a4c7802b6cdd57530dac37c62ddb9a38d6ffb7f0a4abb5f51bf3a",
+  "source_sha256": {
+    "mobile/src/App.tsx": "a84714d87377a775cf5f7617f2a38ff5fb2d6faf10c74ecfc8b8bc47b9a4b3c8",
+    "mobile/src/storage.ts": "3ae16c0c4109a331b28f8dc3601a7453bf07947626651728ca03d999bb2b8fe3",
+    "mobile/src/reminderStorage.ts": "269e672e8ca0bfa0ef3a5bd57cc8dbaccf4291eaf797af3fb24b10fd0e4de208",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "mobile/src/api.ts": "8c7bc2a0d324246701885082d83b6db3ac8ce0cb52ab6d394ae2861c12c8fab0",
+    "mobile/test/native/app.test.tsx": "c913a568b87dcc638de2758edab6a1023829e44ec263316d87001abdca4d21fc"
+  },
+  "build_log_sha256": "d4119f6094a17835e9c0f30cdd19e62fa52ec10eae1d8864536608aa92853e8e",
+  "limits": "Android 16 ARM64 emulator, host audio disabled. No iOS compilation, physical-device, live speech or production signing claim.",
+  "native_or_javascript_startup_failure_observed": false,
+  "other_process_log_messages": [
+    "JDWP debugger agent unavailable in the non-debuggable preview",
+    "ashmem pinning deprecated since Android Q"
+  ],
+  "process_log_sha256": "bc4a509de7016e21c3c222cfc3127965884f2fbacf7a53c71b03e0ea3ce403c5"
+}

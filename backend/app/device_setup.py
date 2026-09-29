@@ -31,12 +31,22 @@ def service_readiness(app) -> dict:
     }
 
 
-def device_status(device, connected_ids: set[str]) -> dict:
+def device_status(device, connected_ids: set[str], phone_state=None, selected=False) -> dict:
     fresh = bool(device.last_seen and timedelta(0) <= utcnow() - aware(device.last_seen) <= timedelta(seconds=15))
-    state = ('revoked' if device.revoked_at else 'connected' if fresh and device.id in connected_ids
+    foreground=bool(phone_state and phone_state.lifecycle=='foreground' and fresh)
+    background_alerts=bool(phone_state and phone_state.notification_permission in {'granted','provisional'} and phone_state.scheduled_until and aware(phone_state.scheduled_until)>utcnow() and selected and not device.revoked_at)
+    state = ('revoked' if device.revoked_at else 'connected' if fresh and (device.id in connected_ids or device.device_type=='phone' and foreground)
              else 'stale' if device.last_seen else 'awaiting_connection')
     return {
-        'id': device.id, 'status': state, 'claimed_at': iso(device.claimed_at),
+        'id': device.id, 'status': state,
+        'selected':selected,
+        'phone_presence': ({'foreground_ready':foreground and phone_state.microphone_permission=='granted' and not device.revoked_at,
+                            'last_reported_lifecycle':phone_state.lifecycle,'microphone_permission':phone_state.microphone_permission,
+                            'notification_permission':phone_state.notification_permission,'background_alerts_enabled':background_alerts,
+                            'scheduled_until':iso(phone_state.scheduled_until),'reported_at':iso(phone_state.reported_at),
+                            'push_registered':bool(phone_state.push_token and not phone_state.push_disabled_at and not device.revoked_at)} if phone_state else None), 'claimed_at': iso(device.claimed_at),
+        'device_type': device.device_type, 'platform': device.platform,
+        'display_name': device.display_name,
         'last_seen': iso(device.last_seen), 'battery_mv': device.battery_mv,
         'rssi': device.rssi, 'firmware_version': device.firmware_version,
         'revoked_at': iso(device.revoked_at),

@@ -1,0 +1,82 @@
+{
+  "at": "2026-09-27T11:19:38.756Z",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "environment": "Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and one-second tone replies. No real speech or acoustic audibility evidence.",
+  "source_sha256": {
+    "mobile/src/App.tsx": "263264c635fda8021de4062ba268a793e3b87f4aff4b8e439b58c74b149504e2",
+    "mobile/src/useVoice.ts": "306b9127c41b946530fb71c7388a77bce51e49e48505324bed917df8eddce35d",
+    "mobile/src/api.ts": "c47f9fd49c83ec14df83d1939a941d6a2b48cddd8548807d123941b523b328cf",
+    "mobile/src/storage.ts": "d617df7a010d6cc68f0cd5dc6e3dfac021b1684bc6e10bc5fa50963871f3d99f",
+    "tools/android_native_fixture.py": "cbb7ce19914685368f1779c940d980735b842cbdf573429b5b7bc1f3cc424cd8",
+    "tools/android_native_smoke.cjs": "f4f2f5edff46c0510a7776f64bcc5bc1c100398eb893248cc5339976dd147558",
+    "tools/android_native_care.cjs": "48be6db43584dba70abb17294f000c2e29741f389a531b2ba656b4373bf2897b",
+    "tools/android_native_reminders.cjs": "c7c0c35163465d4805b33cd1367037c8531f5d47edbf28e1afb1f7ffd4825a93",
+    "tools/android_native_control.py": "1f209a3f64334b348d1d4e2098afbed8d2b76057aeeba25b549eb5df0ee49c45"
+  },
+  "checks": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    },
+    {
+      "name": "Native medication reminder plays a fixture tone, records actual start/completion callbacks and is not replayed after restart",
+      "passed": true
+    },
+    {
+      "name": "Native checkin reminder plays a fixture tone, records actual start/completion callbacks and is not replayed after restart",
+      "passed": true
+    }
+  ],
+  "installed_apk_sha256": "b61cc2298826f2757d6e682fc2607aa83a1785204d7f256bd14c01d91413ece4",
+  "mode": "reminders",
+  "enrollmentCreatedInThisRun": false,
+  "reminders": [
+    {
+      "kind": "medication",
+      "dose_id": "dose_92892ab70ab8495195861bee8dc98532",
+      "id": "cmd_7b791b1ebef14a1d9b8cfae38268ad51",
+      "delivery_state": "playback_completed",
+      "route_generation": 1,
+      "occurrence_id": "occ_0159ff6e8fd34691bc7c8a018338989e",
+      "acks": [
+        {
+          "stage": "received",
+          "id": "8105533b-e6c9-4c02-8444-c8f61d168fa3"
+        },
+        {
+          "stage": "playback_started",
+          "id": "0261de05-daac-4a09-8efc-f938e6acf5e8"
+        },
+        {
+          "stage": "playback_completed",
+          "id": "c302c0c5-c2ca-4d86-8315-96ec1699934d"
+        }
+      ]
+    },
+    {
+      "kind": "checkin",
+      "id": "checkin_38f33577195043559ffe86456ee58cbc",
+      "delivery_state": "playback_completed",
+      "route_generation": 1,
+      "occurrence_id": "occ_d3ea10fcb9554e08aa84295f477e0f2e",
+      "acks": [
+        {
+          "stage": "received",
+          "id": "0a8d76a9-4546-4836-bc12-d1ccae59f4d0"
+        },
+        {
+          "stage": "playback_started",
+          "id": "fcaad611-2e01-4e65-8d1d-3539eec23b28"
+        },
+        {
+          "stage": "playback_completed",
+          "id": "ff5ea138-2a30-4477-b69f-7f2be1d98b88"
+        }
+      ]
+    }
+  ],
+  "reminder_device_id": "dev_5b702870fa704c5bb3ccebad18bb433b",
+  "notification_due_at": "2026-09-27T11:23:00Z",
+  "failure": "AssertionError [ERR_ASSERTION]: Android did not post the generic local alert within the observed window"
+}

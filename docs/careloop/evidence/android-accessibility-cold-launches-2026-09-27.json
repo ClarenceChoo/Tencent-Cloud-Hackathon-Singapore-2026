@@ -1,0 +1,56 @@
+[
+  {
+    "attempt": 0,
+    "delay_seconds": 0,
+    "nodes": 20,
+    "nonzero": 20,
+    "talk": [
+      "[63,1372][1017,1913]"
+    ]
+  },
+  {
+    "attempt": 0,
+    "delay_seconds": 2,
+    "nodes": 20,
+    "nonzero": 20,
+    "talk": [
+      "[63,1372][1017,1913]"
+    ]
+  },
+  {
+    "attempt": 1,
+    "delay_seconds": 0,
+    "nodes": 20,
+    "nonzero": 20,
+    "talk": [
+      "[63,1372][1017,1913]"
+    ]
+  },
+  {
+    "attempt": 1,
+    "delay_seconds": 2,
+    "nodes": 20,
+    "nonzero": 20,
+    "talk": [
+      "[63,1372][1017,1913]"
+    ]
+  },
+  {
+    "attempt": 2,
+    "delay_seconds": 0,
+    "nodes": 20,
+    "nonzero": 20,
+    "talk": [
+      "[63,1372][1017,1913]"
+    ]
+  },
+  {
+    "attempt": 2,
+    "delay_seconds": 2,
+    "nodes": 20,
+    "nonzero": 20,
+    "talk": [
+      "[63,1372][1017,1913]"
+    ]
+  }
+]

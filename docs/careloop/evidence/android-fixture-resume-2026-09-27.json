@@ -1,0 +1,15 @@
+{
+  "preserved_counts": {
+    "patients": 1,
+    "users": 3,
+    "devices": 1,
+    "health_notes": 4,
+    "voice_turns": 29,
+    "dose_instances": 31,
+    "visit_summaries": 1
+  },
+  "all_preexisting_record_identities_preserved": true,
+  "fixture_metadata_unchanged": true,
+  "reseeded": false,
+  "fixture_source_sha256": "02f47605eb96b79595ccfb991cd8c2ecf72808bc3680386853d97b2113b75271"
+}

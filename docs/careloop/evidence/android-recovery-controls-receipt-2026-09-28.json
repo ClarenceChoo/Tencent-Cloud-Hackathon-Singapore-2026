@@ -1,0 +1,63 @@
+{
+  "at": "2026-09-28T02:56:16.966Z",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "environment": "Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and fixture tone replies. No real speech or acoustic audibility evidence.",
+  "source_sha256": {
+    "mobile/src/App.tsx": "07ecfcafb6316ab8a5ec8bc2d09fe473d67573ec1fc0388cb0f526359dc98c6f",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "mobile/src/api.ts": "8c7bc2a0d324246701885082d83b6db3ac8ce0cb52ab6d394ae2861c12c8fab0",
+    "mobile/src/storage.ts": "d617df7a010d6cc68f0cd5dc6e3dfac021b1684bc6e10bc5fa50963871f3d99f",
+    "tools/android_native_fixture.py": "02f47605eb96b79595ccfb991cd8c2ecf72808bc3680386853d97b2113b75271",
+    "tools/android_native_smoke.cjs": "fcd1b9be1a6dbbc343e1ce6289653b6c087e4b9c8491e7baadc9686b35740c36",
+    "tools/android_native_care.cjs": "48be6db43584dba70abb17294f000c2e29741f389a531b2ba656b4373bf2897b",
+    "tools/android_native_recovery.cjs": "3cf03ab4659416ef52df557b1db07c784ff8343c4579b3d4be8d88dbcd85aa4b",
+    "tools/android_native_fault_proxy.py": "8619dd07b52ca3a888d8126e4885d506a44fde5988c71a5bd75b6bea6ef2e7dd",
+    "tools/android_native_control.py": "868f5d6fc4867f05fa625e9ddb089bea4845be0af3799d9ada76cf0e87187f35"
+  },
+  "checks": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    },
+    {
+      "name": "Accepted upload with lost 503 receipt shows failure, removes cache audio and commits no note",
+      "passed": true
+    },
+    {
+      "name": "Native reconnect after offline restart recovers the same turn without reupload or automatic confirmation",
+      "passed": true
+    },
+    {
+      "name": "Explicit native confirmation saves one recovered note for the permitted caregiver; restart adds no turn or fact",
+      "passed": true
+    }
+  ],
+  "installed_apk_sha256": "a9e5cb595c208fb461c77cfba98cc57630d3f4bdcd2ce305fa8867f24846b815",
+  "mode": "recovery-503",
+  "enrollmentCreatedInThisRun": false,
+  "fault": "503",
+  "emulatorAdbRoot": true,
+  "initial_turn_count": 35,
+  "microphone_permission_granted_by_native_dialog": true,
+  "interruption": {
+    "at": "2026-09-28T02:56:48.117530+00:00",
+    "kind": "accepted_receipt_interrupted",
+    "fault": "503",
+    "turn_id": "turn_c1b9b0038ff84b2db934c70cba94acf1",
+    "upstream_status": 202
+  },
+  "interrupted_feedback": "Local test gateway interrupted the upload receipt.",
+  "recovered_recording_controls": [],
+  "recovered_receipt": {
+    "at": "2026-09-28T02:57:13.239240+00:00",
+    "kind": "receipt_lookup",
+    "upstream_status": 200,
+    "turn_id": "turn_c1b9b0038ff84b2db934c70cba94acf1"
+  },
+  "recovered_turn": {
+    "id": "turn_c1b9b0038ff84b2db934c70cba94acf1",
+    "status": "awaiting_confirmation",
+    "raw_audio_retained": false
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "date": "2026-09-28",
+  "browser": "Firefox Android",
+  "version": "156.0.1",
+  "version_code": "2016185922",
+  "abi": "arm64-v8a",
+  "package": "org.mozilla.firefox",
+  "source": "https://archive.mozilla.org/pub/fenix/releases/156.0.1/android/fenix-156.0.1-android-arm64-v8a/fenix-156.0.1.multi.android-arm64-v8a.apk",
+  "version_manifest": "https://product-details.mozilla.org/1.0/mobile_versions.json",
+  "apk_sha256": "a37ac4de7b61c79dad5c1b639d9bd3afbe18f6b781a56759dbb8bb0d394f8957",
+  "signature_verification": "Verifies\nVerified using v1 scheme (JAR signing): false\nVerified using v2 scheme (APK Signature Scheme v2): true\nVerified using v3 scheme (APK Signature Scheme v3): false\nVerified using v3.1 scheme (APK Signature Scheme v3.1): false\nVerified using v4 scheme (APK Signature Scheme v4): false\nVerified for SourceStamp: false\nNumber of signers: 1\nSigner #1 certificate DN: CN=Release Engineering, OU=Release Engineering, O=Mozilla Corporation, L=Mountain View, ST=California, C=US\nSigner #1 certificate SHA-256 digest: a78b62a5165b4494b2fead9e76a280d22d937fee6251aece599446b2ea319b04\nSigner #1 certificate SHA-1 digest: 920f4876a6a57b4a6a2f4ccaf65f7d29ce26ff2c\nSigner #1 certificate MD5 digest: b1e1bcee2733025ece9456e419a814a3\nSigner #1 key algorithm: RSA\nSigner #1 key size (bits): 2048\nSigner #1 public key SHA-256 digest: aac36655156876c894b09d512e74a0c7bb3301a1c871f200820d099ef1520ae1\nSigner #1 public key SHA-1 digest: 3d4fff78408b159058428bff8d07589a4c18aa8b\nSigner #1 public key MD5 digest: fe669db38a1eae305b8573293e5c35d8\n",
+  "setup": "Installed only on disposable emulator-5580. Browser onboarding completed; browser-local exception accepted only for https://127.0.0.1:8443 with the existing fictional fixture certificate. No native app, production TLS configuration or system CA store changed. Browser password storage declined for fictional test logins.",
+  "certificate_sha256": "018a0e068d2fb65e92becbfe756191f9ac9ac0c091df7014b3d84378638f730b"
+}

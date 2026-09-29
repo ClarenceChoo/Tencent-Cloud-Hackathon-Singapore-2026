@@ -359,12 +359,37 @@ def create_proposal(
     source_turn_id: Optional[str] = None,
     replaces: Optional[m.ConfirmationProposal] = None,
 ) -> m.ConfirmationProposal:
+    from .routing import lock_patient
+    lock_patient(db, patient_id)
+    source = db.get(m.VoiceTurn, source_turn_id) if source_turn_id else None
+    device = db.get(m.Device, source.device_id, populate_existing=True) if source else None
+    if device and device.device_type == "phone":
+        if device.revoked_at or device.patient_id != patient_id:
+            raise HTTPException(403, "Phone access changed")
+        # Slow completion of an older utterance must not replace a newer read-back.
+        newer = db.scalar(select(m.VoiceTurn.id).where(m.VoiceTurn.device_id == device.id,
+                          m.VoiceTurn.received_at > source.received_at,
+                          m.VoiceTurn.status == "awaiting_confirmation"))
+        if newer:
+            raise HTTPException(409, "A newer phone response is current")
     clean, plan_version = validate_payload(db, patient_id, kind, payload, acting_user_id=user_id)
     if replaces:
-        if replaces.status != "pending":
-            raise HTTPException(status_code=409, detail="Only a pending proposal can be revised")
+        changed = db.execute(update(m.ConfirmationProposal).where(
+            m.ConfirmationProposal.id == replaces.id,
+            m.ConfirmationProposal.status == "pending",
+            m.ConfirmationProposal.expires_at > utcnow(),
+        ).values(status="invalidated", invalidated_reason="revised").execution_options(synchronize_session=False))
+        if changed.rowcount != 1:
+            raise HTTPException(status_code=409, detail="Only a current pending proposal can be revised")
         replaces.status = "invalidated"
         replaces.invalidated_reason = "revised"
+    if device and device.device_type == "phone":
+        previous_ids = select(m.VoiceTurn.id).where(m.VoiceTurn.device_id == device.id)
+        db.execute(update(m.ConfirmationProposal).where(
+            m.ConfirmationProposal.source_turn_id.in_(previous_ids),
+            m.ConfirmationProposal.status == "pending",
+        ).values(status="invalidated", invalidated_reason="new_phone_readback")
+                   .execution_options(synchronize_session=False))
     proposal = m.ConfirmationProposal(
         patient_id=patient_id,
         kind=kind,
@@ -436,7 +461,12 @@ def summary_sources_current(db: Session, summary: m.VisitSummary) -> bool:
 
 
 def commit_proposal(db: Session, proposal_id: str, patient_id: Optional[str] = None) -> m.ConfirmationProposal:
-    proposal = db.scalar(select(m.ConfirmationProposal).where(m.ConfirmationProposal.id == proposal_id).with_for_update())
+    from .routing import lock_patient
+    identity = db.get(m.ConfirmationProposal, proposal_id)
+    if not identity or (patient_id and identity.patient_id != patient_id):
+        raise HTTPException(404, "Proposal not found")
+    lock_patient(db, identity.patient_id)
+    proposal = db.scalar(select(m.ConfirmationProposal).where(m.ConfirmationProposal.id == proposal_id).with_for_update().execution_options(populate_existing=True))
     if not proposal or (patient_id and proposal.patient_id != patient_id):
         raise HTTPException(status_code=404, detail="Proposal not found")
     if proposal.status == "committed":
@@ -447,6 +477,18 @@ def commit_proposal(db: Session, proposal_id: str, patient_id: Optional[str] = N
         proposal.status = "expired"
         db.flush()
         raise HTTPException(status_code=409, detail="Proposal has expired; review it again")
+
+    # SQLite ignores FOR UPDATE. A compare-and-set takes its write lock and also
+    # serializes confirmation against cancellation/correction on both databases.
+    claimed = db.execute(update(m.ConfirmationProposal).where(
+        m.ConfirmationProposal.id == proposal.id, m.ConfirmationProposal.status == "pending"
+    ).values(status="committing").execution_options(synchronize_session=False))
+    if claimed.rowcount != 1:
+        db.refresh(proposal)
+        if proposal.status == "committed":
+            return proposal
+        raise HTTPException(status_code=409, detail="Proposal is no longer current")
+    proposal.status = "committing"
 
     payload = proposal.payload
     record = None
@@ -486,6 +528,12 @@ def commit_proposal(db: Session, proposal_id: str, patient_id: Optional[str] = N
         dose.report_time = utcnow()
         dose.taken_time_text = payload.get("taken_time_text")
         dose.confirmation_proposal_id = proposal.id
+        for command in db.scalars(select(m.ReminderCommand).where(
+                m.ReminderCommand.dose_instance_id == dose.id,
+                m.ReminderCommand.delivery_state.in_(["queued", "received", "playback_started"]))):
+            command.delivery_state = "playback_unknown" if command.delivery_state == "playback_started" else "cancelled"
+            command.cancelled_at = utcnow()
+            command.cancel_reason = "dose_reported"
         record = dose
         record_type = "medication_report"
     elif proposal.kind == "measurement":
@@ -672,6 +720,8 @@ def materialize_plan_doses(db: Session, plan: m.MedicationPlanVersion, now: Opti
 
 
 def create_plan(db: Session, patient_id: str, user: m.User, data) -> m.MedicationPlanVersion:
+    from .routing import lock_patient
+    lock_patient(db, patient_id)
     try:
         tz = ZoneInfo(data.timezone)
     except ZoneInfoNotFoundError:
@@ -689,6 +739,7 @@ def create_plan(db: Session, patient_id: str, user: m.User, data) -> m.Medicatio
         for command in commands:
             command.cancelled_at = now
             command.delivery_state = "cancelled"
+            command.cancel_reason = "plan_changed"
     plan = m.MedicationPlanVersion(
         patient_id=patient_id,
         version=latest + 1,

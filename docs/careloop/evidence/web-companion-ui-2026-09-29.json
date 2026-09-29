@@ -1,0 +1,173 @@
+{
+  "at": "2026-09-29T08:43:50.822Z",
+  "browser": "154.0.8037.58",
+  "node": "v25.2.1",
+  "commit": "006ecbc6acf1a06cd7cd84e968969230c762526e",
+  "scope": "Actual Chromium UI + MediaRecorder with synthetic microphone input; same-origin FastAPI and fictional SQLite; scripted ASR/interpretation and tone replies. Not live speech or a physical-phone test.",
+  "server_startup_source_sha256": {
+    "backend/app/worker.py": "c8f8f395f02039502b8f562da72f4afc9ba7848aea3410fb2dd2de7850641664",
+    "backend/app/phone_audio.py": "6946a462be2be4df885285bddd1a23b524ee39f1d5c0b12a1f7ea3f105ec9c5f",
+    "backend/app/phone.py": "10655ab413df0644a4b5e4cab13dac8b38d14a3d73c18eeff44df2789bd4e111",
+    "backend/app/services.py": "96fd030b2df1408ccdbc1f5cbdac9d8f67e031cc136b2dd4a1f26229e31f2247",
+    "backend/app/config.py": "6e1856ae28af6c068ee11bd92fb78f2176b496ae11f5d95e9491dc3952de35f5",
+    "backend/app/models.py": "6746f022d50c48683b72e475e884246c876109aad3b5eae3101034a81361e773",
+    "backend/app/database.py": "73fed4cd44eaeed7952cc488cf39ebf67a950a45ae4bc1b35cac69c54554b130",
+    "backend/app/security.py": "c8a26db3dc8c9b8d51ce2e33ffac1454622de2d70e8a4504ae67dd203c4de87d",
+    "backend/app/__init__.py": "a25ff3395d4375b2a25feda5f496e75adacd3fc0a5d0ce1e10dc227dc8310f65",
+    "backend/app/reminders.py": "686556f4fb6865b4db91dcb1986dcd8ecef2433c2b12f545737b5c9d50987a63",
+    "backend/app/care_status.py": "3c7f60ac315ddf39d60d6da5a7b0613eb009bf60fb75d12198df6de055da3b63",
+    "backend/app/providers.py": "3ed0d151b1847411a0f049b88c43a8e9335b9589049976cf829a35ac7e0c7a64",
+    "backend/app/notification_api.py": "4ba13411826785186110cfeb16cf8218c1cc534288fd6a81f73cb674f7c6cd92",
+    "backend/app/seed.py": "ed645cf432b61a11cf213e7a9fb76f7ef8fb1754cf5c9d52bbeabc10b5eaa190",
+    "backend/app/schemas.py": "c36a91131e91da6b436192dd3b65067d8fdfddd74eacb499b9ba10f1a4f37568",
+    "backend/app/admin.py": "4e2a96890853250631ab6a90f3b5483dff76afa9222aef6debff3e6ca69403c6",
+    "backend/app/turns.py": "fa51ecab9766dc7b5f7ce930a302a65057a4930a7018884f63c00ee6fd140a1e",
+    "backend/app/routing.py": "fb5c959ac5d56ac54778381bb1bd3b2b805280a7c726c9ada99b091f4d83bc07",
+    "backend/app/notifications.py": "2e456b7bd692dac229ded4fc1d3edf08c49cb3f44ad87e51bf64e75265494db2",
+    "backend/app/web_companion.py": "be84a9ae019f59e7422fc43068702a63db731a6ea8a5711dcf36e053bfe3085c",
+    "backend/app/provenance.py": "ec28cde06cc9a24660e770b23fb5f7970e0f534c97092b6ecb7ad7ee6f85ea95",
+    "backend/app/device_setup.py": "c63baa3029fa9d310dc91d78b7417b3da79dd70a002234702afa6791f4b868dd",
+    "backend/app/main.py": "3c9c34277ce5df10baba5164e97829453dbde455aa0f1c66d9ba8d8b5da4b093",
+    "backend/app/migrate.py": "4cacd5cdd7e044812a1bd3b1cbe3754ad811eb5621efbab2fd38030546e67a6b",
+    "backend/app/provisioning.py": "a71d94221f3787888060141e1fa7c170a61127e6fb8d94320e23e4d87ff81de4",
+    "backend/app/audio_subprocess.py": "62af1da5b0234afddd09ca99c4c85a71b31d058d484b22df388fc13ed207eca5",
+    "frontend/dist/index.html": "b1147cfe5efd3a6616b7efd822a41af8c793a74e5564f593a7b2774eaa271077",
+    "frontend/dist/assets/index-mdmybz3d.js": "3c3c9c2e2eec92c113152210c01e2bbbf488996676d365055f9ec4fd1f1f670b",
+    "frontend/dist/assets/index-BXIeW-zJ.css": "9160c9ff71a539acf26cda5aa54c6941a864d82448669b67f1cff4bf1031e757"
+  },
+  "checks": [
+    {
+      "name": "Owner-approved browser pairing works through the dashboard; credentials are HttpOnly and unsafe calls require CSRF",
+      "passed": true
+    },
+    {
+      "name": "Cancelling real browser recording releases microphone tracks and sends no upload",
+      "passed": true
+    },
+    {
+      "name": "MediaRecorder WebM reaches the shared worker and shows an unsaved read-back with its named recipient",
+      "passed": true
+    },
+    {
+      "name": "The user can play an authenticated browser audio reply through an actual HTML audio element",
+      "passed": true
+    },
+    {
+      "name": "An expired reply is blocked before audio download or playback",
+      "passed": true
+    },
+    {
+      "name": "Correction plus explicit confirmation saves one note and automatically updates only its permitted caregiver",
+      "passed": true
+    },
+    {
+      "name": "Medication reporting stays unconfirmed until a deliberate save and preserves the exact dose state",
+      "passed": true
+    },
+    {
+      "name": "A confirmed support request is shared and the caregiver acknowledgement returns to the companion",
+      "passed": true
+    },
+    {
+      "name": "A private confirmed note stays out of both caregiver responses",
+      "passed": true
+    },
+    {
+      "name": "Reload restores the same browser pairing without persisting care text or bearer credentials in web storage",
+      "passed": true
+    },
+    {
+      "name": "320/390/768/1440-pixel layouts avoid horizontal overflow and retain the large recording target",
+      "passed": true
+    },
+    {
+      "name": "Denied microphone permission gives an error without uploading audio",
+      "passed": true
+    },
+    {
+      "name": "Owner revocation clears the open companion care view and blocks further patient reads",
+      "passed": true
+    }
+  ],
+  "pageErrors": [],
+  "source_sha256": {
+    "frontend/src/Companion.tsx": "4a3b4fb821fcaa9ec61ee7f94fb01e9443a3121cde94029462687e3d3c2d1239",
+    "frontend/src/companionApi.ts": "7ea09014948b60f773f1dc470e53b02deb5bef9fabaf8a46ba8059eba296274e",
+    "frontend/src/companion.css": "117dbf6b9e347a722e99391a82bc9b1dbd09ef91f7e3fe7fb8200e9685be9020",
+    "backend/app/web_companion.py": "be84a9ae019f59e7422fc43068702a63db731a6ea8a5711dcf36e053bfe3085c",
+    "backend/app/phone_audio.py": "6946a462be2be4df885285bddd1a23b524ee39f1d5c0b12a1f7ea3f105ec9c5f",
+    "tools/web_companion_fixture.py": "e70b14eecaa75b76dd3d39325fc393e897839f2a8b138fafa5cbd8cf800cbc17",
+    "tools/browser_web_companion.cjs": "d1014532e2871f397ea965f30ecef7c898206a2774f62c2ffc4bd8f42692f042"
+  },
+  "screenshots": [
+    "web-readback.png",
+    "web-layout-320.png",
+    "web-layout-390.png",
+    "web-layout-768.png",
+    "web-layout-1440.png",
+    "web-large-text.png"
+  ],
+  "device_id": "dev_df7e917b8fe744b2a0383a51ecbb0501",
+  "confirm_to_caregiver_ms": 1334,
+  "captures": [
+    {
+      "scenario": "knee-note",
+      "sha256": "92e819d527ad239c8164cf45bf8a7ba16fed04a62e62da14d79773e54d1f9b0c",
+      "frames": 18240,
+      "sample_rate": 16000,
+      "channels": 1,
+      "sample_width": 2
+    },
+    {
+      "scenario": "dose-report",
+      "sha256": "92e819d527ad239c8164cf45bf8a7ba16fed04a62e62da14d79773e54d1f9b0c",
+      "frames": 18240,
+      "sample_rate": 16000,
+      "channels": 1,
+      "sample_width": 2
+    },
+    {
+      "scenario": "support",
+      "sha256": "92e819d527ad239c8164cf45bf8a7ba16fed04a62e62da14d79773e54d1f9b0c",
+      "frames": 18240,
+      "sample_rate": 16000,
+      "channels": 1,
+      "sample_width": 2
+    },
+    {
+      "scenario": "private-note",
+      "sha256": "92e819d527ad239c8164cf45bf8a7ba16fed04a62e62da14d79773e54d1f9b0c",
+      "frames": 18240,
+      "sample_rate": 16000,
+      "channels": 1,
+      "sample_width": 2
+    }
+  ],
+  "uploads": [
+    {
+      "mime": "audio/webm",
+      "bytes": 18563,
+      "sha256": "540b542548e9fb39d6ed4d082e8b4168609d970b65537d74ff01017a68d36b54",
+      "normalized_bytes": 36524
+    },
+    {
+      "mime": "audio/webm",
+      "bytes": 18563,
+      "sha256": "598522b01c1ea5b72cb00f3fbe4f28550ef264ac3f1821c188ef8b30a8a6d692",
+      "normalized_bytes": 36524
+    },
+    {
+      "mime": "audio/webm",
+      "bytes": 18563,
+      "sha256": "f6ecaf18e4367d31a4a23fe166997a04f37519ce5094ed477473aa03f663ec9b",
+      "normalized_bytes": 36524
+    },
+    {
+      "mime": "audio/webm",
+      "bytes": 18563,
+      "sha256": "5baea78b0a109c869b10bd0c5512bd93ab077a7b3df5914c08d0e80488e95b36",
+      "normalized_bytes": 36524
+    }
+  ],
+  "passed": true
+}

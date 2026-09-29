@@ -28,7 +28,7 @@ def phone_db(request: Request):
 
 class EnrollmentCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    platform: Literal["ios", "android"]
+    platform: Literal["ios", "android", "web"]
     display_name: str = Field(min_length=1, max_length=80)
 
 
@@ -122,8 +122,10 @@ def enroll(data: EnrollmentCreate, request: Request, response: Response,
         response.status_code = 200
         return enrollment_view(db, device, concurrent, token)
     expires = utcnow() + timedelta(minutes=10)
+    capabilities = (["web-companion-v1", "wav-16k-mono"] if data.platform == "web"
+                    else ["phone-v1", "wav-16k-mono"])
     device = m.Device(credential_hash=sha256(token), device_type="phone", platform=data.platform,
-                      display_name=data.display_name, capabilities=["phone-v1", "wav-16k-mono"],
+                      display_name=data.display_name, capabilities=capabilities,
                       claim_code_hash=sha256(possession_code(token, key)), claim_expires_at=expires)
     try:
         db.add(device)

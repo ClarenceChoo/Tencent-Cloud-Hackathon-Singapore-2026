@@ -1,4 +1,4 @@
-"""Bounded, phone-only AAC/M4A normalization. Pendant input remains strict WAV."""
+"""Bounded phone AAC/M4A and browser WebM/Opus normalization."""
 import io
 import json
 import os
@@ -51,17 +51,21 @@ def _normalize(body: bytes, mime: str) -> bytes:
         except ValueError as exc:
             raise HTTPException(400, str(exc))
         return body
-    if mime not in {'audio/mp4', 'audio/x-m4a'} or len(body) < 12 or body[4:8] != b'ftyp':
-        raise HTTPException(400, 'Use PCM WAV or an AAC recording in an M4A container with its matching Content-Type')
+    is_m4a = mime in {'audio/mp4', 'audio/x-m4a'} and len(body) >= 12 and body[4:8] == b'ftyp'
+    is_webm = mime == 'audio/webm' and len(body) >= 4 and body[:4] == b'\x1a\x45\xdf\xa3'
+    if not is_m4a and not is_webm:
+        raise HTTPException(400, 'Use PCM WAV, AAC/M4A, or Opus/WebM with its matching Content-Type')
     with tempfile.TemporaryDirectory(prefix='parse-audio-') as temporary:
-        path = Path(temporary) / 'input.m4a'
+        path = Path(temporary) / ('input.m4a' if is_m4a else 'input.webm')
         with path.open('xb') as output:
             os.chmod(path, 0o600)
             output.write(body)
-        # Only the MOV demuxer is enabled. Its external data references are disabled;
-        # protocols exclude network access, playlists and nested container formats.
-        input_args = ['-protocol_whitelist', 'file,pipe', '-format_whitelist', 'mov',
-                      '-enable_drefs', '0', '-use_absolute_path', '0', '-i', str(path)]
+        # Fixed demuxer and file-only protocols exclude network and nested inputs.
+        input_args = ['-protocol_whitelist', 'file,pipe', '-format_whitelist',
+                      'mov' if is_m4a else 'matroska,webm']
+        if is_m4a:
+            input_args += ['-enable_drefs', '0', '-use_absolute_path', '0']
+        input_args += ['-i', str(path)]
         metadata = _decode('ffprobe', ['-v', 'error', *input_args, '-show_entries',
             'format=duration:stream=codec_type,codec_name,sample_rate,channels', '-of', 'json'])
         if len(metadata) > 16384:
@@ -69,13 +73,15 @@ def _normalize(body: bytes, mime: str) -> bytes:
         try:
             info = json.loads(metadata)
             streams = info['streams']
-            duration = float(info['format']['duration'])
-            if len(streams) != 1 or streams[0]['codec_type'] != 'audio' or streams[0]['codec_name'] != 'aac':
+            duration = info.get('format', {}).get('duration')
+            if len(streams) != 1 or streams[0]['codec_type'] != 'audio' or streams[0]['codec_name'] != ('aac' if is_m4a else 'opus'):
                 raise ValueError()
-            if not 0.3 <= duration <= 20 or not 1 <= int(streams[0]['channels']) <= 2 or not 8000 <= int(streams[0]['sample_rate']) <= 96000:
+            if (duration is not None and not 0.3 <= float(duration) <= 20) or (is_m4a and duration is None):
+                raise ValueError()
+            if not 1 <= int(streams[0]['channels']) <= 2 or not 8000 <= int(streams[0]['sample_rate']) <= 96000:
                 raise ValueError()
         except (KeyError, ValueError, TypeError, json.JSONDecodeError):
-            raise HTTPException(400, 'Phone recording must be one AAC audio stream lasting 0.3–20 seconds')
+            raise HTTPException(400, 'Recording must be one AAC or Opus audio stream lasting 0.3–20 seconds')
         pcm = _decode('ffmpeg', ['-nostdin', '-v', 'error', '-threads', '1', *input_args,
             '-map', '0:a:0', '-vn', '-sn', '-dn', '-t', '20.1', '-ac', '1', '-ar', '16000',
             '-c:a', 'pcm_s16le', '-f', 's16le', 'pipe:1'])

@@ -19,6 +19,7 @@ from .config import Settings, get_settings
 from .database import Database
 from .device_setup import device_status, service_readiness, PROTOCOL
 from .phone import EnrollmentLimiter, router as phone_router
+from .web_companion import router as web_companion_router
 from .routing import choose_target, current_attempt, lock_patient, release_removed_phone, route_view
 from .schemas import (
     ActiveCompanionSelect,
@@ -262,17 +263,31 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
                 await task
             except asyncio.CancelledError:
                 pass
+        dispatches = list(app.state.web_turn_dispatches)
+        for dispatch in dispatches:
+            dispatch.cancel()
+        if dispatches:
+            await asyncio.gather(*dispatches, return_exceptions=True)
 
     app = FastAPI(title="CareLoop API", version="0.1.0", lifespan=lifespan)
     app.state.settings = settings
     app.state.db = Database(settings.database_url)
     app.state.sockets = SocketRegistry()
     app.state.phone_limiter = EnrollmentLimiter()
+    app.state.web_turn_dispatches = set()
     app.include_router(phone_router)
+    app.include_router(web_companion_router)
     from .notification_api import router as notification_router
     app.include_router(notification_router)
     app.state.fixture_transcripts = {} if settings.testing else None
-    app.add_middleware(CORSMiddleware, allow_origins=settings.allowed_origins, allow_credentials=True, allow_methods=["GET", "POST", "PUT", "DELETE"], allow_headers=["Content-Type", "X-CSRF-Token", "Idempotency-Key", "X-Context-Id", "Authorization"])
+    app.add_middleware(CORSMiddleware, allow_origins=settings.allowed_origins, allow_credentials=True, allow_methods=["GET", "POST", "PUT", "DELETE"], allow_headers=["Content-Type", "X-CSRF-Token", "X-Parse-Web", "Idempotency-Key", "X-Context-Id", "Authorization"])
+
+    @app.middleware("http")
+    async def web_no_store(request: Request, call_next):
+        response = await call_next(request)
+        if request.url.path.startswith("/v1/web/"):
+            response.headers["Cache-Control"] = "private, no-store"
+        return response
 
     @app.get("/healthz")
     def healthz():

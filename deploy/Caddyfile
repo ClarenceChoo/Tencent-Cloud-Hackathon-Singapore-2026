@@ -4,13 +4,16 @@
         X-Content-Type-Options nosniff
         Referrer-Policy no-referrer
         X-Frame-Options DENY
-        Permissions-Policy "camera=(), microphone=(), geolocation=()"
     }
-    @phoneAudio path /v1/phone/turns
-    request_body @phoneAudio {
+    @companionDocument path /companion /companion/*
+    header @companionDocument Permissions-Policy "camera=(), microphone=(self), geolocation=()"
+    @otherDocument not path /companion /companion/*
+    header @otherDocument Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    @uploadAudio path /v1/phone/turns /v1/web/turns
+    request_body @uploadAudio {
         max_size 2097152
     }
-    @otherBody not path /v1/phone/turns
+    @otherBody not path /v1/phone/turns /v1/web/turns
     request_body @otherBody {
         max_size 1MB
     }

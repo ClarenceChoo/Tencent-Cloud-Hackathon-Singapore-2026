@@ -14,7 +14,7 @@ export default function CompanionSelection({data,canManage,onSelect,onReleaseRem
   const available=data.devices.filter(d=>!d.revoked_at);
   const phoneMustPause=current?.device_type==='phone';
   const needsPowerOff=!!current&&current.device_type!=='phone'||!current&&data.devices.some(d=>d.device_type!=='phone'&&d.id!==selected);
-  const name=(device:Dashboard['devices'][number])=>device.device_type==='phone'?`Phone · ${label(device,'display_name','platform')||'Parse app'}`:`Cardholder · ${String(device.id).slice(-6)}`;
+  const name=(device:Dashboard['devices'][number])=>device.device_type==='phone'?`${device.platform==='web'?'Browser':'Phone'} · ${label(device,'display_name','platform')||'Parse app'}`:`Cardholder · ${String(device.id).slice(-6)}`;
   async function save(event:React.FormEvent) {
     event.preventDefault();setBusy(true);setError('');
     try{await onSelect(selected||null,route?.generation||0,poweredOff)}
@@ -31,7 +31,7 @@ export default function CompanionSelection({data,canManage,onSelect,onReleaseRem
   return <section className="card" aria-label="Reminder companion">
     <div className="section-head"><div><div className="eyebrow">One place for reminders</div><h2>Reminder companion</h2></div></div>
     <p className="section-intro">{current?`Selected: ${name(current)}${current.revoked_at?' · access revoked':''}.`:'Reminders are paused. Choose a paired companion to receive them.'} Pairing a new device does not change this selection.</p>
-    {phoneMustPause&&<p className="source-note">To switch, open Parse on the selected phone and choose <b>Pause reminders</b> in Settings. The phone must stop speech and clear its local alerts first, including after its access is revoked.</p>}
+    {phoneMustPause&&<p className="source-note">{current?.platform==='web'?'To switch, open Parse in the selected browser and choose':'To switch, open Parse on the selected phone and choose'} <b>Pause reminders</b>{current?.platform==='web'?' at the bottom of the companion page. Keep that page open while switching.':' in Settings. The phone must stop speech and clear its local alerts first, including after its access is revoked.'}</p>}
     {canManage?<form onSubmit={save} className="claim-form">
       <label htmlFor="reminder-companion">Send reminders to</label>
       <select id="reminder-companion" value={selected} disabled={busy||phoneMustPause} onChange={e=>{setSelected(e.target.value);setPoweredOff(false);setError('')}}>
@@ -44,10 +44,10 @@ export default function CompanionSelection({data,canManage,onSelect,onReleaseRem
       {error&&<p role="alert" className="inline-error">{error}</p>}
     </form>:<p className="source-note">The care-space owner selects where reminders are delivered.</p>}
     {canManage&&phoneMustPause&&!!current?.revoked_at&&onReleaseRemoved&&<div className="claim-form">
-      <h3>Already removed Parse from this phone?</h3>
-      <p className="source-note">Use this only after uninstalling Parse or clearing its app data on that phone. If Parse is still installed, use Pause reminders on the phone instead. Reminders will stay paused until you choose another companion.</p>
-      <label><input type="checkbox" checked={removed} disabled={busy} onChange={e=>setRemoved(e.target.checked)}/> I have uninstalled Parse or cleared its app data on the old phone.</label>
-      <button type="button" className="button button-deep" disabled={busy||!removed} onClick={()=>void releaseRemoved()}>{busy?'Updating…':'Finish removing this phone'}</button>
+      <h3>Already removed Parse from this {current?.platform==='web'?'browser':'phone'}?</h3>
+      <p className="source-note">{current?.platform==='web'?'Use this only after clearing this browser’s Parse site data. If the browser is still connected, choose Pause reminders in the companion page instead.':'Use this only after uninstalling Parse or clearing its app data on that phone. If Parse is still installed, use Pause reminders on the phone instead.'} Reminders will stay paused until you choose another companion.</p>
+      <label><input type="checkbox" checked={removed} disabled={busy} onChange={e=>setRemoved(e.target.checked)}/> {current?.platform==='web'?'I have cleared Parse site data in the old browser.':'I have uninstalled Parse or cleared its app data on the old phone.'}</label>
+      <button type="button" className="button button-deep" disabled={busy||!removed} onClick={()=>void releaseRemoved()}>{busy?'Updating…':current?.platform==='web'?'Finish removing this browser':'Finish removing this phone'}</button>
     </div>}
     <p className="source-note">Delivery history stays with each dose. A reminder that may already have played will not automatically repeat after switching.</p>
   </section>;

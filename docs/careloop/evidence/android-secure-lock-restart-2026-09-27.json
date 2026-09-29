@@ -1,0 +1,20 @@
+{
+  "at": "2026-09-27T15:30:26.672Z",
+  "environment": "Android emulator; post-PIN-removal cold app restart, scripted fixture only",
+  "source_report_sha256": "f70dc6d0911a66f40d270ede6aca5b5198b6de4b996b9a47eb0d8b359b157e5c",
+  "checks": [
+    {
+      "name": "After temporary PIN removal, a cold process restart opens the paired companion home with the same selected device",
+      "passed": true
+    }
+  ],
+  "pid_before": "2111",
+  "background_process_absent": true,
+  "pid_after": "6397",
+  "route_after": {
+    "device_id": "dev_61c7c95d16034baaacd3220d4a41947d",
+    "generation": 15
+  },
+  "screenshot_sha256": "493c788fa40b9cff3927cc7f5b6b5af0fde48132243991f1dc0b9205d4e898f1",
+  "ui_sha256": "295cd62b2f9aa109c10f002a77639b229ec4ff94c4a89eb43eb0c9ac01cbaab3"
+}

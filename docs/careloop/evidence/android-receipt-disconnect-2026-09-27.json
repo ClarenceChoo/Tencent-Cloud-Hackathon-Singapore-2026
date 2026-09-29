@@ -1,0 +1,61 @@
+{
+  "at": "2026-09-27T11:47:20.608Z",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "environment": "Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and one-second tone replies. No real speech or acoustic audibility evidence.",
+  "source_sha256": {
+    "mobile/src/App.tsx": "263264c635fda8021de4062ba268a793e3b87f4aff4b8e439b58c74b149504e2",
+    "mobile/src/useVoice.ts": "306b9127c41b946530fb71c7388a77bce51e49e48505324bed917df8eddce35d",
+    "mobile/src/api.ts": "c47f9fd49c83ec14df83d1939a941d6a2b48cddd8548807d123941b523b328cf",
+    "mobile/src/storage.ts": "d617df7a010d6cc68f0cd5dc6e3dfac021b1684bc6e10bc5fa50963871f3d99f",
+    "tools/android_native_fixture.py": "cbb7ce19914685368f1779c940d980735b842cbdf573429b5b7bc1f3cc424cd8",
+    "tools/android_native_smoke.cjs": "cae56f900af9f400ad783ab8133cd90993f2962cc9cfc5b44a127c15c99a7066",
+    "tools/android_native_care.cjs": "48be6db43584dba70abb17294f000c2e29741f389a531b2ba656b4373bf2897b",
+    "tools/android_native_recovery.cjs": "b02f3b628aef9f989d6fda6763d7239416bee5a6e81d965e41ebb3b1caa4c78f",
+    "tools/android_native_fault_proxy.py": "b234b01d228e18205e57fbdee631641afbec2b633400f6536b311a29e69eed1a",
+    "tools/android_native_control.py": "15b94974f08752d0c7ce07d0ae0be1df4d4246d6d0a559da7fea431591d75766"
+  },
+  "checks": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    },
+    {
+      "name": "Accepted upload with lost disconnect receipt shows failure, removes cache audio and commits no note",
+      "passed": true
+    },
+    {
+      "name": "Native reconnect after offline restart recovers the same turn without reupload or automatic confirmation",
+      "passed": true
+    },
+    {
+      "name": "Explicit native confirmation saves one recovered note for the permitted caregiver; restart adds no turn or fact",
+      "passed": true
+    }
+  ],
+  "installed_apk_sha256": "b61cc2298826f2757d6e682fc2607aa83a1785204d7f256bd14c01d91413ece4",
+  "mode": "recovery-disconnect",
+  "enrollmentCreatedInThisRun": false,
+  "fault": "disconnect",
+  "emulatorAdbRoot": true,
+  "initial_turn_count": 26,
+  "interruption": {
+    "at": "2026-09-27T11:47:39.720741+00:00",
+    "kind": "accepted_receipt_interrupted",
+    "fault": "disconnect",
+    "turn_id": "turn_13fd0caeab9740db8d762ce820cf3132",
+    "upstream_status": 202
+  },
+  "interrupted_feedback": "fetch failed: java.io.IOException: unexpected end of stream on https://127.0.0.1:8443/...",
+  "recovered_receipt": {
+    "at": "2026-09-27T11:48:02.292693+00:00",
+    "kind": "receipt_lookup",
+    "upstream_status": 200,
+    "turn_id": "turn_13fd0caeab9740db8d762ce820cf3132"
+  },
+  "recovered_turn": {
+    "id": "turn_13fd0caeab9740db8d762ce820cf3132",
+    "status": "awaiting_confirmation",
+    "raw_audio_retained": false
+  }
+}

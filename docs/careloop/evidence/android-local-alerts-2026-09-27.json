@@ -1,0 +1,52 @@
+{
+  "at": "2026-09-27T11:29:59.040Z",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "environment": "Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and one-second tone replies. No real speech or acoustic audibility evidence.",
+  "source_sha256": {
+    "mobile/src/App.tsx": "263264c635fda8021de4062ba268a793e3b87f4aff4b8e439b58c74b149504e2",
+    "mobile/src/useVoice.ts": "306b9127c41b946530fb71c7388a77bce51e49e48505324bed917df8eddce35d",
+    "mobile/src/api.ts": "c47f9fd49c83ec14df83d1939a941d6a2b48cddd8548807d123941b523b328cf",
+    "mobile/src/storage.ts": "d617df7a010d6cc68f0cd5dc6e3dfac021b1684bc6e10bc5fa50963871f3d99f",
+    "tools/android_native_fixture.py": "cbb7ce19914685368f1779c940d980735b842cbdf573429b5b7bc1f3cc424cd8",
+    "tools/android_native_smoke.cjs": "18a23e660fcdbda4f0e8aa4bd422730f0e2ce35ce9c54be6db33b475a73ff7e9",
+    "tools/android_native_care.cjs": "48be6db43584dba70abb17294f000c2e29741f389a531b2ba656b4373bf2897b",
+    "tools/android_native_reminders.cjs": "bb9c08c2ad06b9a0cc4a91aa018494541a057731dc71065cb1f812e2c00040be",
+    "tools/android_native_control.py": "1f209a3f64334b348d1d4e2098afbed8d2b76057aeeba25b549eb5df0ee49c45"
+  },
+  "checks": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    },
+    {
+      "name": "Android posts a generic local alert while backgrounded; opening it does not record medication taken",
+      "passed": true
+    },
+    {
+      "name": "Native notification denial clears reported background coverage and is shown in the app",
+      "passed": true
+    },
+    {
+      "name": "Native Pause reminders completes cleanup before deactivating the selected companion",
+      "passed": true
+    }
+  ],
+  "installed_apk_sha256": "b61cc2298826f2757d6e682fc2607aa83a1785204d7f256bd14c01d91413ece4",
+  "mode": "alerts",
+  "enrollmentCreatedInThisRun": false,
+  "reminders": [],
+  "reminder_device_id": "dev_5b702870fa704c5bb3ccebad18bb433b",
+  "notification_plan_version": 4,
+  "notification_dose_id": "dose_59894c9971d94bb7ab72b12885dcc313",
+  "notification_due_at": "2026-09-27T11:33:00Z",
+  "notification_observation_window_seconds": 300,
+  "notification_posted_at": "2026-09-27T11:34:46.254Z",
+  "notification_delay_ms": 106254,
+  "notification": {
+    "actual_posted": true,
+    "backgrounded": true,
+    "generic_body": "Open Parse to check your care schedule.",
+    "live_push": false
+  }
+}

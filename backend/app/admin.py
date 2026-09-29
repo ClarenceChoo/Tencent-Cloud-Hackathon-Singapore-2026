@@ -11,6 +11,7 @@ from .config import get_settings
 from .database import Database
 from .models import AccessGrant, Device, Patient, User
 from .security import hash_password, sha256, utcnow
+from .provisioning import prepare_device, renew_claim
 
 
 def parser() -> argparse.ArgumentParser:
@@ -29,6 +30,13 @@ def parser() -> argparse.ArgumentParser:
     patient.add_argument("--owner-email", required=True)
     device = commands.add_parser("provision-device")
     device.add_argument("--claim-minutes", type=int, default=60)
+    kit = commands.add_parser('prepare-device', help='Create one private NVS provisioning bundle')
+    kit.add_argument('--backend-url', required=True)
+    kit.add_argument('--output-dir', required=True)
+    kit.add_argument('--claim-minutes', type=int, default=60)
+    renew = commands.add_parser('renew-claim', help='Replace an expired code without replacing firmware credentials')
+    renew.add_argument('--device-id', required=True)
+    renew.add_argument('--claim-minutes', type=int, default=60)
     return root
 
 
@@ -41,7 +49,22 @@ def main() -> None:
     database.create_all()
     db = database.SessionLocal()
     try:
-        if args.command == "create-user":
+        if args.command == 'prepare-device':
+            try:
+                device_id = prepare_device(db, args.output_dir, args.backend_url, args.claim_minutes)
+            except (ValueError, FileExistsError) as exc:
+                raise SystemExit(str(exc)) from exc
+            print('Prepared device %s. Private setup files saved in %s.' % (device_id, args.output_dir))
+            print('Device credentials were not printed. Use owner-setup.txt for pairing.')
+        elif args.command == 'renew-claim':
+            try:
+                code, expiry = renew_claim(db, args.device_id, args.claim_minutes)
+            except ValueError as exc:
+                raise SystemExit(str(exc)) from exc
+            print('Device ID: %s' % args.device_id)
+            print('One-time claim code: %s' % code)
+            print('Expires (UTC): %s' % expiry)
+        elif args.command == "create-user":
             password = os.getenv(args.password_env, "")
             if len(password) < 12:
                 raise SystemExit("The password environment variable must contain at least 12 characters.")

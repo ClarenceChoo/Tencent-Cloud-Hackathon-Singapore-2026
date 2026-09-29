@@ -1,0 +1,167 @@
+{
+  "at": "2026-09-27T15:45:46.289Z",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "environment": "Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and fixture tone replies. No real speech or acoustic audibility evidence.",
+  "source_sha256": {
+    "mobile/src/App.tsx": "040650c4ba7d61a35e2c5926c616a0f09a051f03da778766a3241dcd2ccdb275",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "mobile/src/api.ts": "c47f9fd49c83ec14df83d1939a941d6a2b48cddd8548807d123941b523b328cf",
+    "mobile/src/storage.ts": "d617df7a010d6cc68f0cd5dc6e3dfac021b1684bc6e10bc5fa50963871f3d99f",
+    "tools/android_native_fixture.py": "02f47605eb96b79595ccfb991cd8c2ecf72808bc3680386853d97b2113b75271",
+    "tools/android_native_smoke.cjs": "f03c084bee7b8524939115288e90459edaa608d128f9ea2d993f448f16fb019a",
+    "tools/android_native_care.cjs": "48be6db43584dba70abb17294f000c2e29741f389a531b2ba656b4373bf2897b",
+    "mobile/src/useReminders.ts": "ace3aff6d600a44a73aa5a7384cb15ee616624e42d17d42e13930aa2960ce269",
+    "mobile/src/alertSchedule.ts": "1c3f4f23ea35da5981b6fb4642e668444085f6120476238c101c6b1a477c051e",
+    "tools/android_native_alert_lifecycle.cjs": "15a98d3d900ed27b05db7541679f3bdaa1fe5fc8f8cefb9b05ffd8305effecca",
+    "tools/android_native_power.cjs": "6aec1e672db88eb18290ab7b5bf4f607cc67d960f5610eb860982f4227b57d8a",
+    "tools/android_native_revocation.cjs": "635bcd81c0f108720e78f95117035c96dbb77bf28534b81b8cf25a9a74ef1435",
+    "tools/android_native_fault_proxy.py": "8619dd07b52ca3a888d8126e4885d506a44fde5988c71a5bd75b6bea6ef2e7dd",
+    "tools/android_native_control.py": "868f5d6fc4867f05fa625e9ddb089bea4845be0af3799d9ada76cf0e87187f35",
+    "tools/android_native_recents.cjs": "eef9f221def72525de405238ffdd242819e69eb4826abd9f9b52c12eb16b896b"
+  },
+  "checks": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    },
+    {
+      "name": "Native alert is scheduled for the exact dose before entering recents state",
+      "passed": true
+    },
+    {
+      "name": "Android posts the exact generic alert in recents state without recording a dose",
+      "passed": true
+    },
+    {
+      "name": "Actual recents notification tap opens the native app and remains separate from medication reporting",
+      "passed": true
+    }
+  ],
+  "installed_apk_sha256": "15ad0b843daad17bd030dad58e8db29d9269f2317707db3236dec80484b33c3e",
+  "mode": "alert-recents",
+  "enrollmentCreatedInThisRun": false,
+  "alert_state": "recents",
+  "original_lock_disabled": true,
+  "clocks_before": {
+    "host_before_ms": 1790523952242,
+    "host_after_ms": 1790523952258,
+    "android_ms": 1790523952544,
+    "android_minus_host_midpoint_ms": 294,
+    "roundtrip_ms": 16
+  },
+  "recents": {
+    "original": {
+      "at": "2026-09-27T15:45:52.348Z",
+      "task_ids": [
+        103
+      ],
+      "pid": "7284",
+      "package_stopped": false
+    },
+    "note": "Actual upward swipe of the Parse local verification card. Task removal, process presence and package stopped state are recorded separately; no am kill or force-stop is used.",
+    "gesture": {
+      "card_label": "Parse local verification",
+      "bounds": "[173,312][907,1943]",
+      "from": [
+        540,
+        1128
+      ],
+      "to": [
+        540,
+        40
+      ],
+      "duration_ms": 350
+    },
+    "after_swipe": {
+      "at": "2026-09-27T15:46:30.114Z",
+      "task_ids": [],
+      "pid": null,
+      "package_stopped": false
+    },
+    "last_observed": {
+      "at": "2026-09-27T15:49:15.550Z",
+      "task_ids": [],
+      "pid": "8285",
+      "package_stopped": false
+    },
+    "at_due": {
+      "at": "2026-09-27T15:48:02.336Z",
+      "task_ids": [],
+      "pid": null,
+      "package_stopped": false
+    },
+    "at_notification": {
+      "at": "2026-09-27T15:49:15.550Z",
+      "task_ids": [],
+      "pid": "8285",
+      "package_stopped": false
+    },
+    "after_opening": {
+      "at": "2026-09-27T15:49:27.070Z",
+      "task_ids": [
+        105
+      ],
+      "pid": "8285",
+      "package_stopped": false
+    }
+  },
+  "reminder_device_id": "dev_61c7c95d16034baaacd3220d4a41947d",
+  "plan_version": 22,
+  "dose_id": "dose_fe14e0cad3734d649146c75a25285b18",
+  "due_at": "2026-09-27T15:48:00Z",
+  "identity": "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_13e07c99dc214a7e96ee33cdac436eaa.g15",
+  "native_scheduled_before": [
+    "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_13e07c99dc214a7e96ee33cdac436eaa.g15",
+    "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_771de8a961ab4d5bbaca4ba396121910.g15"
+  ],
+  "native_scheduled_after_dismissal": [
+    "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_13e07c99dc214a7e96ee33cdac436eaa.g15",
+    "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_771de8a961ab4d5bbaca4ba396121910.g15"
+  ],
+  "notes_before": 5,
+  "observation_window_seconds_after_due": 300,
+  "command_while_dismissed": {
+    "id": "cmd_4c53e9c206b64dc1a1d3789f3a286dd1",
+    "dose_id": "dose_fe14e0cad3734d649146c75a25285b18",
+    "state": "queued",
+    "cancel_reason": null,
+    "audio_accessed": false,
+    "acks": []
+  },
+  "command_before_opening": {
+    "id": "cmd_4c53e9c206b64dc1a1d3789f3a286dd1",
+    "dose_id": "dose_fe14e0cad3734d649146c75a25285b18",
+    "state": "queued",
+    "cancel_reason": null,
+    "audio_accessed": false,
+    "acks": []
+  },
+  "posted_at": "2026-09-27T15:49:15.428Z",
+  "delay_ms": 75428,
+  "clocks_after": {
+    "host_before_ms": 1790524156115,
+    "host_after_ms": 1790524156131,
+    "android_ms": 1790524156417,
+    "android_minus_host_midpoint_ms": 294,
+    "roundtrip_ms": 16
+  },
+  "clock_adjusted_delay_ms": 75134,
+  "raw_notification_sha256": "c129294da507f0e6e85dc09521170e047cfc7641720f3e515e412014fd325f69",
+  "pid_after_notification": "8285",
+  "opened": true,
+  "medication_report": "unconfirmed",
+  "command_after_opening": {
+    "id": "cmd_4c53e9c206b64dc1a1d3789f3a286dd1",
+    "dose_id": "dose_fe14e0cad3734d649146c75a25285b18",
+    "state": "playback_completed",
+    "cancel_reason": null,
+    "audio_accessed": true,
+    "acks": [
+      "received",
+      "playback_started",
+      "playback_completed"
+    ]
+  },
+  "notes_after": 5
+}

@@ -1,0 +1,39 @@
+{
+  "name": "parse-phone-companion",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start --dev-client",
+    "ios": "expo run:ios",
+    "android": "expo run:android",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run test:unit && npm run test:adapters",
+    "prebuild": "expo prebuild --no-install",
+    "test:unit": "node --import tsx --test test/*.test.ts",
+    "test:adapters": "vitest run"
+  },
+  "dependencies": {
+    "expo": "57.0.25",
+    "expo-audio": "57.0.5",
+    "expo-crypto": "57.0.3",
+    "expo-dev-client": "57.0.19",
+    "expo-file-system": "57.0.7",
+    "expo-haptics": "57.0.3",
+    "expo-notifications": "57.0.21",
+    "expo-secure-store": "57.0.4",
+    "expo-system-ui": "57.0.4",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-safe-area-context": "5.7.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.0",
+    "@types/react-test-renderer": "19.1.0",
+    "prettier": "3.6.2",
+    "react-test-renderer": "19.2.3",
+    "tsx": "^4.20.0",
+    "typescript": "~5.9.3",
+    "vitest": "4.1.11"
+  }
+}

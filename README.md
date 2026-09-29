@@ -2,9 +2,13 @@
 
 Parse is a voice companion for older adults, built into the back of a 3D-printed transit/ID cardholder. The ESP32-S3 handles push-to-talk and playback; a FastAPI backend handles confirmed care records and speech-provider adapters; a responsive React dashboard supports the owner and permitted caregivers.
 
-The current delivery milestone is **software first**: a working dashboard, backend and device API using fictional development data. You can create checked medication plans, confirm care notes and reported readings, manage preventive tasks and support follow-ups, and review/share visit summaries before hardware arrives. Live speech requires provider credentials; assembled-cardholder validation belongs to the later integration stage. See [verification status](docs/careloop/VERIFICATION.md) for the evidence and remaining checks.
+The software includes a working dashboard, backend, device API and guided hardware pairing. You can create checked medication plans, confirm care notes and reported readings, manage preventive tasks and support follow-ups, and review/share visit summaries before hardware arrives. The [hardware pairing runbook](docs/careloop/Hardware-Pairing-Runbook.md) covers per-device provisioning, firmware setup, Wi-Fi, connection checks and physical acceptance. Live speech requires provider credentials and assembled-cardholder validation remains outstanding. See [verification status](docs/careloop/VERIFICATION.md) for the evidence and remaining checks.
 
 The dashboard opens on a dated care timeline, with medication, note and reading filters, expandable records, and a side panel for upcoming doses, arranged visits and permitted care members. Its ivory and terracotta interface adapts to desktop and mobile. Scheduled doses remain separate from reported medication history; adding or correcting a care record still requires review and confirmation.
+
+**Browser companion.** Open `/companion` on the same service as the dashboard, pair it through the owner's Settings page, then record, review and confirm care updates. Shared records appear in the permitted caregiver's timeline. This version supports in-page reminders while open and visible; it does not provide closed-browser alerts. See the [web companion guide](docs/careloop/Web-Companion.md) for setup, browser limits and the recorded demo.
+
+The native alternative remains in `mobile/`; its [setup guide](docs/careloop/Phone-Companion-Setup.md) and [verification ledger](docs/careloop/Phone-Companion-Verification.md) describe its separate implementation and acceptance status.
 
 ## Start the software demo
 
@@ -42,7 +46,7 @@ VITE_DEMO_MODE=true npm run dev
 
 Open the loopback address printed by Vite. Keep the exact dashboard origin in `backend/.env` under `CARELOOP_ALLOWED_ORIGINS`; `localhost` and `127.0.0.1` are distinct origins. Vite normally proxies `/v1` to `http://127.0.0.1:8000`; set `CARELOOP_API_TARGET` when using a different backend port.
 
-The dashboard works without provider credentials. Voice processing then returns an explicit unavailable result. To enable real speech, configure the [provider environment](docs/careloop/PROVIDERS.md), then restart the backend. The browser never records microphone audio.
+The dashboard works without provider credentials. Voice processing then returns an explicit unavailable result. To enable real speech, configure the [provider environment](docs/careloop/PROVIDERS.md), then restart the backend. The `/companion` page records audio only after a deliberate tap and microphone permission; the caregiver dashboard does not record audio. Deployed companion routes require HTTPS. Use the isolated, explicitly scripted fixture in the [web companion guide](docs/careloop/Web-Companion.md) for local voice-flow demonstrations.
 
 ## Build and verify
 
@@ -67,6 +71,7 @@ Firmware requires ESP-IDF **v5.4.2** and the supplier's actual board configurati
 - [Hardware–software integration guide](docs/careloop/Hardware-Software-Integration.md): hardware interfaces, firmware responsibilities, audio transport, backend APIs, and build sequence.
 - [Chinese hardware supplier checklist](docs/careloop/Supplier-Handoff-Checklist-ZH.md): prototype scope, component requirements, testing, and supplier handoff.
 - [Implemented API contract](backend/API.md): dashboard sessions, proposals, device endpoints and permissions.
+- [Web companion](docs/careloop/Web-Companion.md): browser pairing, recording, shared care records, UI evidence and demo.
 - [Deployment instructions](deploy/README.md): HTTPS proxy, PostgreSQL, application containers and explicit provisioning.
 - [Verification status](docs/careloop/VERIFICATION.md): tested behavior and unverified acceptance requirements.
 
@@ -74,10 +79,10 @@ Firmware requires ESP-IDF **v5.4.2** and the supplier's actual board configurati
 
 The pendant runs device firmware and exchanges audio and commands with a Tencent-hosted backend over Wi-Fi. The phone and caregiver dashboards access the same backend. Speech recognition, AI, and speech synthesis run through backend services.
 
-The prototype uses the ESP32-S3 pendant from the start. There is no phone-based voice prototype. The phone remains a dashboard and optional Wi-Fi hotspot; it does not replace the pendant. Backend work can proceed with developer test fixtures while hardware is assembled.
+The browser companion provides a software-first way to exercise the same care flow while the ESP32-S3 cardholder is assembled. It uses the phone's microphone and browser over HTTPS. The pendant and retained native app use their own transports and share the backend's confirmation and access rules.
 
 The hardware supplier assembles and tests the pendant. The project team develops the firmware, backend, and dashboards.
 
 ## Repository layout
 
-`firmware/` contains ESP-IDF code, `backend/` contains FastAPI and its tests, `frontend/` contains the dashboard, `tools/` contains developer checks, and `deploy/` contains deployment configuration. Credentials, databases, build output and local test artifacts are ignored by Git.
+`firmware/` contains ESP-IDF code, `backend/` contains FastAPI and its tests, `frontend/` contains the dashboard and browser companion, `mobile/` contains the native app, `tools/` contains developer checks, and `deploy/` contains deployment configuration. Credentials, databases, build output and local test artifacts are ignored by Git.

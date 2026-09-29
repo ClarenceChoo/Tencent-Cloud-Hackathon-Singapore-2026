@@ -1,0 +1,22 @@
+{
+  "date": "2026-09-28",
+  "preview": "r10",
+  "apk": "runtime/releases/parse-companion-android-arm64-preview-2026-09-28-r10.apk",
+  "sha256": "1b123f61a40cd892827b9a2e3d753d0106cee6bb8e757d43d58e7cd5658f7754",
+  "bytes": 31328215,
+  "installed_digest_matches": true,
+  "package": "sg.parse.companion",
+  "cold_launch": "Starting: Intent { cmp=sg.parse.companion/.MainActivity }\nStatus: ok\nLaunchState: COLD\nActivity: sg.parse.companion/.MainActivity\nTotalTime: 287\nWaitTime: 288\nComplete\n",
+  "pairing_screen_verified": true,
+  "fixture_trust_resources": false,
+  "signature": "Verified Android debug key, v2 signature; not a distribution release",
+  "verification_apk_sha256": "e131cf04cc81164b914aa694f05a91d931ffa29b5e950556cddf3b185819dc6e",
+  "source_sha256": {
+    "mobile/src/App.tsx": "a84714d87377a775cf5f7617f2a38ff5fb2d6faf10c74ecfc8b8bc47b9a4b3c8",
+    "mobile/src/useVoice.ts": "f05583036e1888d98784b224f7be201ed5ab27df25f8408cb0b28883edd8250f",
+    "mobile/src/api.ts": "8c7bc2a0d324246701885082d83b6db3ac8ce0cb52ab6d394ae2861c12c8fab0"
+  },
+  "build_log_sha256": "a470d536ea26ed3a52b0349330d9dda79e17c117f3b069f7cd4da8dd7eff69b0",
+  "native_or_javascript_startup_failure_observed": false,
+  "limits": "Android 16 ARM64 emulator, host audio disabled. No native iOS, physical phone, live speech or production signing claim."
+}

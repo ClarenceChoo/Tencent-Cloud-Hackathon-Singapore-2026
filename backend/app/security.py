@@ -118,5 +118,5 @@ def iso(value):
     if value is None:
         return None
     if isinstance(value, datetime):
-        return aware(value).isoformat().replace("+00:00", "Z")
+        return aware(value).astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
     return value.isoformat()

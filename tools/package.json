@@ -4,7 +4,8 @@
   "private": true,
   "description": "Real browser checks against a fictional local CareLoop database",
   "scripts": {
-    "test": "node browser_smoke.cjs"
+    "test": "node browser_smoke.cjs",
+    "test:phone": "node browser_phone.cjs"
   },
   "devDependencies": {
     "playwright": "1.62.1"

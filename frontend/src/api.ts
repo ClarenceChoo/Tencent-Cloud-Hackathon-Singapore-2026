@@ -3,14 +3,25 @@ export type Patient = { id: string; name: string; timezone: string; preferred_na
 export type Session = { user: User; patients: Patient[]; csrf_token: string };
 export type Proposal = { id: string; kind: string; payload: Record<string, unknown>; readback: string; status: string; expires_at?: string };
 export type Row = Record<string, unknown> & { id?: string };
+export type DeviceSetupStatus = {
+  service_address: string | null;
+  voice_service: 'unconfigured' | 'configured' | 'simulated' | 'invalid_configuration';
+  live_voice_verified: boolean;
+  scheduler_enabled: boolean;
+};
 export type Dashboard = {
   patient: Patient & Record<string, unknown>;
   devices: Row[]; medication_plans: Row[]; doses: Row[]; notes: Row[]; measurements: Row[];
   preventive_tasks: Row[]; support_requests: Row[]; followups: Row[]; proposals: Proposal[]; permissions: string[]; access_grants: Row[]; allowed_recipients: Row[]; summaries: Row[];
+  device_setup?: DeviceSetupStatus;
+  active_companion?: {device_id:string|null;generation:number;changed_at?:string|null}|null;
 };
 
 let csrfToken = '';
 export function setCsrf(token: string) { csrfToken = token; }
+export class ApiError extends Error {
+  constructor(message: string, readonly status: number) { super(message); this.name = 'ApiError'; }
+}
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers);
   if (options.body) headers.set('Content-Type', 'application/json');
@@ -31,7 +42,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       }).join('; ');
       else if (detail != null) message = JSON.stringify(detail);
     } catch { /* response had no JSON body */ }
-    throw new Error(message);
+    throw new ApiError(message, response.status);
   }
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
@@ -50,7 +61,10 @@ export const api = {
   acknowledge: (id: string) => request<void>(`/app/support-requests/${encodeURIComponent(id)}/acknowledge`, json('POST')),
   resolve: (id: string, outcome: string) => request<void>(`/app/support-requests/${encodeURIComponent(id)}/resolve`, json('POST', { outcome })),
   claimDevice: (code: string, patientId: string) => request<Row>('/app/devices/claim', json('POST', { code, patient_id: patientId })),
+  approvePhone: (code: string, patientId: string) => request<Row>('/app/phone-enrollments/approve', json('POST', { code, patient_id: patientId })),
+  selectCompanion: (patientId:string, deviceId:string|null, generation:number, poweredOff:boolean) => request(`/app/patients/${encodeURIComponent(patientId)}/active-companion`, json('PUT', {device_id:deviceId, expected_generation:generation, other_pendants_powered_off:poweredOff})),
   revokeDevice: (id: string) => request<void>(`/app/devices/${encodeURIComponent(id)}/revoke`, json('POST')),
+  releaseRemovedPhone: (id:string,generation:number) => request(`/app/devices/${encodeURIComponent(id)}/release-removed-phone`, json('POST', {expected_generation:generation,app_removed_or_reset:true})),
   createSummary: (patientId: string, startDate: string, endDate: string) => request<Row>(`/app/patients/${encodeURIComponent(patientId)}/summaries`, json('POST', { start_date: startDate, end_date: endDate })),
   updateSummary: (id: string, payload: Record<string, unknown>) => request<Row>(`/app/summaries/${encodeURIComponent(id)}`, json('PUT', payload)),
   shareSummary: (id: string) => request<Row>(`/app/summaries/${encodeURIComponent(id)}/share`, json('POST', { expires_in_seconds: 3600 })),
@@ -59,7 +73,7 @@ export const api = {
   revokeGrant: (id: string) => request<void>(`/app/grants/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   setNoteSharing: (noteId: string, userIds: string[]) => request<Row>(`/app/notes/${encodeURIComponent(noteId)}/sharing`, { method: 'PUT', body: JSON.stringify({ user_ids: userIds }) }),
   deleteNote: (noteId: string) => request<void>(`/app/notes/${encodeURIComponent(noteId)}`, { method: 'DELETE' }),
-  sharedSummary: (token: string) => request<Row>(`/shared/summaries/${encodeURIComponent(token)}`),
+  sharedSummary: (token: string, signal?: AbortSignal) => request<Row>(`/shared/summaries/${encodeURIComponent(token)}`, { signal, cache: 'no-store' }),
   createMedicationPlan: (patientId: string, payload: Record<string, unknown>) => request<Row>(`/app/patients/${encodeURIComponent(patientId)}/medication-plans`, json('POST', payload)),
 };
 

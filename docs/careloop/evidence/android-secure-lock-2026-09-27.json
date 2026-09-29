@@ -1,0 +1,201 @@
+{
+  "at": "2026-09-27T15:24:12.022Z",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "environment": "Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and fixture tone replies. No real speech or acoustic audibility evidence.",
+  "source_sha256": {
+    "mobile/src/App.tsx": "040650c4ba7d61a35e2c5926c616a0f09a051f03da778766a3241dcd2ccdb275",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "mobile/src/api.ts": "c47f9fd49c83ec14df83d1939a941d6a2b48cddd8548807d123941b523b328cf",
+    "mobile/src/storage.ts": "d617df7a010d6cc68f0cd5dc6e3dfac021b1684bc6e10bc5fa50963871f3d99f",
+    "tools/android_native_fixture.py": "02f47605eb96b79595ccfb991cd8c2ecf72808bc3680386853d97b2113b75271",
+    "tools/android_native_smoke.cjs": "37dce8fba3885331230c0751cc6ee7dd42c62416b20beafa9b7db24b34a95778",
+    "tools/android_native_care.cjs": "48be6db43584dba70abb17294f000c2e29741f389a531b2ba656b4373bf2897b",
+    "mobile/src/useReminders.ts": "ace3aff6d600a44a73aa5a7384cb15ee616624e42d17d42e13930aa2960ce269",
+    "mobile/src/alertSchedule.ts": "1c3f4f23ea35da5981b6fb4642e668444085f6120476238c101c6b1a477c051e",
+    "tools/android_native_alert_lifecycle.cjs": "abab1a87bdb8485371914776d1e2a4b8d39922010bc046a7be19b09418d1e7e0",
+    "tools/android_native_power.cjs": "6aec1e672db88eb18290ab7b5bf4f607cc67d960f5610eb860982f4227b57d8a",
+    "tools/android_native_revocation.cjs": "635bcd81c0f108720e78f95117035c96dbb77bf28534b81b8cf25a9a74ef1435",
+    "tools/android_native_fault_proxy.py": "8619dd07b52ca3a888d8126e4885d506a44fde5988c71a5bd75b6bea6ef2e7dd",
+    "tools/android_native_control.py": "868f5d6fc4867f05fa625e9ddb089bea4845be0af3799d9ada76cf0e87187f35",
+    "tools/android_native_secure_lock.cjs": "16f893fd4a3eaee3955b9ac343fe35cde08ff9556ffb121f80ec43216da7bfd2"
+  },
+  "checks": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    },
+    {
+      "name": "Native alert is scheduled for the exact dose before entering secure-locked state",
+      "passed": true
+    },
+    {
+      "name": "Android posts the exact generic alert in secure-locked state without recording a dose",
+      "passed": true
+    },
+    {
+      "name": "Secure keyguard requires PIN entry and exposes no care UI or reminder playback after the notification tap",
+      "passed": true
+    },
+    {
+      "name": "Actual secure-locked notification tap opens the native app and remains separate from medication reporting",
+      "passed": true
+    }
+  ],
+  "installed_apk_sha256": "15ad0b843daad17bd030dad58e8db29d9269f2317707db3236dec80484b33c3e",
+  "mode": "alert-secure-locked",
+  "enrollmentCreatedInThisRun": false,
+  "alert_state": "secure-locked",
+  "original_lock_disabled": true,
+  "clocks_before": {
+    "host_before_ms": 1790522663336,
+    "host_after_ms": 1790522663353,
+    "android_ms": 1790522663681,
+    "android_minus_host_midpoint_ms": 336.5,
+    "roundtrip_ms": 17
+  },
+  "secure_lock": {
+    "original": {
+      "at": "2026-09-27T15:24:23.371Z",
+      "secure": false,
+      "showing": false,
+      "input_restricted": false,
+      "screen_state": "SCREEN_STATE_ON",
+      "disabled": "true",
+      "show_notifications": "1",
+      "allow_private_notifications": "1"
+    },
+    "note": "Actual PIN-protected Android keyguard on a disposable emulator. A fictional test PIN is entered through the OS UI and removed after the test. No physical biometric, secure-storage or iOS claim.",
+    "entered": {
+      "at": "2026-09-27T15:24:56.731Z",
+      "secure": true,
+      "showing": true,
+      "input_restricted": true,
+      "screen_state": "SCREEN_STATE_OFF",
+      "disabled": "false",
+      "show_notifications": "1",
+      "allow_private_notifications": "1"
+    },
+    "last_observed": {
+      "at": "2026-09-27T15:28:44.843Z",
+      "secure": true,
+      "showing": true,
+      "input_restricted": true,
+      "screen_state": "SCREEN_STATE_ON",
+      "disabled": "false",
+      "show_notifications": "1",
+      "allow_private_notifications": "1"
+    },
+    "at_due": {
+      "at": "2026-09-27T15:27:02.746Z",
+      "secure": true,
+      "showing": true,
+      "input_restricted": true,
+      "screen_state": "SCREEN_STATE_OFF",
+      "disabled": "false",
+      "show_notifications": "1",
+      "allow_private_notifications": "1"
+    },
+    "at_notification": {
+      "at": "2026-09-27T15:28:37.476Z",
+      "secure": true,
+      "showing": true,
+      "input_restricted": true,
+      "screen_state": "SCREEN_STATE_OFF",
+      "disabled": "false",
+      "show_notifications": "1",
+      "allow_private_notifications": "1"
+    },
+    "after_notification_tap": {
+      "at": "2026-09-27T15:28:44.843Z",
+      "secure": true,
+      "showing": true,
+      "input_restricted": true,
+      "screen_state": "SCREEN_STATE_ON",
+      "disabled": "false",
+      "show_notifications": "1",
+      "allow_private_notifications": "1"
+    },
+    "unlocked": {
+      "at": "2026-09-27T15:28:51.891Z",
+      "secure": true,
+      "showing": false,
+      "input_restricted": false,
+      "screen_state": "SCREEN_STATE_ON",
+      "disabled": "false",
+      "show_notifications": "1",
+      "allow_private_notifications": "1"
+    },
+    "restored": {
+      "at": "2026-09-27T15:28:57.754Z",
+      "secure": false,
+      "showing": false,
+      "input_restricted": false,
+      "screen_state": "SCREEN_STATE_ON",
+      "disabled": "true",
+      "show_notifications": "1",
+      "allow_private_notifications": "1"
+    }
+  },
+  "reminder_device_id": "dev_61c7c95d16034baaacd3220d4a41947d",
+  "plan_version": 20,
+  "dose_id": "dose_2137fffaac5040fb831eed79866a78ed",
+  "due_at": "2026-09-27T15:27:00Z",
+  "identity": "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_376b673438bd464b90ec5b26d85897e5.g15",
+  "native_scheduled_before": [
+    "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_376b673438bd464b90ec5b26d85897e5.g15",
+    "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_771de8a961ab4d5bbaca4ba396121910.g15"
+  ],
+  "notes_before": 5,
+  "observation_window_seconds_after_due": 300,
+  "command_while_locked": {
+    "id": "cmd_d151425cfde44694975427f79c6a7ea7",
+    "dose_id": "dose_2137fffaac5040fb831eed79866a78ed",
+    "state": "queued",
+    "cancel_reason": null,
+    "audio_accessed": false,
+    "acks": []
+  },
+  "command_before_opening": {
+    "id": "cmd_d151425cfde44694975427f79c6a7ea7",
+    "dose_id": "dose_2137fffaac5040fb831eed79866a78ed",
+    "state": "queued",
+    "cancel_reason": null,
+    "audio_accessed": false,
+    "acks": []
+  },
+  "posted_at": "2026-09-27T15:28:37.196Z",
+  "delay_ms": 97196,
+  "clocks_after": {
+    "host_before_ms": 1790522917986,
+    "host_after_ms": 1790522918003,
+    "android_ms": 1790522918334,
+    "android_minus_host_midpoint_ms": 339.5,
+    "roundtrip_ms": 17
+  },
+  "clock_adjusted_delay_ms": 96856.5,
+  "raw_notification_sha256": "62685bbd32cb1fa9d624bc99cdf2f1b4cf43243f4cd7d5c755ea756de8e0e69f",
+  "command_before_unlocking": {
+    "id": "cmd_d151425cfde44694975427f79c6a7ea7",
+    "dose_id": "dose_2137fffaac5040fb831eed79866a78ed",
+    "state": "queued",
+    "cancel_reason": null,
+    "audio_accessed": false,
+    "acks": []
+  },
+  "opened": true,
+  "medication_report": "unconfirmed",
+  "command_after_opening": {
+    "id": "cmd_d151425cfde44694975427f79c6a7ea7",
+    "dose_id": "dose_2137fffaac5040fb831eed79866a78ed",
+    "state": "playback_completed",
+    "cancel_reason": null,
+    "audio_accessed": true,
+    "acks": [
+      "received",
+      "playback_started",
+      "playback_completed"
+    ]
+  },
+  "notes_after": 5
+}

@@ -1,0 +1,10 @@
+{
+  "environment": "AOSP Android 16 emulator, fictional local fixture; no live push",
+  "scheduled_at": "2026-09-27T11:23:00Z",
+  "posted_epoch_ms": 1790508284008,
+  "delay_ms": 104008,
+  "generic_body_visible_in_android_shade": true,
+  "medication_name_absent": true,
+  "test_timeout_seconds": 90,
+  "result": "OS posted after the original test observation window; not an on-time-delivery pass"
+}

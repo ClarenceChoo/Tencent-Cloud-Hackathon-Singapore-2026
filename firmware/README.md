@@ -31,6 +31,8 @@ While an accepted turn is still processing, a new press produces three short hap
 
 ## Setup and secrets
 
+Use the backend's `prepare-device` command to generate the per-unit NVS file and owner setup sheet. The complete [pairing runbook](../docs/careloop/Hardware-Pairing-Runbook.md) covers account binding, code renewal, ESP-IDF NVS generation, flashing and the server connection check. Use the same server database for provisioning and the device API.
+
 On a device with no saved Wi-Fi/backend configuration, the firmware starts a WPA2 SoftAP named `CareLoop-XXXX` for ten minutes and exposes a small local form at `http://192.168.4.1/`. Its per-device setup password is generated once in NVS. Put this password on the physical device label during manufacturing or provision it over the trusted USB/recovery workflow; it is intentionally never written to the serial log.
 
 The setup page accepts Wi-Fi details and an `https://` backend hostname (for example `https://care.example`, with no path). Device credentials are a separate, revocable backend token and must be provisioned through a trusted USB flow, not committed here. Create an NVS CSV outside this repository, generate a NVS partition with the matching ESP-IDF `nvs_partition_gen.py` tool, and write the `nvs` partition using the matching `parttool.py`. Required namespace/keys are:
@@ -52,8 +54,10 @@ The device sends WSS heartbeats every five seconds and uses the configured base 
 
 ## Recovery and bench boundary
 
+To change Wi-Fi without erasing the credential or reminder replay ledger, hold the configured talk button at power-on for five seconds. After two vibration pulses, release it. The firmware clears only saved SSID/password and opens the password-protected setup network again, keeping the setup password, backend and device token. This requires the actual supplier button/haptic mapping and still needs a physical power-cycle test.
+
 For normal recovery, enter the supplier-documented ESP32-S3 bootloader (often by holding BOOT while resetting), then run the matching `idf.py -p PORT flash monitor` command above. Preserve the USB data port and the supplier's documented boot/reset procedure in the enclosure design. `idf.py -p PORT erase-flash` removes Wi-Fi, device credentials, and the replay ledger; it is a deliberate factory-reset/recovery action and must be followed by reprovisioning.
 
-ESP-IDF v5.4.2 compiled this project for `esp32s3` on 23 September 2026. The resulting factory image is 0x19a350 bytes, with 0x5cb0 bytes free (1%) in the 0x1a0000-byte factory partition. Its SHA-256 is `d99b441abead910c686a44d7475a29ffe4144e06094b6ca962d2ba69a3e61c5b`. Host tests also pass for WAV validation/conversion, reply-array and single-path fallback selection, terminal-turn recovery status, context-expiry gating, retry/ledger protocol, and interaction-state logic.
+ESP-IDF v5.4.2 compiled this project, including the Wi-Fi setup boot gesture, for `esp32s3` on 23 September 2026. The resulting factory image is 0x19a490 bytes, with 0x5b70 bytes free (1%) in the 0x1a0000-byte factory partition. Its SHA-256 is `c3b1e9e72dfd45d7e0475683c822fb26b62314c5944df32420314a2d608ddd7d`. This is a source-check build with unassigned GPIOs and PSRAM disabled, not a board-specific release image. Host tests also pass for WAV validation/conversion, reply-array and single-path fallback selection, terminal-turn recovery status, context-expiry gating, retry/ledger protocol, and interaction-state logic. Rebuild and recheck image fit after applying the supplier's pin/PSRAM configuration.
 
 Compilation and host tests establish source-level behavior only. This firmware has not been flashed or tested on a cardholder in this workspace. Acoustic intelligibility, motor noise, pin electrical safety, Wi-Fi/card interference, charging, brownouts, and end-to-end physical acceptance require the delivered board and the bench sequence in the integration document.

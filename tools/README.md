@@ -1,6 +1,6 @@
 # Developer checks
 
-These tools exercise implementation contracts with fictional data. The product voice client remains the ESP32 cardholder.
+These tools exercise implementation contracts with fictional data. Parse has an ESP32 cardholder and a native phone companion under `mobile/`, using the same backend and care records. See the [phone setup guide](../docs/careloop/Phone-Companion-Setup.md) and [verification ledger](../docs/careloop/Phone-Companion-Verification.md) for the platform evidence and remaining acceptance work. Developer fixtures do not establish physical hardware or live speech behavior.
 
 ## Software demo
 
@@ -61,3 +61,25 @@ After the main scenario, `node tools/browser_settings.cjs` checks saved profile 
 To include device claim/revocation, provision a fresh fictional device with the backend admin CLI against that same local database. Save the command's output in a private file under `runtime/` and set `CARELOOP_TEST_DEVICE_FILE` to its path. The runner reads the one-time code and credential without printing them. It verifies authenticated API access before and after dashboard revocation and leaves the test device revoked. This verifies access control only; it does not simulate microphone, speaker, battery or physical Wi-Fi behavior.
 
 `node tools/browser_latency.cjs` measures 30 confirmed fictional-note updates in the already-open dashboard. It records each confirmation-request-start to visible-entry duration, p50, p95 and maximum under `runtime/dashboard-latency.json`, and fails if the local p95 exceeds two seconds. This conservative local baseline includes request/commit time; it does not verify a real phone, cloud deployment or demo network. The same optional browser environment settings apply.
+
+## Native Android sequence checks
+
+`android_native_sequence.py` exercises the installed verification package on the dedicated rooted Android emulator. It requires the existing fictional native TLS fixture and its loopback fault proxy; it refuses other packages, origins and an unexpected APK digest. See [the native build guide](../docs/careloop/Phone-Companion-Native-Build.md#native-android-reply-order-and-expiry) for the recorded setup and evidence.
+
+An optional fixture-only `sequence-tone.json` forces the production speech splitter to generate distinct PCM tones. The runner observes protected clip downloads, native playback state and cache hashes, then stalls a freshness request across a shortened reply deadline. It restores the proxy configuration and direct fixture connection in `finally`, and checks that care records, proposals, voice turns, uploads and routing are unchanged. This verifies emulator media behavior, not speech intelligibility or physical audibility. Use a unique `--run-suffix` to retain a second run without overwriting earlier evidence.
+
+## Hardware pairing checks
+
+For a deployed, already-claimed device, run `backend/.venv/bin/python tools/check_hardware_ready.py --base-url https://YOUR-DOMAIN --nvs-file /PRIVATE/device-nvs.csv --require-voice-config`. It checks HTTPS, the bound identity, audio protocol, pending commands and WSS heartbeat acknowledgement. It never uploads audio, creates a care record or prints the credential. Its own temporary heartbeat does update connection status; it is not proof that a physical pendant is connected. `--token-env` is also supported. `--allow-insecure-loopback` permits local HTTP only for explicit tests. Redirects are refused on HTTP and WebSocket connections.
+
+To reproduce the actual browser pairing journey, use a **new** directory under ignored `runtime/`, with backend dependencies installed, `npm ci --prefix frontend`, `npm ci --prefix tools`, and Chrome available. In separate terminals from the repository root:
+
+```sh
+backend/.venv/bin/python tools/pairing_fixture_server.py --data-dir runtime/pairing-check
+CARELOOP_API_TARGET=http://127.0.0.1:8002 npm --prefix frontend run dev -- --port 5174 --strictPort
+CARELOOP_PAIRING_FIXTURE_DIR=runtime/pairing-check node tools/browser_pairing.cjs
+```
+
+The server binds only loopback and refuses an existing data directory. The scenario uses synthetic WAVs explicitly registered with the fixture adapter: it does not recognize or synthesize live speech. It checks invalid/valid codes, paired vs online state, a real WebSocket heartbeat, confirmation before saving, exactly-once retry, the permitted caregiver's automatic refresh, read-only device controls, four responsive widths, disconnect and revocation. Private setup files and fictional screenshots stay in the selected directory; only credential-free evidence should be shared. Stop both test servers after the run. A fresh run requires a fresh directory because the test deliberately revokes its device.
+
+`backend/.venv/bin/python -m unittest discover -s tools -p 'test_hardware_ready.py' -v` checks the diagnostic client against a disposable loopback server, including credential rejection, redirect handling and response bounds. It requires permission to bind a local port.

@@ -1,0 +1,507 @@
+{
+  "at": "2026-09-27T16:34:28.801003+00:00",
+  "physical_phone": false,
+  "live_speech": false,
+  "scope": "Real TalkBack focus and double-tap gestures, native recording and cancellation on the Android 16 emulator. Host audio disabled; no audibility, live speech or full accessibility acceptance. Extended flow verifies scripted note correction, review, explicit confirmation and already-open caregiver visibility using actual screen-reader gestures.",
+  "source_sha256": {
+    "tools/android_native_talkback_probe.py": "a5f2b97ea5130ce3e5223bb8bc020566f9b309e9446c2c250f6ea9b0f67cc15f",
+    "mobile/src/App.tsx": "040650c4ba7d61a35e2c5926c616a0f09a051f03da778766a3241dcd2ccdb275",
+    "mobile/src/useTalkMode.ts": "c159dcedbad3b79d5a76b7238391bf7a4cc9d310b2b02bfae4aabef7ab1cc941",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "tools/android_emulator_touch.c": "e9a1d5c8edbc18796d206a1241734bd7dc20535787282c2a8aa64152b5741c8e",
+    "tools/android_native_talkback_care.py": "1b410dde493450c59fc797fb176404829952e8979d9bdd71eb64dce77e5d7abe",
+    "tools/android_talkback_dashboard.cjs": "f08141a8d5bcdec9962b66e9d965b29c21253becdf707d7012d88a78afa4c61f",
+    "tools/android_native_fixture.py": "02f47605eb96b79595ccfb991cd8c2ecf72808bc3680386853d97b2113b75271"
+  },
+  "parse_apk_sha256": "15ad0b843daad17bd030dad58e8db29d9269f2317707db3236dec80484b33c3e",
+  "tooling_provenance_sha256": "370e109f2d4d662fa9b6a62a20e380d723d748cefc2b79a59daf146340adf443",
+  "checks": [
+    {
+      "name": "Actual TalkBack and its offline English voice are active; the saved hold preference is overridden by accessible tap mode",
+      "passed": true
+    },
+    {
+      "name": "TalkBack forward gestures reach the labelled recording button without starting capture",
+      "passed": true
+    },
+    {
+      "name": "A real TalkBack double-tap starts native recording and exposes the send label and transient capture file",
+      "passed": true
+    },
+    {
+      "name": "TalkBack gestures reach and activate Cancel; capture stops, cached audio is removed, and no upload is sent",
+      "passed": true
+    },
+    {
+      "name": "TalkBack recording returns an unsaved note; gesture navigation reaches the review and its named recipient",
+      "passed": true
+    },
+    {
+      "name": "TalkBack correction replaces the old context; the corrected read-back, recipient and explicit Confirm control are reachable before saving",
+      "passed": true
+    },
+    {
+      "name": "TalkBack double-tap confirms one corrected phone-sourced note; the already-open permitted caregiver updates and the restricted caregiver does not",
+      "passed": true
+    },
+    {
+      "name": "Resuming the TalkBack-enabled companion preserves the one confirmed record without replaying a voice upload",
+      "passed": true
+    }
+  ],
+  "focus_sequence": [
+    {
+      "at": "2026-09-27T16:35:19.034628+00:00",
+      "nodes": [
+        "(44233)1980.TextView:(574, 233 - 1017, 276):TEXT{YOUR CARE COMPANION{AbsoluteSizeSpan 'YOUR CARE COMPANION'AbsoluteSizeSpan{size=32, isDip=false}}{ForegroundColorSpan 'YOUR CARE COMPANION'ForegroundColorSpan{color=#FF78695E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:20.164783+00:00",
+      "nodes": [
+        "(48077)1980.TextView:(63, 412 - 1017, 455):TEXT{HELLO, Mei{AbsoluteSizeSpan 'HELLO, Mei'AbsoluteSizeSpan{size=32, isDip=false}}{ForegroundColorSpan 'HELLO, Mei'ForegroundColorSpan{color=#FF78695E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:21.284168+00:00",
+      "nodes": [
+        "feeling today?'ForegroundColorSpan{color=#FF322C27}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:22.411782+00:00",
+      "nodes": [
+        "(56726)1980.TextView:(63, 792 - 1017, 1014):TEXT{Your microphone turns on only when you choose to speak. Parse checks the details with you before saving.{AbsoluteSizeSpan 'Your microphone turns on only when you choose to speak. Parse checks the details with you before saving.'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'Your microphone turns on only when you choose to speak. Parse checks the details with you before saving.'ForegroundColorSpan{color=#FF50473E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:23.559321+00:00",
+      "nodes": [
+        "(58648)1980.TextView:(110, 1108 - 970, 1256):TEXT{Test speech is enabled on this server. These responses are simulated.{AbsoluteSizeSpan 'Test speech is enabled on this server. These responses are simulated.'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'Test speech is enabled on this server. These responses are simulated.'ForegroundColorSpan{color=#FF50473E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:24.702654+00:00",
+      "nodes": [
+        "(59609)1980.Button:(63, 1372 - 1017, 1913):CONTENT{Tap to start recording}:GRANULARITY{11}(action:FOCUS/CLEAR_A11Y_FOCUS/CLICK):focusable:clickable:accessibilityFocused"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:26.984865+00:00",
+      "nodes": [
+        "(62492)1980.TextView:(63, 1960 - 1017, 2102):TEXT{Listening. Tap to send, or choose Cancel recording.{AbsoluteSizeSpan 'Listening. Tap to send, or choose Cancel recording.'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'Listening. Tap to send, or choose Cancel recording.'ForegroundColorSpan{color=#FF50473E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation:politeLiveRegion"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:28.140418+00:00",
+      "nodes": [
+        "(63453)1980.TextView:(63, 2175 - 508, 2249):TEXT{Tap to start and stop{AbsoluteSizeSpan 'Tap to start and stop'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'Tap to start and stop'ForegroundColorSpan{color=#FF50473E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:29.540659+00:00",
+      "nodes": [
+        "(64414)1980.Switch:(891, 2148 - 1017, 2274):CONTENT{Use tap instead of hold to record}:STATE{ON}:GRANULARITY{0}:checked(action:FOCUS/CLEAR_A11Y_FOCUS):focusable:clickable:accessibilityFocused:disabled"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:30.822469+00:00",
+      "nodes": [
+        "(141294)1980.TextView:(63, 175 - 1017, 313):TEXT{Tap mode is enabled while your screen reader is on.{AbsoluteSizeSpan 'Tap mode is enabled while your screen reader is on.'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'Tap mode is enabled while your screen reader is on.'ForegroundColorSpan{color=#FF756C60}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:31.959632+00:00",
+      "nodes": [
+        "(142255)1980.Button:(63, 361 - 1017, 505):CONTENT{Cancel recording}:GRANULARITY{11}(action:FOCUS/CLEAR_A11Y_FOCUS/CLICK):focusable:clickable:accessibilityFocused"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:36.369754+00:00",
+      "nodes": [
+        "(141294)1980.TextView:(63, 128 - 1017, 266):TEXT{Tap mode is enabled while your screen reader is on.{AbsoluteSizeSpan 'Tap mode is enabled while your screen reader is on.'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'Tap mode is enabled while your screen reader is on.'ForegroundColorSpan{color=#FF756C60}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:37.654609+00:00",
+      "nodes": [
+        "(64414)1980.Switch:(891, 2078 - 1017, 2204):CONTENT{Use tap instead of hold to record}:STATE{ON}:GRANULARITY{0}:checked(action:FOCUS/CLEAR_A11Y_FOCUS):focusable:clickable:accessibilityFocused:disabled"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:38.806551+00:00",
+      "nodes": [
+        "(63453)1980.TextView:(63, 2104 - 508, 2178):TEXT{Tap to start and stop{AbsoluteSizeSpan 'Tap to start and stop'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'Tap to start and stop'ForegroundColorSpan{color=#FF50473E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:39.966272+00:00",
+      "nodes": [
+        "(62492)1980.TextView:(63, 1960 - 1017, 2031):TEXT{Stopped. You can speak when you are ready.{AbsoluteSizeSpan 'Stopped. You can speak when you are ready.'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'Stopped. You can speak when you are ready.'ForegroundColorSpan{color=#FF50473E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation:politeLiveRegion"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:41.088801+00:00",
+      "nodes": [
+        "(59609)1980.Button:(63, 1372 - 1017, 1913):CONTENT{Tap to start recording}:GRANULARITY{11}(action:FOCUS/CLEAR_A11Y_FOCUS/CLICK):focusable:clickable:accessibilityFocused"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:45.911146+00:00",
+      "nodes": [
+        "(62492)1980.TextView:(63, 1960 - 1017, 2244):TEXT{I will record: Fictional TalkBack right knee concern 1790526932831, after a fictional walk. It will be shared with Fictional Jamie Lim. Is that right?{AbsoluteSizeSpan 'I will record: Fictional TalkBack right knee concern 1790526932831, after a fictional walk. It will be shared with Fictional Jamie Lim. Is that right?'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'I will record: Fictional TalkBack right knee concern 1790526932831, after a fictional walk. It will be shared with Fictional Jamie Lim. Is that right?'ForegroundColorSpan{color=#FF50473E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation:politeLiveRegion"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:47.197178+00:00",
+      "nodes": [
+        "(63453)1980.TextView:(63, 171 - 508, 245):TEXT{Tap to start and stop{AbsoluteSizeSpan 'Tap to start and stop'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'Tap to start and stop'ForegroundColorSpan{color=#FF50473E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:48.336013+00:00",
+      "nodes": [
+        "(64414)1980.Switch:(891, 145 - 1017, 271):CONTENT{Use tap instead of hold to record}:STATE{ON}:GRANULARITY{0}:checked(action:FOCUS/CLEAR_A11Y_FOCUS):focusable:clickable:accessibilityFocused:disabled"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:49.485359+00:00",
+      "nodes": [
+        "(141294)1980.TextView:(63, 318 - 1017, 456):TEXT{Tap mode is enabled while your screen reader is on.{AbsoluteSizeSpan 'Tap mode is enabled while your screen reader is on.'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'Tap mode is enabled while your screen reader is on.'ForegroundColorSpan{color=#FF756C60}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:50.629433+00:00",
+      "nodes": [
+        "(102854)1980.Button:(63, 504 - 1017, 648):CONTENT{Repeat spoken reply}:GRANULARITY{11}(action:FOCUS/CLEAR_A11Y_FOCUS/CLICK):focusable:clickable:accessibilityFocused"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:51.767394+00:00",
+      "nodes": [
+        "(147060)1980.TextView:(123, 755 - 957, 798):TEXT{REVIEW BEFORE SAVING{AbsoluteSizeSpan 'REVIEW BEFORE SAVING'AbsoluteSizeSpan{size=32, isDip=false}}{ForegroundColorSpan 'REVIEW BEFORE SAVING'ForegroundColorSpan{color=#FF78695E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:52.892076+00:00",
+      "nodes": [
+        "(148021)1980.TextView:(123, 840 - 957, 919):TEXT{Have I got that right?{AbsoluteSizeSpan 'Have I got that right?'AbsoluteSizeSpan{size=61, isDip=false}}{ForegroundColorSpan 'Have I got that right?'ForegroundColorSpan{color=#FF322C27}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:54.027163+00:00",
+      "nodes": [
+        "(148982)1980.TextView:(123, 961 - 957, 1257):TEXT{I will record: Fictional TalkBack right knee concern 1790526932831, after a fictional walk. It will be shared with Fictional Jamie Lim. Is that right?{AbsoluteSizeSpan 'I will record: Fictional TalkBack right knee concern 1790526932831, after a fictional walk. It will be shared with Fictional Jamie Lim. Is that right?'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'I will record: Fictional TalkBack right knee concern 1790526932831, after a fictional walk. It will be shared with Fictional Jamie Lim. Is that right?'ForegroundColorSpan{color=#FF50473E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:55.338912+00:00",
+      "nodes": [
+        "(148021)1980.TextView:(123, 840 - 957, 919):TEXT{Have I got that right?{AbsoluteSizeSpan 'Have I got that right?'AbsoluteSizeSpan{size=61, isDip=false}}{ForegroundColorSpan 'Have I got that right?'ForegroundColorSpan{color=#FF322C27}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:56.456789+00:00",
+      "nodes": [
+        "(147060)1980.TextView:(123, 755 - 957, 798):TEXT{REVIEW BEFORE SAVING{AbsoluteSizeSpan 'REVIEW BEFORE SAVING'AbsoluteSizeSpan{size=32, isDip=false}}{ForegroundColorSpan 'REVIEW BEFORE SAVING'ForegroundColorSpan{color=#FF78695E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:57.601831+00:00",
+      "nodes": [
+        "(102854)1980.Button:(63, 504 - 1017, 648):CONTENT{Repeat spoken reply}:GRANULARITY{11}(action:FOCUS/CLEAR_A11Y_FOCUS/CLICK):focusable:clickable:accessibilityFocused"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:58.824511+00:00",
+      "nodes": [
+        "(141294)1980.TextView:(63, 318 - 1017, 456):TEXT{Tap mode is enabled while your screen reader is on.{AbsoluteSizeSpan 'Tap mode is enabled while your screen reader is on.'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'Tap mode is enabled while your screen reader is on.'ForegroundColorSpan{color=#FF756C60}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:35:59.964208+00:00",
+      "nodes": [
+        "(64414)1980.Switch:(891, 145 - 1017, 271):CONTENT{Use tap instead of hold to record}:STATE{ON}:GRANULARITY{0}:checked(action:FOCUS/CLEAR_A11Y_FOCUS):focusable:clickable:accessibilityFocused:disabled"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:36:01.109862+00:00",
+      "nodes": [
+        "(63453)1980.TextView:(63, 171 - 508, 245):TEXT{Tap to start and stop{AbsoluteSizeSpan 'Tap to start and stop'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'Tap to start and stop'ForegroundColorSpan{color=#FF50473E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:36:02.369050+00:00",
+      "nodes": [
+        "(62492)1980.TextView:(63, 1960 - 1017, 2244):TEXT{I will record: Fictional TalkBack right knee concern 1790526932831, after a fictional walk. It will be shared with Fictional Jamie Lim. Is that right?{AbsoluteSizeSpan 'I will record: Fictional TalkBack right knee concern 1790526932831, after a fictional walk. It will be shared with Fictional Jamie Lim. Is that right?'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'I will record: Fictional TalkBack right knee concern 1790526932831, after a fictional walk. It will be shared with Fictional Jamie Lim. Is that right?'ForegroundColorSpan{color=#FF50473E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation:politeLiveRegion"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:36:03.510034+00:00",
+      "nodes": [
+        "(59609)1980.Button:(63, 1372 - 1017, 1913):CONTENT{Tap to start recording}:GRANULARITY{11}(action:FOCUS/CLEAR_A11Y_FOCUS/CLICK):focusable:clickable:accessibilityFocused"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:36:08.224718+00:00",
+      "nodes": [
+        "(62492)1980.TextView:(63, 1960 - 1017, 2244):TEXT{I will record: Fictional TalkBack left knee concern 1790526932831, after a fictional walk. It will be shared with Fictional Jamie Lim. Is that right?{AbsoluteSizeSpan 'I will record: Fictional TalkBack left knee concern 1790526932831, after a fictional walk. It will be shared with Fictional Jamie Lim. Is that right?'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'I will record: Fictional TalkBack left knee concern 1790526932831, after a fictional walk. It will be shared with Fictional Jamie Lim. Is that right?'ForegroundColorSpan{color=#FF50473E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation:politeLiveRegion"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:36:09.490457+00:00",
+      "nodes": [
+        "(63453)1980.TextView:(63, 171 - 508, 245):TEXT{Tap to start and stop{AbsoluteSizeSpan 'Tap to start and stop'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'Tap to start and stop'ForegroundColorSpan{color=#FF50473E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:36:10.635804+00:00",
+      "nodes": [
+        "(64414)1980.Switch:(891, 145 - 1017, 271):CONTENT{Use tap instead of hold to record}:STATE{ON}:GRANULARITY{0}:checked(action:FOCUS/CLEAR_A11Y_FOCUS):focusable:clickable:accessibilityFocused:disabled"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:36:11.780687+00:00",
+      "nodes": [
+        "(141294)1980.TextView:(63, 318 - 1017, 456):TEXT{Tap mode is enabled while your screen reader is on.{AbsoluteSizeSpan 'Tap mode is enabled while your screen reader is on.'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'Tap mode is enabled while your screen reader is on.'ForegroundColorSpan{color=#FF756C60}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:36:12.930224+00:00",
+      "nodes": [
+        "(102854)1980.Button:(63, 504 - 1017, 648):CONTENT{Repeat spoken reply}:GRANULARITY{11}(action:FOCUS/CLEAR_A11Y_FOCUS/CLICK):focusable:clickable:accessibilityFocused"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:36:14.088518+00:00",
+      "nodes": [
+        "(147060)1980.TextView:(123, 755 - 957, 798):TEXT{REVIEW BEFORE SAVING{AbsoluteSizeSpan 'REVIEW BEFORE SAVING'AbsoluteSizeSpan{size=32, isDip=false}}{ForegroundColorSpan 'REVIEW BEFORE SAVING'ForegroundColorSpan{color=#FF78695E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:36:15.210079+00:00",
+      "nodes": [
+        "(148021)1980.TextView:(123, 840 - 957, 919):TEXT{Have I got that right?{AbsoluteSizeSpan 'Have I got that right?'AbsoluteSizeSpan{size=61, isDip=false}}{ForegroundColorSpan 'Have I got that right?'ForegroundColorSpan{color=#FF322C27}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:36:16.336791+00:00",
+      "nodes": [
+        "(148982)1980.TextView:(123, 961 - 957, 1257):TEXT{I will record: Fictional TalkBack left knee concern 1790526932831, after a fictional walk. It will be shared with Fictional Jamie Lim. Is that right?{AbsoluteSizeSpan 'I will record: Fictional TalkBack left knee concern 1790526932831, after a fictional walk. It will be shared with Fictional Jamie Lim. Is that right?'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'I will record: Fictional TalkBack left knee concern 1790526932831, after a fictional walk. It will be shared with Fictional Jamie Lim. Is that right?'ForegroundColorSpan{color=#FF50473E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:36:17.621014+00:00",
+      "nodes": [
+        "(149943)1980.Button:(123, 1299 - 957, 1443):CONTENT{Hear this read-back}:GRANULARITY{11}(action:FOCUS/CLEAR_A11Y_FOCUS/CLICK):focusable:clickable:accessibilityFocused"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:36:20.330584+00:00",
+      "nodes": [
+        "(151865)1980.TextView:(123, 1485 - 957, 1692):TEXT{This is not saved yet. To change a detail, use the talk button and say the correction.{AbsoluteSizeSpan 'This is not saved yet. To change a detail, use the talk button and say the correction.'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'This is not saved yet. To change a detail, use the talk button and say the correction.'ForegroundColorSpan{color=#FF756C60}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:36:21.476806+00:00",
+      "nodes": [
+        "(152826)1980.Button:(123, 1734 - 957, 1878):CONTENT{Confirm and save}:GRANULARITY{11}(action:FOCUS/CLEAR_A11Y_FOCUS/CLICK):focusable:clickable:accessibilityFocused"
+      ]
+    }
+  ],
+  "virtual_touch_binary_sha256": "f1c32ec7688ea81c16f054a5f9392de531ab6edb2952a55abce9006b27edd63f",
+  "uploads_before": 33,
+  "recording_gesture_at": "2026-09-27T16:35:24.876855+00:00",
+  "capture_files_during_recording": [
+    "/data/user/0/sg.parse.companion.verification/cache/Audio/recording-3588afab-eaf3-4eff-af0f-4259612fca85.m4a"
+  ],
+  "uploads_after": 33,
+  "capture_files_after": [],
+  "care": {
+    "wording": {
+      "original": "Fictional TalkBack right knee concern 1790526932831",
+      "corrected": "Fictional TalkBack left knee concern 1790526932831"
+    },
+    "started_at": "2026-09-27T16:35:32.831971+00:00",
+    "observer": {
+      "ready": true,
+      "at": "2026-09-27T16:35:34.880Z",
+      "browser": "153.0.8010.54",
+      "baseline": {
+        "owner": [
+          "note_274df94653ac4332aeb5e10c1add1a14",
+          "note_619566712e4247a08a009f9172fe7d22",
+          "note_a1c9a90ed3084838b24176708a2fc239",
+          "note_da2714b3ddfa45ed87cef8c72046e6e4",
+          "note_e3cac52e3601453bba0eab7c2746ba6e",
+          "note_e880d910db694a28b93939f9a3e6e37f"
+        ],
+        "caregiver": [
+          "note_274df94653ac4332aeb5e10c1add1a14",
+          "note_619566712e4247a08a009f9172fe7d22",
+          "note_a1c9a90ed3084838b24176708a2fc239",
+          "note_da2714b3ddfa45ed87cef8c72046e6e4",
+          "note_e3cac52e3601453bba0eab7c2746ba6e",
+          "note_e880d910db694a28b93939f9a3e6e37f"
+        ],
+        "restricted": []
+      }
+    },
+    "original_proposal": {
+      "id": "prop_ccab584dc22f4e95930ef074c5e7cca6",
+      "status": "pending",
+      "payload": {
+        "wording": "Fictional TalkBack right knee concern 1790526932831",
+        "occurrence_text": "after a fictional walk",
+        "share_with_user_ids": [
+          "usr_74ac2ebf30bf4a2a912ca0416e37d6ee"
+        ],
+        "share_with_names": [
+          "Fictional Jamie Lim"
+        ]
+      },
+      "readback": "I will record: Fictional TalkBack right knee concern 1790526932831, after a fictional walk. It will be shared with Fictional Jamie Lim. Is that right?",
+      "context_id": "ctx_49e529ae5b764bd4b82ee41d92f1431d",
+      "replaces_proposal_id": null,
+      "source_turn_id": "turn_360d4a81dc654a5aa0cfaa31c9be3c3a"
+    },
+    "original_unsaved": {
+      "unsaved": true,
+      "at": "2026-09-27T16:35:44.797Z"
+    },
+    "corrected_proposal": {
+      "id": "prop_17e3687ac2404605b46be28970fe242a",
+      "status": "pending",
+      "payload": {
+        "wording": "Fictional TalkBack left knee concern 1790526932831",
+        "occurrence_text": "after a fictional walk",
+        "share_with_user_ids": [
+          "usr_74ac2ebf30bf4a2a912ca0416e37d6ee"
+        ],
+        "share_with_names": [
+          "Fictional Jamie Lim"
+        ]
+      },
+      "readback": "I will record: Fictional TalkBack left knee concern 1790526932831, after a fictional walk. It will be shared with Fictional Jamie Lim. Is that right?",
+      "context_id": "ctx_35cafc25a7514387b46b7fe27aaf9a0a",
+      "replaces_proposal_id": "prop_ccab584dc22f4e95930ef074c5e7cca6",
+      "source_turn_id": "turn_b7f6484c63824d329fe4acba2193fd11"
+    },
+    "corrected_unsaved": {
+      "unsaved": true,
+      "at": "2026-09-27T16:36:06.983Z"
+    },
+    "original_after_correction": {
+      "id": "prop_ccab584dc22f4e95930ef074c5e7cca6",
+      "status": "invalidated",
+      "payload": {
+        "wording": "Fictional TalkBack right knee concern 1790526932831",
+        "occurrence_text": "after a fictional walk",
+        "share_with_user_ids": [
+          "usr_74ac2ebf30bf4a2a912ca0416e37d6ee"
+        ],
+        "share_with_names": [
+          "Fictional Jamie Lim"
+        ]
+      },
+      "readback": "I will record: Fictional TalkBack right knee concern 1790526932831, after a fictional walk. It will be shared with Fictional Jamie Lim. Is that right?",
+      "context_id": "ctx_49e529ae5b764bd4b82ee41d92f1431d",
+      "replaces_proposal_id": null,
+      "source_turn_id": "turn_360d4a81dc654a5aa0cfaa31c9be3c3a"
+    },
+    "readback_requested_asset_ids": [
+      "audio_77c4ac6000ea44538c77e185a5dd4f39"
+    ],
+    "before_confirmation": {
+      "unsaved": true,
+      "at": "2026-09-27T16:36:21.657Z"
+    },
+    "confirmation_gesture_at": "2026-09-27T16:36:21.658083+00:00",
+    "saved": {
+      "saved": true,
+      "at": "2026-09-27T16:36:22.998Z",
+      "note": {
+        "id": "note_7e8554703f7949b985f689b842cfc029",
+        "wording": "Fictional TalkBack left knee concern 1790526932831",
+        "symptom": null,
+        "occurrence_text": "after a fictional walk",
+        "occurred_at": null,
+        "timezone": null,
+        "created_at": "2026-09-27T16:36:21.917954Z",
+        "shared_with_user_ids": [
+          "usr_74ac2ebf30bf4a2a912ca0416e37d6ee"
+        ],
+        "version": 1,
+        "provenance": {
+          "type": "phone",
+          "device_id": "dev_61c7c95d16034baaacd3220d4a41947d",
+          "turn_id": "turn_b7f6484c63824d329fe4acba2193fd11",
+          "proposal_id": "prop_17e3687ac2404605b46be28970fe242a",
+          "confirmed_at": "2026-09-27T16:36:21.918140Z"
+        }
+      },
+      "caregiver_visible": true,
+      "restricted_visible": false,
+      "owner_note_count": 7,
+      "pages_reloaded": false
+    },
+    "uploads_after": 35,
+    "captures": [
+      {
+        "scenario": "talkback-original-1790526932831",
+        "sha256": "6eb072c484d97804018da22cac89ad8c899a10c907f2607b7cf411f195f0e602",
+        "frames": 23552,
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2
+      },
+      {
+        "scenario": "talkback-corrected-1790526932831",
+        "sha256": "ffd114e2bcb1e90af962e0129f2ae8d5e5f03f2762df04f1ea6e1d2c8cc745f8",
+        "frames": 20480,
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width": 2
+      }
+    ],
+    "after_resume": {
+      "saved": true,
+      "at": "2026-09-27T16:36:24.945Z",
+      "note": {
+        "id": "note_7e8554703f7949b985f689b842cfc029",
+        "wording": "Fictional TalkBack left knee concern 1790526932831",
+        "symptom": null,
+        "occurrence_text": "after a fictional walk",
+        "occurred_at": null,
+        "timezone": null,
+        "created_at": "2026-09-27T16:36:21.917954Z",
+        "shared_with_user_ids": [
+          "usr_74ac2ebf30bf4a2a912ca0416e37d6ee"
+        ],
+        "version": 1,
+        "provenance": {
+          "type": "phone",
+          "device_id": "dev_61c7c95d16034baaacd3220d4a41947d",
+          "turn_id": "turn_b7f6484c63824d329fe4acba2193fd11",
+          "proposal_id": "prop_17e3687ac2404605b46be28970fe242a",
+          "confirmed_at": "2026-09-27T16:36:21.918140Z"
+        }
+      },
+      "caregiver_visible": true,
+      "restricted_visible": false,
+      "owner_note_count": 7,
+      "pages_reloaded": false
+    },
+    "observer_exit_code": 0
+  },
+  "restored_settings": {
+    "enabled_accessibility_services": "null",
+    "accessibility_enabled": "0",
+    "touch_exploration_enabled": "0",
+    "tts_default_synth": "null",
+    "tts_default_rate": "null",
+    "tts_default_pitch": "null"
+  },
+  "tap_preference_restored": true,
+  "capture_files_at_cleanup": []
+}

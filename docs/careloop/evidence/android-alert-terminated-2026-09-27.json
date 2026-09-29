@@ -1,0 +1,75 @@
+{
+  "at": "2026-09-27T12:16:49.791Z",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "environment": "Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and one-second tone replies. No real speech or acoustic audibility evidence.",
+  "source_sha256": {
+    "mobile/src/App.tsx": "263264c635fda8021de4062ba268a793e3b87f4aff4b8e439b58c74b149504e2",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "mobile/src/api.ts": "c47f9fd49c83ec14df83d1939a941d6a2b48cddd8548807d123941b523b328cf",
+    "mobile/src/storage.ts": "d617df7a010d6cc68f0cd5dc6e3dfac021b1684bc6e10bc5fa50963871f3d99f",
+    "tools/android_native_fixture.py": "cbb7ce19914685368f1779c940d980735b842cbdf573429b5b7bc1f3cc424cd8",
+    "tools/android_native_smoke.cjs": "95765e7bd60962d36277a43438ddd042ce9716e528c2b9157c7af29c0ab31872",
+    "tools/android_native_care.cjs": "48be6db43584dba70abb17294f000c2e29741f389a531b2ba656b4373bf2897b",
+    "mobile/src/useReminders.ts": "338ba060d56fbd646a3a5f56d4f22a858ec8417ba091f0b94a9563f3deea5f89",
+    "mobile/src/alertSchedule.ts": "1c3f4f23ea35da5981b6fb4642e668444085f6120476238c101c6b1a477c051e",
+    "tools/android_native_alert_lifecycle.cjs": "7716534abc39f0d6a09492e329fe0e44441fb5cbaf557655ff1996661d5949c1",
+    "tools/android_native_control.py": "475dbf5fef74603973a02b2024415719c0077e9312704bffa3d8ea02ddb72dbd"
+  },
+  "checks": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    },
+    {
+      "name": "Native alert is scheduled for the exact dose before entering terminated state",
+      "passed": true
+    },
+    {
+      "name": "Android posts the exact generic alert in terminated state without recording a dose",
+      "passed": true
+    },
+    {
+      "name": "Actual terminated notification tap opens the native app and remains separate from medication reporting",
+      "passed": true
+    }
+  ],
+  "installed_apk_sha256": "066506741c42aa37a6a805cdcf7ef638afc84539da649ad29765de083eee5e0d",
+  "mode": "alert-terminated",
+  "enrollmentCreatedInThisRun": false,
+  "alert_state": "terminated",
+  "original_lock_disabled": true,
+  "clocks_before": {
+    "host_before_ms": 1790511419749,
+    "host_after_ms": 1790511419768,
+    "android_ms": 1790511420174,
+    "android_minus_host_midpoint_ms": 415.5,
+    "roundtrip_ms": 19
+  },
+  "reminder_device_id": "dev_5b702870fa704c5bb3ccebad18bb433b",
+  "plan_version": 6,
+  "dose_id": "dose_68ee54c5c05d4128a5d3281a58ab11b6",
+  "due_at": "2026-09-27T12:19:00Z",
+  "identity": "parse.dev_5b702870fa704c5bb3ccebad18bb433b.occ_9a51a2de15f44c36b098cbee9800aa5a.g3",
+  "pid_before_termination": "25450",
+  "termination": {
+    "command": "am kill of the background package",
+    "process_absent": true,
+    "package_stopped": false
+  },
+  "observation_window_seconds_after_due": 300,
+  "posted_at": "2026-09-27T12:20:09.450Z",
+  "delay_ms": 69450,
+  "clocks_after": {
+    "host_before_ms": 1790511610832,
+    "host_after_ms": 1790511610876,
+    "android_ms": 1790511611229,
+    "android_minus_host_midpoint_ms": 375,
+    "roundtrip_ms": 44
+  },
+  "clock_adjusted_delay_ms": 69075,
+  "raw_notification_sha256": "efbecbc202cfa91d8bdca217fc57b6127dd4d62b8d609bda7e1f58e1c59b3845",
+  "pid_after_notification": "26027",
+  "opened": true,
+  "medication_report": "unconfirmed"
+}

@@ -6,6 +6,7 @@ import DeviceSetup from './DeviceSetup';
 import { useSharedSummary } from './useSharedSummary';
 import { RecordSource, RecordHistory } from './RecordSource';
 import CompanionSelection from './CompanionSelection';
+import { uiPreview } from './uiPreview';
 
 type View = 'overview' | 'timeline' | 'medications' | 'care' | 'support' | 'summary' | 'settings';
 const nav: { id: View; title: string; icon: typeof Heart }[] = [
@@ -71,7 +72,7 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
     }
     return false;
   }, [onAccessLost]);
-  const sharedToken = useMemo(() => window.location.pathname.match(/^\/shared\/summaries\/([^/]+)\/?$/)?.[1] || '', []);
+  const sharedToken = useMemo(() => uiPreview ? '' : window.location.pathname.match(/^\/shared\/summaries\/([^/]+)\/?$/)?.[1] || '', []);
 
   const publicView = useSharedSummary(sharedToken);
 
@@ -101,7 +102,7 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
   useEffect(() => { if (session && patientId) loadDashboard(patientId); }, [session, patientId, loadDashboard]);
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'auto' }); }, [view]);
   useEffect(() => {
-    if (!session || !patientId || sharedToken) return;
+    if (!session || !patientId || sharedToken || uiPreview) return;
     let active = true;
     const refresh = async () => {
       if (!active || document.visibilityState !== 'visible' || refreshInFlight.current) return;
@@ -214,12 +215,13 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
     <header className="site-header">
       <button className="brand" aria-label="Parse home" onClick={() => { setView('timeline'); setMobileMenu(false); }}>Parse</button>
       <nav id="main-navigation" className={`nav-list ${mobileMenu ? 'nav-open' : ''}`} aria-label="Main navigation">{nav.map(item => <button key={item.id} className={`nav-item ${view === item.id ? 'active' : ''}`} aria-current={view === item.id ? 'page' : undefined} onClick={() => { setView(item.id); setMobileMenu(false); }}><span>{item.title}</span>{item.id === 'support' && d?.support_requests?.some(r => !['resolved','closed'].includes(stateText(r).toLowerCase())) && <i className="nav-dot" />}</button>)}</nav>
-      <div className="header-account"><span className="avatar avatar-user" title={`${session.user.name} · ${session.user.role}`}>{initials(session.user.name)}</span><span className="account-name">{session.user.name}</span><button className="icon-button" aria-label="Sign out" onClick={logout}><LogOut size={17}/></button></div>
+      <div className="header-account"><span className="avatar avatar-user" title={`${session.user.name} · ${session.user.role}`}>{initials(session.user.name)}</span><span className="account-name">{session.user.name}</span>{!uiPreview && <button className="icon-button" aria-label="Sign out" onClick={logout}><LogOut size={17}/></button>}</div>
       <button className="mobile-menu icon-button" aria-label={mobileMenu ? 'Close menu' : 'Open menu'} aria-controls="main-navigation" aria-expanded={mobileMenu} onClick={() => setMobileMenu(!mobileMenu)}>{mobileMenu ? <X size={21}/> : <Menu size={21}/>}</button>
     </header>
     <main className="main-area">
       <div className="page-content">
-        <div className="workspace-bar"><div className="patient-select-wrap"><label className="patient-select-label"><span>Care space</span><select value={patientId} onChange={e => setPatientId(e.target.value)} aria-label="Choose patient profile">{session.patients.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label><ChevronDown size={14} className="select-chevron"/></div><div className="workspace-actions">{demo && <span className="demo-badge"><span className="demo-dot"/>Fictional demo data</span>}<button className="icon-button" aria-label="Refresh care data" onClick={() => loadDashboard(patientId)}><RefreshCw size={16}/></button></div></div>
+        {uiPreview && <div className="preview-banner" role="status"><strong>UI demo · fictional sample data</strong><span>Explore the care views. Nothing here is connected, saved, shared, or sent to a device.</span></div>}
+        <div className="workspace-bar"><div className="patient-select-wrap"><label className="patient-select-label"><span>Care space</span><select value={patientId} onChange={e => setPatientId(e.target.value)} aria-label="Choose patient profile">{session.patients.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label><ChevronDown size={14} className="select-chevron"/></div><div className="workspace-actions">{(demo || uiPreview) && <span className="demo-badge"><span className="demo-dot"/>{uiPreview ? 'Fictional UI demo' : 'Fictional demo data'}</span>}<button className="icon-button" aria-label="Refresh care data" onClick={() => loadDashboard(patientId)}><RefreshCw size={16}/></button></div></div>
         <div className="page-heading"><div><h1>{greeting}</h1><p className="lead">{weekdayDate(patient?.timezone)}<span className="page-timezone">{patient?.timezone.replaceAll('_',' ')}</span></p></div>{view !== 'summary' && canWriteCare && <button className="button button-primary" onClick={() => beginComposer('health_note')}><Plus size={19}/> Add entry</button>}</div>
         {(error || toast) && <div className={`feedback ${error ? 'feedback-error' : 'feedback-success'}`} role={error ? 'alert' : 'status'}>{error || toast}<button aria-label="Dismiss" onClick={() => { setError(''); setToast(''); }}><X size={15} /></button></div>}
         {refreshWarning && <p className="source-note" role="status">{refreshWarning}</p>}
@@ -230,7 +232,7 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
           {view === 'care' && <CarePlan data={d} canWriteCare={canWriteCare} onCompose={beginComposer} onCreate={(kind,payload) => propose(kind,payload)} />}
           {view === 'support' && <Support data={d} currentUserId={session.user.id} canWriteCare={canWriteCare} onCompose={beginComposer} onCreate={(kind,payload)=>propose(kind,payload)} onAcknowledge={id => mutate('Request acknowledged.', () => api.acknowledge(id))} onResolve={(id,outcome) => mutate('Resolution saved.', () => api.resolve(id,outcome))} />}
           {view === 'summary' && (canManageSharing ? <Summary timezone={patient?.timezone || dashboard?.patient.timezone || 'Asia/Singapore'} summary={summary} summaryText={summaryText} setSummaryText={text=>{setSummaryText(text);setSummaryReviewed(false);}} omittedSourceIds={omittedSourceIds} setOmittedSourceIds={ids=>{setOmittedSourceIds(ids);setSummaryReviewed(false);}} reviewed={summaryReviewed} makeSummary={makeSummary} saveSummary={saveSummary} shareSummary={shareSummary} revokeShare={revokeSummaryShare} busy={busy} /> : <section className="card empty-card"><Shield size={24}/><h2>Summary sharing is owner managed</h2><p>This account does not have permission to prepare or share appointment summaries.</p></section>)}
-          {view === 'settings' && <SettingsView onReleaseRemoved={async (id,generation)=>{await api.releaseRemovedPhone(id,generation);await loadDashboard(patientId);setToast('Old phone removed. Choose a companion to resume reminders.')}} onSelect={async (id,generation,poweredOff)=>{await api.selectCompanion(patientId,id,generation,poweredOff);await loadDashboard(patientId);setToast('Reminder companion updated.')}} data={d} patient={d.patient} onProfile={payload=>mutate('Care preferences saved.',()=>api.updateProfile(patientId,payload))} onClaim={async (code,kind) => {await (kind==='phone'?api.approvePhone(code,patientId):api.claimDevice(code, patientId));await loadDashboard(patientId);setToast(kind==='phone'?'Companion paired. Return to the Parse companion.':'Cardholder paired. Connect it to Wi-Fi to bring it online.');}} onRevoke={id => mutate('Device access revoked.', () => api.revokeDevice(id))} onGrant={(userId,scopes)=>mutate('Sharing permission added.',()=>api.grant(patientId,userId,scopes))} onRevokeGrant={id=>mutate('Sharing permission removed.',()=>api.revokeGrant(id))} canManageSharing={canManageSharing} canManageDevices={canManageDevices} canManageProfile={canManageProfile} />}
+          {view === 'settings' && <SettingsView onReleaseRemoved={async (id,generation)=>{await api.releaseRemovedPhone(id,generation);await loadDashboard(patientId);setToast('Old phone removed. Choose a companion to resume reminders.')}} onSelect={async (id,generation,poweredOff)=>{await api.selectCompanion(patientId,id,generation,poweredOff);await loadDashboard(patientId);setToast('Reminder companion updated.')}} data={d} patient={d.patient} onProfile={payload=>mutate('Care preferences saved.',()=>api.updateProfile(patientId,payload))} onClaim={async (code,kind) => {await (kind==='phone'?api.approvePhone(code,patientId):api.claimDevice(code, patientId));await loadDashboard(patientId);setToast(kind==='phone'?'Companion paired. Return to the Parse companion.':'Cardholder paired. Connect it to Wi-Fi to bring it online.');}} onRevoke={id => mutate('Device access revoked.', () => api.revokeDevice(id))} onGrant={(userId,scopes)=>mutate('Sharing permission added.',()=>api.grant(patientId,userId,scopes))} onRevokeGrant={id=>mutate('Sharing permission removed.',()=>api.revokeGrant(id))} canManageSharing={canManageSharing} canManageDevices={canManageDevices && !uiPreview} canManageProfile={canManageProfile} />}
         </> : <div className="empty-card"><Heart size={25} /><h2>Your care space is ready</h2><p>There are no care records to show yet.</p></div>}
         <footer className="page-footer"><span>Parse · Your everyday care record</span><span><Shield size={13}/> Shared only with permission</span></footer>
       </div>

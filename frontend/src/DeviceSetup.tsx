@@ -1,6 +1,7 @@
 import {useState} from 'react';
 import {Check, Wifi, Link2, MessageCircle, Shield} from 'lucide-react';
 import {Dashboard,Row,label,niceDate} from './api';
+import { uiPreview } from './uiPreview';
 
 export default function DeviceSetup({data,canManage,onClaim,onRevoke}:{data:Dashboard;canManage:boolean;onClaim:(code:string,kind?:'phone'|'pendant')=>Promise<void>;onRevoke:(id:string)=>void}) {
   const [code,setCode]=useState('');
@@ -15,6 +16,7 @@ export default function DeviceSetup({data,canManage,onClaim,onRevoke}:{data:Dash
   const selected=matching.some(d=>d.selected);
   const setup=data.device_setup;
   const voice=setup?.voice_service;
+  if (uiPreview) return <section className="card pairing-card" aria-label="Companion setup"><div className="section-head"><div><div className="eyebrow">UI demo · fictional sample data</div><h2>Companion setup</h2></div><Wifi size={21}/></div><p className="section-intro">Pairing and voice are unavailable in this public UI demo. Explore the companion preview without a code or microphone.</p><a className="button button-deep" href="/companion">Open companion preview</a></section>;
   async function pair(event:React.FormEvent) {
     event.preventDefault();if(pairing||!code.trim())return;
     setPairing(true);setError('');

@@ -1,6 +1,16 @@
-# Vercel frontend preview
+# Vercel frontend deployment
 
-This deployment serves the real React frontend over HTTPS. The FastAPI backend, PostgreSQL, scheduler and provider integrations continue to need their own persistent host. The browser calls same-origin `/v1/*`; the Vercel config either forwards those requests to one configured HTTPS backend or returns an explicit 503 JSON response when no backend exists. No demo account, patient data or speech is fabricated by this preview.
+The default deployment serves the real React frontend over HTTPS. The FastAPI backend, PostgreSQL, scheduler and provider integrations continue to need their own persistent host. The browser calls same-origin `/v1/*`; the Vercel config either forwards those requests to one configured HTTPS backend or returns an explicit 503 JSON response when no backend exists. This default mode requires the app's normal login and does not fabricate accounts, patient data or speech.
+
+## Public UI demo for sharing
+
+Use a separate Vercel project for a public interface showcase. The project created for this repository is **`parse-careloop-ui-demo`**. Set **`VITE_UI_PREVIEW=true`** for its build and leave **`BACKEND_URL` unset**. Deploy to Production for a stable shareable address. Vercel Authentication can be disabled on this dedicated fictional-data project when public sharing is intended.
+
+This explicit build mode opens the dashboard without an app login and uses authored fictional samples bundled with the frontend. Visitors can navigate the care views and inspect forms. Backend requests and changes are blocked; device provisioning, actual sharing and microphone recording are unavailable. Each view labels the demo as fictional. The companion route displays an inert preview page. The public UI does not read the local demo database or retain visitor input in browser storage.
+
+`vercel.mjs` rejects a public UI build with a nonempty `BACKEND_URL`, keeps `/v1/*` and `/healthz` on the unavailable endpoint, and disables microphone permission for the companion route. Verify the deployed site in an unauthenticated browser: it should open into the sample dashboard without either login gate, display the fictional-data notice, and return 503 JSON for API paths.
+
+Use a separate checkout or upload directory when linking this public project with the CLI, so the regular checkout's protected project association remains usable. The **`parse-careloop-preview`** project continues to use its normal app login and All Deployments Vercel Authentication. Keep `VITE_UI_PREVIEW` unset for that project and for the real app.
 
 ## Prepare the project
 

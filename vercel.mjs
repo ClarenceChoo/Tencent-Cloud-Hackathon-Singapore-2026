@@ -15,7 +15,14 @@ function backendOrigin(value) {
   return url.origin;
 }
 
+const uiPreview = process.env.VITE_UI_PREVIEW === 'true';
+if (uiPreview && process.env.BACKEND_URL) {
+  throw new Error('The public UI preview must leave BACKEND_URL unset; it uses only bundled fictional sample data.');
+}
 const origin = backendOrigin(process.env.BACKEND_URL);
+const companionPermissions = uiPreview
+  ? 'camera=(), microphone=(), geolocation=()'
+  : 'camera=(), microphone=(self), geolocation=()';
 const csp = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; media-src 'self' blob:; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests";
 const commonHeaders = [
   { key: 'Content-Security-Policy', value: csp },
@@ -33,8 +40,8 @@ export const config = {
   outputDirectory: 'frontend/dist',
   headers: [
     { source: '/(.*)', headers: commonHeaders },
-    { source: '/companion', headers: [{ key: 'Permissions-Policy', value: 'camera=(), microphone=(self), geolocation=()' }] },
-    { source: '/companion/:path*', headers: [{ key: 'Permissions-Policy', value: 'camera=(), microphone=(self), geolocation=()' }] },
+    { source: '/companion', headers: [{ key: 'Permissions-Policy', value: companionPermissions }] },
+    { source: '/companion/:path*', headers: [{ key: 'Permissions-Policy', value: companionPermissions }] },
     { source: '/((?!companion(?:/|$)).*)', headers: [{ key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' }] },
     { source: '/v1', headers: [{ key: 'Cache-Control', value: 'private, no-store' }] },
     { source: '/v1/:path*', headers: [{ key: 'Cache-Control', value: 'private, no-store' }] },

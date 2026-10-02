@@ -1,3 +1,5 @@
+import { previewDashboard, previewOnlyMessage, previewSession, uiPreview } from './uiPreview';
+
 export type User = { id: string; name: string; email: string; role: string };
 export type Patient = { id: string; name: string; timezone: string; preferred_name?: string; language?: string; daily_check_in_enabled?: boolean; daily_check_in_local_time?: string | null; calling_route?: string | null };
 export type Session = { user: User; patients: Patient[]; csrf_token: string };
@@ -23,6 +25,11 @@ export class ApiError extends Error {
   constructor(message: string, readonly status: number) { super(message); this.name = 'ApiError'; }
 }
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  if (uiPreview) {
+    if ((!options.method || options.method === 'GET') && path === '/auth/session') return previewSession() as T;
+    if ((!options.method || options.method === 'GET') && path === '/app/patients/sample-patient/dashboard') return previewDashboard() as T;
+    throw new ApiError(previewOnlyMessage, 400);
+  }
   const headers = new Headers(options.headers);
   if (options.body) headers.set('Content-Type', 'application/json');
   if (options.method && options.method !== 'GET') {

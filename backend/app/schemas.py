@@ -156,9 +156,32 @@ class PatientProfileUpdate(BaseModel):
         return self
 
 
+SummaryPurpose = Literal["doctor_visit", "family_handoff", "weekly_review"]
+
+
+def _summary_questions(value: Optional[List[str]]) -> Optional[List[str]]:
+    if value is None:
+        return None
+    if len(value) > 10:
+        raise ValueError("A summary can have at most 10 questions")
+    cleaned = []
+    for text in value:
+        if not isinstance(text, str) or not text.strip() or len(text.strip()) > 500:
+            raise ValueError("Each question must contain 1 to 500 characters")
+        cleaned.append(text.strip())
+    return cleaned
+
+
 class SummaryCreate(BaseModel):
     start_date: date
     end_date: date
+    purpose: SummaryPurpose = "doctor_visit"
+    questions: List[str] = Field(default_factory=list)
+
+    @field_validator("questions")
+    @classmethod
+    def questions_valid(cls, value: List[str]) -> List[str]:
+        return _summary_questions(value) or []
 
     @model_validator(mode="after")
     def ordered(self):
@@ -171,6 +194,12 @@ class SummaryUpdate(BaseModel):
     sections: List[Dict[str, Any]]
     omitted_source_ids: List[str] = Field(default_factory=list)
     reviewed: Literal[True]
+    questions: Optional[List[str]] = None
+
+    @field_validator("questions")
+    @classmethod
+    def questions_valid(cls, value: Optional[List[str]]) -> Optional[List[str]]:
+        return _summary_questions(value)
 
 
 class SummaryShareCreate(BaseModel):

@@ -18,6 +18,7 @@ export type CareQueryResponse = {
   items: CareQueryItem[]; truncated: boolean;
 };
 export type Row = Record<string, unknown> & { id?: string };
+export type SummaryPurpose = 'doctor_visit' | 'family_handoff' | 'weekly_review';
 export type VocabularyTerm = { canonical: string; aliases: string[]; category: 'medicine' | 'person' | 'other' };
 export type VocabularyView = { version: number; terms: VocabularyTerm[]; reviewed_by_user_id: string | null; reviewed_at: string | null };
 export type VocabularySuggestion = VocabularyTerm;
@@ -98,10 +99,14 @@ export const api = {
   selectCompanion: (patientId:string, deviceId:string|null, generation:number, poweredOff:boolean) => request(`/app/patients/${encodeURIComponent(patientId)}/active-companion`, json('PUT', {device_id:deviceId, expected_generation:generation, other_pendants_powered_off:poweredOff})),
   revokeDevice: (id: string) => request<void>(`/app/devices/${encodeURIComponent(id)}/revoke`, json('POST')),
   releaseRemovedPhone: (id:string,generation:number) => request(`/app/devices/${encodeURIComponent(id)}/release-removed-phone`, json('POST', {expected_generation:generation,app_removed_or_reset:true})),
-  createSummary: (patientId: string, startDate: string, endDate: string) => request<Row>(`/app/patients/${encodeURIComponent(patientId)}/summaries`, json('POST', { start_date: startDate, end_date: endDate })),
+  createSummary: (patientId: string, startDate: string, endDate: string, purpose: SummaryPurpose = 'doctor_visit', questions: string[] = []) =>
+    request<Row>(`/app/patients/${encodeURIComponent(patientId)}/summaries`, json('POST',
+      { start_date: startDate, end_date: endDate, purpose, questions })),
   updateSummary: (id: string, payload: Record<string, unknown>) => request<Row>(`/app/summaries/${encodeURIComponent(id)}`, json('PUT', payload)),
   shareSummary: (id: string) => request<Row>(`/app/summaries/${encodeURIComponent(id)}/share`, json('POST', { expires_in_seconds: 3600 })),
   revokeSummaryShare: (id: string) => request<void>(`/app/summaries/${encodeURIComponent(id)}/revoke`, json('POST')),
+  printSummary: (id: string, signal?: AbortSignal) => request<Row>(`/app/summaries/${encodeURIComponent(id)}/print`,
+    { signal, cache: 'no-store' }),
   grant: (patientId: string, userId: string, scopes: string[]) => request<Row>(`/app/patients/${encodeURIComponent(patientId)}/grants`, json('POST', { user_id: userId, scopes, expires_at: null })),
   revokeGrant: (id: string) => request<void>(`/app/grants/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   setNoteSharing: (noteId: string, userIds: string[]) => request<Row>(`/app/notes/${encodeURIComponent(noteId)}/sharing`, { method: 'PUT', body: JSON.stringify({ user_ids: userIds }) }),

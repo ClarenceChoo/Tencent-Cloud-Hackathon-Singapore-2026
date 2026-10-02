@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Activity, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronRight, CircleHelp, Clock3, FileText, Heart, ListChecks, LogOut, Menu, Pill, Plus, RefreshCw, Settings, Shield, Sparkles, Stethoscope, Users, X } from 'lucide-react';
-import { api, ApiError, CareQueryItem, Dashboard, label, localDay, niceDate, Patient, Proposal, Row, Session, setCsrf, str, val } from './api';
+import { api, ApiError, CareQueryItem, Dashboard, label, localDay, niceDate, Patient, Proposal, Row, Session, setCsrf, str, SummaryPurpose, val } from './api';
 
 import DeviceSetup from './DeviceSetup';
 import { useSharedSummary } from './useSharedSummary';
@@ -12,6 +12,7 @@ import { buildCareActions, CareAction } from './careActions';
 import { CareActionInbox } from './CareActionInbox';
 import { AskParse } from './AskParse';
 import { CareVocabulary } from './CareVocabulary';
+import { SummaryPrint } from './SummaryPrint';
 
 type View = 'overview' | 'ask' | 'timeline' | 'medications' | 'care' | 'support' | 'summary' | 'settings';
 const nav: { id: View; title: string; icon: typeof Heart }[] = [
@@ -62,6 +63,8 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
   const [summary, setSummary] = useState<Row | null>(null);
   const [summaryPatientId, setSummaryPatientId] = useState('');
   const [summaryText, setSummaryText] = useState('');
+  const [summaryPurpose, setSummaryPurpose] = useState<SummaryPurpose>('doctor_visit');
+  const [summaryQuestions, setSummaryQuestions] = useState('');
   const [omittedSourceIds, setOmittedSourceIds] = useState<string[]>([]);
   const [summaryReviewed, setSummaryReviewed] = useState(false);
   const [toast, setToast] = useState('');
@@ -70,6 +73,8 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
   const patientGeneration = useRef(0);
   const mutationInFlight = useRef(false);
   const mutationGeneration = useRef(0);
+  const summaryEditGeneration = useRef(0);
+  const summaryPresenceGrace = useRef('');
   const selectedPatient = useRef(patientId);
   const currentPatient = (id: string, generation: number) => mounted.current && selectedPatient.current === id && patientGeneration.current === generation;
   const mounted = useRef(true);
@@ -100,7 +105,7 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
     const generation = patientGeneration.current;
     const request = ++dashboardRequest.current;
     setLoading(true); setError('');
-    try { const next = await api.dashboard(id); if (currentPatient(id, generation) && request === dashboardRequest.current) { setDashboard(next); setRefreshWarning(''); } }
+    try { const next = await api.dashboard(id); if (currentPatient(id, generation) && request === dashboardRequest.current) { summaryPresenceGrace.current = ''; setDashboard(next); setRefreshWarning(''); } }
     catch (err) { if (currentPatient(id, generation) && request === dashboardRequest.current && !accessFailed(err)) setError(err instanceof Error ? err.message : 'Could not load this care space.'); }
     finally { if (currentPatient(id, generation) && request === dashboardRequest.current) setLoading(false); }
   }, [accessFailed]);
@@ -139,14 +144,18 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
   }, [session, patientId, sharedToken, accessFailed]);
   useEffect(() => {
     if (!dashboard || dashboard.patient.id !== patientId || summaryPatientId === patientId) return;
-    const saved = (dashboard.summaries || []).find(item => !val(item,'invalidated_at'));
-    setSummary(saved || null); setSummaryText(saved ? summaryReadable(saved) : ''); setOmittedSourceIds([]); setSummaryReviewed(Boolean(saved && (val(saved,'reviewed')===true||val(saved,'status')==='reviewed'))); setSummaryPatientId(patientId);
+    const saved = (dashboard.summaries || []).find(item => !val(item,'invalidated_at') && item.source_access_current !== false);
+    setSummary(saved || null); setSummaryText(saved ? summaryReadable(saved) : '');
+    setSummaryPurpose(summaryPurposeOf(saved || null)); setSummaryQuestions(saved ? summaryQuestionsReadable(saved) : '');
+    setOmittedSourceIds(saved && Array.isArray(saved.omitted_source_ids) ? saved.omitted_source_ids as string[] : []); setSummaryReviewed(Boolean(saved && (val(saved,'reviewed')===true||val(saved,'status')==='reviewed'))); setSummaryPatientId(patientId);
   }, [dashboard, patientId, summaryPatientId]);
   useEffect(() => {
     if (!summary?.id || !dashboard || dashboard.patient.id !== patientId) return;
     const current = (dashboard.summaries || []).find(item => item.id === summary.id);
-    if (current?.invalidated_at && !summary.invalidated_at) {
-      setSummary(current); setSummaryReviewed(false); setToast('A source record changed. Prepare a fresh visit summary before sharing.');
+    if ((!current && summaryPresenceGrace.current !== summary.id) || current?.source_access_current === false || current?.invalidated_at) {
+      summaryEditGeneration.current++;
+      setSummary(null); setSummaryText(''); setSummaryQuestions(''); setOmittedSourceIds([]); setSummaryReviewed(false);
+      setToast('Summary access or a source record changed. Prepare and review a fresh draft.');
     }
   }, [dashboard, patientId, summary]);
   const patient = useMemo(() => (dashboard?.patient.id === patientId ? dashboard.patient : undefined) || session?.patients.find(p => p.id === patientId), [session, patientId, dashboard]);
@@ -212,10 +221,12 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
     dashboardRequest.current++;
     refreshInFlight.current = 0;
     mutationGeneration.current++;
+    summaryEditGeneration.current++;
+    summaryPresenceGrace.current = '';
     mutationInFlight.current = false;
     selectedPatient.current = id;
     setDashboard(null); setLoading(true); setBusy(false); setProposal(null); setNoteForSharing(null); setComposer(false);
-    setSummary(null); setSummaryPatientId(''); setSummaryText(''); setOmittedSourceIds([]); setSummaryReviewed(false);
+    setSummary(null); setSummaryPatientId(''); setSummaryText(''); setSummaryPurpose('doctor_visit'); setSummaryQuestions(''); setOmittedSourceIds([]); setSummaryReviewed(false);
     setFocusAction(null); setToast(''); setError(''); setRefreshWarning(''); setPatientId(id);
   }
 
@@ -267,22 +278,24 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
     catch (err) { if (currentPatient(sourcePatient, generation)) setError(err instanceof Error ? err.message : 'That change was not saved.'); }
     finally { if (mutation === mutationGeneration.current) mutationInFlight.current = false; if (currentPatient(sourcePatient, generation)) setBusy(false); }
   }
-  async function makeSummary(start: string, end: string) {
+  async function makeSummary(start: string, end: string, purpose: SummaryPurpose, questions: string[]) {
     const sourcePatient = patientId; const generation = patientGeneration.current;
+    const editGeneration = summaryEditGeneration.current;
     setBusy(true); setError('');
-    try { const row = await api.createSummary(sourcePatient, start, end); if (currentPatient(sourcePatient, generation)) { setSummary(row); setSummaryPatientId(sourcePatient); setSummaryText(summaryReadable(row)); setOmittedSourceIds([]); setSummaryReviewed(false); } }
+    try { const row = await api.createSummary(sourcePatient, start, end, purpose, questions); if (currentPatient(sourcePatient, generation) && editGeneration === summaryEditGeneration.current) { summaryPresenceGrace.current = String(row.id); setSummary(row); setSummaryPatientId(sourcePatient); setSummaryText(summaryReadable(row)); setSummaryPurpose(summaryPurposeOf(row)); setSummaryQuestions(summaryQuestionsReadable(row)); setOmittedSourceIds([]); setSummaryReviewed(false); } }
     catch (err) { if (currentPatient(sourcePatient, generation)) setError(err instanceof Error ? err.message : 'Could not prepare the summary.'); }
     finally { if (currentPatient(sourcePatient, generation)) setBusy(false); }
   }
   async function saveSummary() {
     if (!summary?.id) return;
     const sourcePatient = patientId; const generation = patientGeneration.current;
+    const editGeneration = summaryEditGeneration.current;
     setBusy(true); setError('');
     try {
       const edits=parseSummaryDraft(summaryText,summary.sections as Row[]|undefined);
-      const sections=(Array.isArray(summary.sections)?summary.sections as Row[]:[]).map((section,sectionIndex)=>({title:label(section,'title')||'Visit summary',items:(Array.isArray(section.items)?section.items as Row[]:[]).map((item,itemIndex)=>{const sourceId=label(item,'source_id');const edit=edits.find(entry=>entry.sectionIndex===sectionIndex&&entry.itemIndex===itemIndex);return {text:edit?.text??label(item,'text'),...(sourceId?{source_id:sourceId}:{})};}).filter(item=>!item.source_id||!omittedSourceIds.includes(String(item.source_id)))}));
-      const saved = await api.updateSummary(String(summary.id), { sections, omitted_source_ids: omittedSourceIds, reviewed: true });
-      if (currentPatient(sourcePatient, generation)) { setSummary(saved); setSummaryText(summaryReadable(saved)); setSummaryReviewed(true); setToast('Review saved. It has not been shared.'); }
+      const sections=(Array.isArray(summary.sections)?summary.sections as Row[]:[]).flatMap((section,sectionIndex)=>section.kind==='authored_questions'?[]:[{title:label(section,'title')||'Visit summary',items:(Array.isArray(section.items)?section.items as Row[]:[]).map((item,itemIndex)=>{const sourceId=label(item,'source_id');const edit=edits.find(entry=>entry.sectionIndex===sectionIndex&&entry.itemIndex===itemIndex);return {text:edit?.text??label(item,'text'),...(sourceId?{source_id:sourceId}:{})};}).filter(item=>!item.source_id||!omittedSourceIds.includes(String(item.source_id)))}]);
+      const saved = await api.updateSummary(String(summary.id), { sections, questions: parseSummaryQuestions(summaryQuestions), omitted_source_ids: omittedSourceIds, reviewed: true });
+      if (currentPatient(sourcePatient, generation) && editGeneration === summaryEditGeneration.current) { setSummary(saved); setSummaryText(summaryReadable(saved)); setSummaryQuestions(summaryQuestionsReadable(saved)); setOmittedSourceIds(Array.isArray(saved.omitted_source_ids) ? saved.omitted_source_ids as string[] : []); setSummaryReviewed(true); setToast('Review saved. It has not been shared.'); }
     }
     catch (err) { if (currentPatient(sourcePatient, generation)) setError(err instanceof Error ? err.message : 'Review was not saved.'); }
     finally { if (currentPatient(sourcePatient, generation)) setBusy(false); }
@@ -330,14 +343,14 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
           {view === 'medications' && <Medications data={d} canWriteCare={canWriteCare} onCompose={beginComposer} onPlan={payload => mutate('Medication plan saved after review.', () => api.createMedicationPlan(patientId, payload))} busy={busy} />}
           {view === 'care' && <CarePlan data={d} canWriteCare={canWriteCare} onCompose={beginComposer} onCreate={(kind,payload) => propose(kind,payload)} />}
           {view === 'support' && <Support data={d} currentUserId={session.user.id} canWriteCare={canWriteCare} onCompose={beginComposer} onCreate={(kind,payload)=>propose(kind,payload)} onAcknowledge={id => mutate('Request acknowledged.', () => api.acknowledge(id))} onResolve={(id,outcome) => mutate('Resolution saved.', () => api.resolve(id,outcome))} />}
-          {view === 'summary' && (canManageSharing ? <Summary timezone={patient?.timezone || dashboard?.patient.timezone || 'Asia/Singapore'} summary={summary} summaryText={summaryText} setSummaryText={text=>{setSummaryText(text);setSummaryReviewed(false);}} omittedSourceIds={omittedSourceIds} setOmittedSourceIds={ids=>{setOmittedSourceIds(ids);setSummaryReviewed(false);}} reviewed={summaryReviewed} makeSummary={makeSummary} saveSummary={saveSummary} shareSummary={shareSummary} revokeShare={revokeSummaryShare} busy={busy} /> : <section className="card empty-card"><Shield size={24}/><h2>Summary sharing is owner managed</h2><p>This account does not have permission to prepare or share appointment summaries.</p></section>)}
+          {view === 'summary' && (canManageSharing ? <Summary timezone={patient?.timezone || dashboard?.patient.timezone || 'Asia/Singapore'} patientId={patientId} patientName={displayName(patient)} identityKey={`${session.user.id}:${session.csrf_token}:${patientId}`} summary={summary} summaryText={summaryText} setSummaryText={text=>{summaryEditGeneration.current++;setSummaryText(text);setSummaryReviewed(false);}} purpose={summaryPurpose} setPurpose={value=>{summaryEditGeneration.current++;setSummaryPurpose(value);setSummaryReviewed(false);}} questionsText={summaryQuestions} setQuestionsText={value=>{summaryEditGeneration.current++;setSummaryQuestions(value);setSummaryReviewed(false);}} omittedSourceIds={omittedSourceIds} setOmittedSourceIds={ids=>{summaryEditGeneration.current++;setOmittedSourceIds(ids);setSummaryReviewed(false);}} reviewed={summaryReviewed} makeSummary={makeSummary} saveSummary={saveSummary} shareSummary={shareSummary} revokeShare={revokeSummaryShare} busy={busy} /> : <section className="card empty-card"><Shield size={24}/><h2>Summary sharing is owner managed</h2><p>This account does not have permission to prepare or share appointment summaries.</p></section>)}
           {view === 'settings' && <><SettingsView onReleaseRemoved={(id,generation)=>mutate('Old phone removed. Choose a companion to resume reminders.',()=>api.releaseRemovedPhone(id,generation))} onSelect={(id,generation,poweredOff)=>mutate('Reminder companion updated.',()=>api.selectCompanion(patientId,id,generation,poweredOff))} data={d} patient={d.patient} onProfile={payload=>mutate('Care preferences saved.',()=>api.updateProfile(patientId,payload))} onClaim={(code,kind) => mutate(kind==='phone'?'Companion paired. Return to the Parse companion.':'Cardholder paired. Connect it to Wi-Fi to bring it online.',()=>kind==='phone'?api.approvePhone(code,patientId):api.claimDevice(code,patientId))} onRevoke={id => mutate('Device access revoked.', () => api.revokeDevice(id))} onGrant={(userId,scopes)=>mutate('Sharing permission added.',()=>api.grant(patientId,userId,scopes))} onRevokeGrant={id=>mutate('Sharing permission removed.',()=>api.revokeGrant(id))} canManageSharing={canManageSharing} canManageDevices={canManageDevices && !uiPreview} canManageProfile={canManageProfile} /><CareVocabulary key={patientId} patientId={patientId} canManage={canManageProfile && !uiPreview} onAccessLost={onAccessLost}/></>}
         </> : <div className="empty-card"><Heart size={25} /><h2>Your care space is ready</h2><p>There are no care records to show yet.</p></div>}
         <footer className="page-footer"><span>Parse · Your everyday care record</span><span><a href="/landing/">About Parse</a><Shield size={13}/> Shared only with permission</span></footer>
       </div>
     </main>
     {composer && d && <Composer kind={composerKind} doses={d.doses} recipients={d.allowed_recipients||[]} seed={composerSeed} timezone={patient?.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone} setKind={setComposerKind} onClose={() => setComposer(false)} onCreate={propose} busy={busy} />}
-    {noteForSharing && d && canManageSharing && <NoteSharingDialog note={noteForSharing} grants={d.access_grants||[]} busy={busy} onClose={()=>setNoteForSharing(null)} onSave={async ids=>{const sourcePatient=patientId;const generation=patientGeneration.current;setBusy(true);setError('');try{await api.setNoteSharing(String(noteForSharing.id),ids);if(currentPatient(sourcePatient,generation)){setNoteForSharing(null);setSummary(null);setSummaryPatientId('');setSummaryText('');setOmittedSourceIds([]);setSummaryReviewed(false);await loadDashboard(sourcePatient);if(currentPatient(sourcePatient,generation))setToast('Note sharing updated. Any affected summary must be prepared and reviewed again.');}}catch(err){if(currentPatient(sourcePatient,generation))setError(err instanceof Error?err.message:'Note sharing was not updated.');}finally{if(currentPatient(sourcePatient,generation))setBusy(false);}}} />}
+    {noteForSharing && d && canManageSharing && <NoteSharingDialog note={noteForSharing} grants={d.access_grants||[]} busy={busy} onClose={()=>setNoteForSharing(null)} onSave={async ids=>{const sourcePatient=patientId;const generation=patientGeneration.current;setBusy(true);setError('');try{await api.setNoteSharing(String(noteForSharing.id),ids);if(currentPatient(sourcePatient,generation)){setNoteForSharing(null);setSummary(null);setSummaryPatientId('');setSummaryText('');setSummaryPurpose('doctor_visit');setSummaryQuestions('');setOmittedSourceIds([]);setSummaryReviewed(false);await loadDashboard(sourcePatient);if(currentPatient(sourcePatient,generation))setToast('Note sharing updated. Any affected summary must be prepared and reviewed again.');}}catch(err){if(currentPatient(sourcePatient,generation))setError(err instanceof Error?err.message:'Note sharing was not updated.');}finally{if(currentPatient(sourcePatient,generation))setBusy(false);}}} />}
     {proposal && <ReviewDialog key={proposal.id} kind={proposalKind} payload={draftPayload} setPayload={setDraftPayload} readback={draftReadback} expiresAt={proposal.expires_at} revise={revise} confirm={confirmProposal} busy={busy} error={error} onClose={() => setProposal(null)} />}
   </div>;
 
@@ -346,7 +359,7 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
     if (!window.confirm(`Delete “${wording}”? This will also invalidate summaries that cite it.`)) return;
     const sourcePatient = patientId; const generation = patientGeneration.current;
     await mutate('Care note deleted. Affected summaries are no longer valid.', () => api.deleteNote(String(note.id)));
-    if (currentPatient(sourcePatient, generation)) { setSummary(null); setSummaryPatientId(''); setSummaryText(''); setOmittedSourceIds([]); setSummaryReviewed(false); }
+    if (currentPatient(sourcePatient, generation)) { setSummary(null); setSummaryPatientId(''); setSummaryText(''); setSummaryPurpose('doctor_visit'); setSummaryQuestions(''); setOmittedSourceIds([]); setSummaryReviewed(false); }
   }
 }
 
@@ -505,20 +518,144 @@ function Support({data,currentUserId,onCompose,onCreate,onAcknowledge,onResolve,
 
 function PressureChart({rows,onCorrect}:{rows:Row[];onCorrect:(row:Row)=>void}) { const readings=rows.map(r=>({r,s:Number(val(r,'systolic')),d:Number(val(r,'diastolic'))})).filter(x=>Number.isFinite(x.s)&&Number.isFinite(x.d)).reverse(); if(!readings.length)return <Empty title="No confirmed readings" text="Values without confirmed numbers are not plotted."/>; const values=readings.flatMap(p=>[p.s,p.d]);const min=Math.floor((Math.min(...values)-10)/10)*10;const max=Math.ceil((Math.max(...values)+10)/10)*10; const y=(n:number)=>130-(n-min)/(max-min)*105;const x=(i:number)=>readings.length<2?160:i*(320/(readings.length-1));const systolic=readings.map((p,i)=>`${x(i)},${y(p.s)}`).join(' ');const diastolic=readings.map((p,i)=>`${x(i)},${y(p.d)}`).join(' ');return <><div className="chart-caption"><span>{readings.length} confirmed {readings.length===1?'reading':'readings'}</span><span>mmHg · both reported values · no interpretation</span></div><div className="chart-wrap"><svg viewBox="0 0 320 150" role="img" aria-label={`Blood pressure readings: ${readings.map(p=>`${p.s} systolic and ${p.d} diastolic`).join(', ')}`}><line x1="0" x2="320" y1={y(Math.round(((min+max)/2)/10)*10)} y2={y(Math.round(((min+max)/2)/10)*10)} className="chart-gridline"/><polyline points={systolic} className="chart-line"/><polyline points={diastolic} className="chart-line chart-diastolic"/>{readings.map((p,i)=><g key={String(p.r.id||i)}><circle cx={x(i)} cy={y(p.s)} r="4" className="chart-point"/><circle cx={x(i)} cy={y(p.d)} r="3" className="chart-point chart-diastolic-point"/><text x={x(i)} y={y(p.s)-8} textAnchor="middle" className="chart-label">{p.s}/{p.d}</text></g>)}</svg></div><div className="chart-legend"><span><i/> Systolic</span><span><i/> Diastolic</span></div><div className="reading-list">{readings.slice(-3).reverse().map((p,i)=><div key={String(p.r.id||i)}><b>{p.s}/{p.d} <small>mmHg</small></b><span>{label(p.r,'occurrence_text')?`About ${label(p.r,'occurrence_text')}`:niceDate(val(p.r,'occurred_at'))}</span><button className="text-link" onClick={()=>onCorrect(p.r)}>Correct</button></div>)}</div><p className="chart-disclaimer">Each point is a reported observation. Differences alone do not show a trend, diagnosis or cause.</p></>; }
 
-type SummaryEdit={sectionIndex:number;itemIndex:number;text:string};
-function summaryReadable(row:Row) { return JSON.stringify((Array.isArray(row.sections)?row.sections as Row[]:[]).flatMap((section,sectionIndex)=>Array.isArray(section.items)?(section.items as Row[]).map((item,itemIndex)=>({sectionIndex,itemIndex,text:label(item,'text')})):[])); }
-function parseSummaryDraft(text:string,sections?:Row[]):SummaryEdit[] { try { const parsed=JSON.parse(text);if(Array.isArray(parsed))return parsed as SummaryEdit[]; } catch { /* Use server text for older draft shapes. */ }return (sections||[]).flatMap((section,sectionIndex)=>Array.isArray(section.items)?(section.items as Row[]).map((item,itemIndex)=>({sectionIndex,itemIndex,text:label(item,'text')})):[]); }
-function Summary({timezone,summary,summaryText,setSummaryText,omittedSourceIds,setOmittedSourceIds,reviewed,makeSummary,saveSummary,shareSummary,revokeShare,busy}:{timezone:string;summary:Row|null;summaryText:string;setSummaryText:(s:string)=>void;omittedSourceIds:string[];setOmittedSourceIds:(ids:string[])=>void;reviewed:boolean;makeSummary:(a:string,b:string)=>void;saveSummary:()=>void;shareSummary:()=>void;revokeShare:()=>void;busy:boolean}) {
- const [start,setStart]=useState(localDay(new Date(Date.now()-30*86400000),timezone));const [end,setEnd]=useState(localDay(new Date(),timezone));const isShared=Boolean(val(summary||{},'url','share_token','share_active'));const invalidated=Boolean(val(summary||{},'invalidated_at'));const sources=Array.isArray(summary?.sources)?summary!.sources as Row[]:[];const sections=Array.isArray(summary?.sections)?summary!.sections as Row[]:[];const edits=parseSummaryDraft(summaryText,sections);
- const changeItem=(sectionIndex:number,itemIndex:number,text:string)=>{const next=sections.flatMap((section,si)=>Array.isArray(section.items)?(section.items as Row[]).map((item,ii)=>({sectionIndex:si,itemIndex:ii,text:edits.find(e=>e.sectionIndex===si&&e.itemIndex===ii)?.text??label(item,'text')})):[]).map(entry=>entry.sectionIndex===sectionIndex&&entry.itemIndex===itemIndex?{...entry,text}:entry);setSummaryText(JSON.stringify(next));};
- return <div className="view-stack"><section className="card"><SectionHead eyebrow="Appointment preparation" title="A summary you can review"/><p className="section-intro">Choose a date range to prepare a draft from confirmed, permitted records. Review every statement and source before sharing a read-only copy.</p><div className="date-range"><Field label="From" value={start} onChange={setStart} type="date"/><Field label="To" value={end} onChange={setEnd} type="date"/><button className="button button-deep" disabled={busy||!start||!end||start>end} onClick={()=>makeSummary(start,end)}><Sparkles size={15}/>{summary?'Prepare a fresh draft':'Prepare draft'}</button></div>{summary? <>{invalidated&&<div className="inline-error" role="alert">The source records changed. This draft and its share link are no longer valid. Prepare a fresh draft to continue.</div>}<div className="summary-meta"><span><FileText size={14}/> Source-linked records</span><span>{label(summary,'start_date')||start} — {label(summary,'end_date')||end}</span></div><div className="summary-source-list"><h3>Review statements and sources</h3><p className="source-instructions">Edit each statement or uncheck a source to remove its linked statement from the saved review.</p>{sections.map((section,sectionIndex)=><div className="summary-section-edit" key={`${label(section,'title')}-${sectionIndex}`}><h4>{label(section,'title')||'Summary'}</h4>{(Array.isArray(section.items)?section.items as Row[]:[]).map((item,itemIndex)=>{const sourceId=label(item,'source_id');const source=sources.find(entry=>String(entry.id)===sourceId);const omitted=Boolean(sourceId&&omittedSourceIds.includes(sourceId));const text=edits.find(entry=>entry.sectionIndex===sectionIndex&&entry.itemIndex===itemIndex)?.text??label(item,'text');return <div className={`summary-source ${omitted?'source-omitted':''}`} key={`${sourceId||'item'}-${itemIndex}`}><label className="summary-source-check"><input type="checkbox" checked={!omitted} disabled={!sourceId||invalidated} onChange={e=>setOmittedSourceIds(e.target.checked?omittedSourceIds.filter(id=>id!==sourceId):[...omittedSourceIds,sourceId])}/><span>{source?`${String(source.type||'Source')} · version ${String(val(source,'version')??'unknown')}`:'Unlinked note'}</span>{omitted&&<em>Omitted</em>}</label><textarea aria-label={`Edit ${label(section,'title')||'summary'} statement ${itemIndex+1}`} disabled={omitted||invalidated} value={text} onChange={e=>changeItem(sectionIndex,itemIndex,e.target.value)}/></div>;})}</div>)}{!sections.length&&<span><CircleHelp size={14}/> The draft contains no included care statements.</span>}</div><div className="summary-actions"><span>{invalidated?'Prepare a fresh draft before sharing.':isShared?'A read-only share is active.':reviewed?'Reviewed and ready to share.':'Save your review before sharing.'}</span><div>{isShared&&Boolean(val(summary||{},'url'))&&<a className="button" href={String(val(summary||{},'url')).replace(/^\/v1/,'')} target="_blank" rel="noreferrer">Open read-only view</a>}{isShared?<button className="button button-danger" disabled={busy||invalidated} onClick={revokeShare}>Revoke link</button>:<><button className="button" disabled={busy||invalidated} onClick={saveSummary}>Save review</button><button className="button button-primary" disabled={busy||invalidated||!summaryText.trim()||!reviewed} onClick={shareSummary}>Share read-only</button></>}</div></div></>:<Empty title="No summary draft yet" text="Choose dates above to draft a source-linked appointment summary. It will not be shared until you choose to share it."/>}</section><div className="summary-guard"><Shield size={16}/><span>Unknown and unconfirmed information stays visible as such. Sharing is a separate, deliberate action.</span></div></div>;
+type SummaryEdit = { sectionIndex: number; itemIndex: number; text: string };
+const summaryPurposes: { value: SummaryPurpose; label: string }[] = [
+  { value: 'doctor_visit', label: 'Doctor visit' },
+  { value: 'family_handoff', label: 'Family handoff' },
+  { value: 'weekly_review', label: 'Weekly care review' },
+];
+function summaryPurposeOf(row: Row | null): SummaryPurpose {
+  const value = row ? label(row, 'purpose') : '';
+  return summaryPurposes.some(option => option.value === value) ? value as SummaryPurpose : 'doctor_visit';
+}
+function parseSummaryQuestions(text: string): string[] { return text.split(/\r?\n/).map(value => value.trim()).filter(Boolean); }
+function summaryQuestionsReadable(row: Row): string { return (Array.isArray(row.questions) ? row.questions as Row[] : []).map(question => label(question, 'text')).join('\n'); }
+function summaryReadable(row: Row) {
+  return JSON.stringify((Array.isArray(row.sections) ? row.sections as Row[] : []).flatMap((section, sectionIndex) =>
+    section.kind === 'authored_questions' ? [] : (Array.isArray(section.items) ? section.items as Row[] : []).map((item, itemIndex) =>
+      ({ sectionIndex, itemIndex, text: label(item, 'text') }))));
+}
+function parseSummaryDraft(text: string, sections?: Row[]): SummaryEdit[] {
+  try { const parsed = JSON.parse(text); if (Array.isArray(parsed)) return parsed as SummaryEdit[]; }
+  catch { /* Keep original source text when an older draft cannot be parsed. */ }
+  return (sections || []).flatMap((section, sectionIndex) =>
+    section.kind === 'authored_questions' ? [] : (Array.isArray(section.items) ? section.items as Row[] : []).map((item, itemIndex) =>
+      ({ sectionIndex, itemIndex, text: label(item, 'text') })));
+}
+type SummaryProps = {
+  timezone: string; patientId: string; patientName: string; identityKey: string;
+  summary: Row | null; summaryText: string; setSummaryText: (text: string) => void;
+  purpose: SummaryPurpose; setPurpose: (purpose: SummaryPurpose) => void;
+  questionsText: string; setQuestionsText: (text: string) => void;
+  omittedSourceIds: string[]; setOmittedSourceIds: (ids: string[]) => void;
+  reviewed: boolean; busy: boolean;
+  makeSummary: (start: string, end: string, purpose: SummaryPurpose, questions: string[]) => void;
+  saveSummary: () => void; shareSummary: () => void; revokeShare: () => void;
+};
+function Summary({ timezone, patientId, patientName, identityKey, summary, summaryText, setSummaryText,
+  purpose, setPurpose, questionsText, setQuestionsText, omittedSourceIds, setOmittedSourceIds,
+  reviewed, makeSummary, saveSummary, shareSummary, revokeShare, busy }: SummaryProps) {
+  const [start, setStart] = useState(localDay(new Date(Date.now() - 30 * 86400000), timezone));
+  const [end, setEnd] = useState(localDay(new Date(), timezone));
+  const isShared = Boolean(val(summary || {}, 'url', 'share_token', 'share_active'));
+  const invalidated = Boolean(val(summary || {}, 'invalidated_at'));
+  const purposeChanged = Boolean(summary && summaryPurposeOf(summary) !== purpose);
+  const sources = Array.isArray(summary?.sources) ? summary.sources as Row[] : [];
+  const sections = Array.isArray(summary?.sections) ? summary.sections as Row[] : [];
+  const evidenceSections = sections.map((section, index) => ({ section, index })).filter(({ section }) => section.kind !== 'authored_questions');
+  const edits = parseSummaryDraft(summaryText, sections);
+  const questions = parseSummaryQuestions(questionsText);
+  const questionError = questions.length > 10 ? 'Use at most 10 questions.' : questions.some(text => text.length > 500) ? 'Each question must be 500 characters or fewer.' : '';
+  const changeItem = (sectionIndex: number, itemIndex: number, text: string) => {
+    const next = sections.flatMap((section, si) => section.kind === 'authored_questions' ? [] :
+      (Array.isArray(section.items) ? section.items as Row[] : []).map((item, ii) => ({
+        sectionIndex: si, itemIndex: ii,
+        text: edits.find(entry => entry.sectionIndex === si && entry.itemIndex === ii)?.text ?? label(item, 'text'),
+      }))).map(entry => entry.sectionIndex === sectionIndex && entry.itemIndex === itemIndex ? { ...entry, text } : entry);
+    setSummaryText(JSON.stringify(next));
+  };
+  return <div className="view-stack"><section className="card">
+    <SectionHead eyebrow="Care handoff" title="A summary you can review" />
+    <p className="section-intro">Choose a purpose and date range. Parse arranges confirmed, permitted records and keeps the source of every report visible. Review before sharing or printing.</p>
+    <div className="summary-purpose-fields">
+      <label>Summary purpose<select aria-label="Summary purpose" value={purpose} onChange={event => setPurpose(event.target.value as SummaryPurpose)}>
+        {summaryPurposes.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+      </select></label>
+      <label>Questions to discuss<textarea aria-label="Questions to discuss" value={questionsText} onChange={event => setQuestionsText(event.target.value)} placeholder="One question per line" rows={3} /></label>
+      <p className="source-note">Questions are written by you and shown separately from confirmed reports. One per line, up to 10 questions of 500 characters each.</p>
+      {questionError && <p className="inline-error" role="alert">{questionError}</p>}
+    </div>
+    <div className="date-range"><Field label="From" value={start} onChange={setStart} type="date"/><Field label="To" value={end} onChange={setEnd} type="date"/>
+      <button className="button button-deep" disabled={busy || !start || !end || start > end || Boolean(questionError)} onClick={() => makeSummary(start, end, purpose, questions)}><Sparkles size={15}/>{summary ? 'Prepare a fresh draft' : 'Prepare draft'}</button></div>
+    {summary ? <>
+      {invalidated && <div className="inline-error" role="alert">The source records changed. This draft and its share link are no longer valid. Prepare a fresh draft to continue.</div>}
+      {purposeChanged && <div className="inline-error" role="status">The purpose changed. Prepare a fresh draft for this purpose before reviewing, sharing or printing.</div>}
+      <div className="summary-meta"><span><FileText size={14}/> {summaryPurposes.find(option => option.value === summaryPurposeOf(summary))?.label} · template {String(val(summary, 'template_version') ?? 1)}</span><span>{label(summary, 'start_date') || start} — {label(summary, 'end_date') || end}</span></div>
+      <div className="summary-source-list"><h3>Review statements and sources</h3><p className="source-instructions">Edit each statement or uncheck a source to omit its linked statement from the saved review. Current context is labelled separately from reports in the selected period.</p>
+        {evidenceSections.map(({ section, index: sectionIndex }) => <div className="summary-section-edit" key={`${label(section, 'title')}-${sectionIndex}`}><h4>{label(section, 'title') || 'Summary'}</h4>
+          {(Array.isArray(section.items) ? section.items as Row[] : []).map((item, itemIndex) => {
+            const sourceId = label(item, 'source_id'); const source = sources.find(entry => String(entry.id) === sourceId);
+            const omitted = Boolean(sourceId && omittedSourceIds.includes(sourceId));
+            const text = edits.find(entry => entry.sectionIndex === sectionIndex && entry.itemIndex === itemIndex)?.text ?? label(item, 'text');
+            return <div className={`summary-source ${omitted ? 'source-omitted' : ''}`} key={`${sourceId || 'item'}-${itemIndex}`}>
+              <label className="summary-source-check"><input type="checkbox" checked={!omitted} disabled={!sourceId || invalidated || purposeChanged} onChange={event => setOmittedSourceIds(event.target.checked ? omittedSourceIds.filter(id => id !== sourceId) : [...omittedSourceIds, sourceId])}/>
+                <span>{source ? `${String(source.type || 'Source')} · ${sourceId} · version ${String(val(source, 'version') ?? 'unknown')}` : 'Unlinked note'}</span>{omitted && <em>Omitted</em>}</label>
+              <textarea aria-label={`Edit ${label(section, 'title') || 'summary'} statement ${itemIndex + 1}`} disabled={omitted || invalidated || purposeChanged} value={text} onChange={event => changeItem(sectionIndex, itemIndex, event.target.value)}/>
+            </div>;
+          })}
+        </div>)}
+        {!evidenceSections.length && <span><CircleHelp size={14}/> The draft contains no included care statements.</span>}
+      </div>
+      <div className="summary-authored-questions"><h3>Authored questions · separate from reported care</h3>
+        {questions.length ? questions.map((text, index) => <p key={`${index}-${text}`}>Question {index + 1}: {text}</p>) : <p>No questions entered.</p>}
+      </div>
+      <div className="summary-actions"><span>{invalidated ? 'Prepare a fresh draft before sharing.' : purposeChanged ? 'Prepare a fresh draft for this purpose.' : reviewed ? 'Reviewed and ready to share or print.' : 'Save your review before sharing or printing.'}</span>
+        <div>{isShared && Boolean(val(summary, 'url')) && <a className="button" href={String(val(summary, 'url')).replace(/^\/v1/, '')} target="_blank" rel="noreferrer">Open read-only view</a>}
+          <button className="button" disabled={busy || invalidated || purposeChanged || Boolean(questionError)} onClick={saveSummary}>Save review</button>
+          <button className="button button-primary" disabled={busy || invalidated || purposeChanged || !reviewed} onClick={shareSummary}>Share read-only</button>
+          {isShared && <button className="button button-danger" disabled={busy || invalidated} onClick={revokeShare}>Revoke link</button>}
+        </div>
+      </div>
+      {reviewed && !busy && !invalidated && !purposeChanged && summary.status === 'reviewed' && <SummaryPrint summary={summary} patientId={patientId} patientName={patientName} identityKey={identityKey} loadCurrentSummary={api.printSummary} />}
+    </> : <Empty title="No summary draft yet" text="Choose a purpose and dates above to draft a source-linked summary. It will not be shared until you choose to share it."/>}
+  </section><div className="summary-guard"><Shield size={16}/><span>Unknown and unconfirmed information stays visible as such. Sharing is a separate, deliberate action.</span></div></div>;
 }
 
 function ProfileSettings({patient,onSave,canManage}:{patient:Patient;onSave:(payload:Record<string,unknown>)=>void;canManage:boolean}) { const [form,setForm]=useState({preferred_name:patient.preferred_name||patient.name,language:patient.language||'en',timezone:patient.timezone||'Asia/Singapore',daily_check_in_enabled:patient.daily_check_in_enabled===true,daily_check_in_local_time:patient.daily_check_in_local_time||'',calling_route:patient.calling_route||''});return <section className="card"><SectionHead eyebrow="Care preferences" title="How the companion addresses them"/><p className="section-intro">The chosen name and language are used for device context. An optional daily check-in is a preference, not a wellbeing signal.</p><div className="form-grid"><Field label="Preferred name" value={form.preferred_name} onChange={v=>setForm({...form,preferred_name:v})}/><Field label="Language" value={form.language} onChange={v=>setForm({...form,language:v})}/><Field label="Timezone" value={form.timezone} onChange={v=>setForm({...form,timezone:v})}/><Field label="Configured calling route (optional)" value={form.calling_route} onChange={v=>setForm({...form,calling_route:v})}/>{form.daily_check_in_enabled&&<Field label="Daily check-in time" value={form.daily_check_in_local_time} onChange={v=>setForm({...form,daily_check_in_local_time:v})} type="time"/>}</div><label className="checkline"><input type="checkbox" checked={form.daily_check_in_enabled} onChange={e=>setForm({...form,daily_check_in_enabled:e.target.checked})}/> Enable an optional daily check-in</label><button className="button button-deep" disabled={!canManage||!form.preferred_name.trim()||!form.language.trim()||!form.timezone.trim()||form.calling_route.length>200||(form.daily_check_in_enabled&&!form.daily_check_in_local_time)} onClick={()=>onSave({...form,daily_check_in_local_time:form.daily_check_in_enabled?form.daily_check_in_local_time:null})}>Save preferences</button>{!canManage&&<p className="source-note">Only an account with profile management permission can change these preferences.</p>}</section>; }
 
 function SettingsView({data,patient,onSelect,onReleaseRemoved,onClaim,onRevoke,onGrant,onRevokeGrant,canManageSharing,canManageDevices,canManageProfile,onProfile}:{data:Dashboard;onSelect:(id:string|null,generation:number,poweredOff:boolean)=>Promise<void>;onReleaseRemoved:(id:string,generation:number)=>Promise<void>;patient?:Patient;canManageSharing:boolean;canManageDevices:boolean;canManageProfile:boolean;onProfile:(payload:Record<string,unknown>)=>void;onClaim:(s:string,kind?:'phone'|'pendant')=>Promise<void>;onRevoke:(id:string)=>void;onGrant:(userId:string,scopes:string[])=>void;onRevokeGrant:(id:string)=>void}) { const [userId,setUserId]=useState('');const [scopes,setScopes]=useState<string[]>(['read:notes','read:measurements']);const grants=(data.access_grants||[]).filter(g=>g.relationship!=='owner');return <div className="view-stack"><DeviceSetup data={data} canManage={canManageDevices} onClaim={onClaim} onRevoke={onRevoke}/><CompanionSelection data={data} canManage={canManageDevices} onSelect={onSelect} onReleaseRemoved={onReleaseRemoved}/>{patient&&<ProfileSettings patient={patient} onSave={onProfile} canManage={canManageProfile}/>}<section className="card"><SectionHead eyebrow="Privacy" title="Sharing permissions"/><p className="section-intro">Choose who may see care information. Each permission can be removed here.</p>{grants.length?grants.map((g,i)=>{const u=(val(g,'user')||{}) as Row;const grantScopes=Array.isArray(g.scopes)?(g.scopes as string[]).join(', '):'Scope unavailable';return <div className="permission-row" key={String(g.id||i)}><div><b>{label(u,'name','email')||'Authorised person'}</b><span>{grantScopes}{val(g,'expires_at')?` · Expires ${niceDate(val(g,'expires_at'))}`:''}</span></div>{canManageSharing&&<button className="button button-danger" onClick={()=>onRevokeGrant(String(g.id))}>Remove access</button>}</div>;}):<Empty title="No additional people have access" text="Add a person only when you have their account ID and the person has agreed to share."/>}{canManageSharing&&<div className="grant-form"><h3>Add a person</h3><label>Account ID<input value={userId} onChange={e=>setUserId(e.target.value)} placeholder="User ID"/></label><div className="scope-options">{['read:notes','read:measurements','read:medications','ack:support'].map(scope=><label key={scope}><input type="checkbox" checked={scopes.includes(scope)} onChange={e=>setScopes(e.target.checked?[...scopes,scope]:scopes.filter(s=>s!==scope))}/>{scope}</label>)}</div><button className="button button-deep" disabled={!userId.trim()||!scopes.length} onClick={()=>onGrant(userId,scopes)}>Add permission</button></div>}</section><section className="card privacy-card"><Shield size={18}/><div><h3>Audio belongs to the companion device</h3><p>The Parse browser companion, native phone companion, and cardholder have separate device identities. This dashboard view does not record audio. A companion records only after you deliberately start it.</p></div></section></div>; }
 
-function SharedSummaryPublic({data,loading,error}:{data:Row|null;loading:boolean;error:string}) { const summary=(data?.summary&&typeof data.summary==='object'?data.summary:{}) as Row;const patient=(data?.patient&&typeof data.patient==='object'?data.patient:{}) as Row;const sections=Array.isArray(summary.sections)?summary.sections as Row[]:[];const sources=Array.isArray(summary.sources)?summary.sources as Row[]:[];return <main className="public-share-page"><div className="public-share-brand"><BrandLogo /><span className="readonly-badge"><Shield size={13}/> Read-only summary</span></div>{loading?<div className="loading-card"><span className="spinner"/><p>Checking this shared summary…</p></div>:error?<div className="empty-card"><CircleHelp size={25}/><h2>This summary is unavailable</h2><p>{error}</p><p>It may have expired, been revoked or changed after the source records were updated.</p></div>:data?<article className="public-summary"><div className="eyebrow">Appointment preparation</div><h1>{label(patient,'name')||label(summary,'patient_name','name')||'Care summary'}</h1><p className="public-summary-meta">{label(summary,'start_date')} – {label(summary,'end_date')} · Reviewed and shared</p>{sections.map((section,i)=><section key={String(section.id||i)}><h2>{label(section,'title')||'Summary'}</h2>{(Array.isArray(section.items)?section.items as Row[]:[]).map((item,j)=>{const sourceId=label(item,'source_id');const source=sources.find(entry=>String(entry.id)===sourceId);return <div className="public-summary-item" key={`${sourceId||'item'}-${j}`}><p>{label(item,'text')}</p>{source&&<small><Shield size={12}/>{String(source.type||'Source')} · version {String(val(source,'version')??'unknown')}</small>}</div>;})}</section>)}<div className="summary-guard"><Shield size={15}/> Read-only copy. It does not include live device data.</div></article>:null}</main>; }
+function SharedSummaryPublic({ data, loading, error }: { data: Row | null; loading: boolean; error: string }) {
+  const summary = (data?.summary && typeof data.summary === 'object' ? data.summary : {}) as Row;
+  const patient = (data?.patient && typeof data.patient === 'object' ? data.patient : {}) as Row;
+  const sections = Array.isArray(summary.sections) ? summary.sections as Row[] : [];
+  const sources = Array.isArray(summary.sources) ? summary.sources as Row[] : [];
+  const purpose = summaryPurposes.find(option => option.value === summaryPurposeOf(summary))?.label || 'Doctor visit';
+  return <main className="public-share-page"><div className="public-share-brand"><BrandLogo /><span className="readonly-badge"><Shield size={13}/> Read-only summary</span></div>
+    {loading ? <div className="loading-card"><span className="spinner"/><p>Checking this shared summary…</p></div> :
+      error ? <div className="empty-card"><CircleHelp size={25}/><h2>This summary is unavailable</h2><p>{error}</p><p>It may have expired, been revoked or changed after the source records were updated.</p></div> :
+      data ? <article className="public-summary"><div className="eyebrow">{purpose} · reviewed care summary</div>
+        <h1>{label(patient, 'name') || label(summary, 'patient_name', 'name') || 'Care summary'}</h1>
+        <p className="public-summary-meta">{label(summary, 'start_date')} – {label(summary, 'end_date')} · Generated {label(summary, 'created_at') || 'time unknown'} · Reviewed and shared</p>
+        <p className="source-note">Sections labelled current context describe a snapshot at generation time, outside the selected-period filter.</p>
+        {sections.map((section, index) => {
+          const authored = section.kind === 'authored_questions';
+          return <section key={String(section.id || index)}><h2>{label(section, 'title') || (authored ? 'Authored questions' : 'Care reports')}</h2>
+            {authored && <p>Written questions, separate from confirmed care reports.</p>}
+            {(Array.isArray(section.items) ? section.items as Row[] : []).map((item, itemIndex) => {
+              const sourceId = label(item, 'source_id');
+              const source = sources.find(entry => String(entry.id) === sourceId);
+              return <div className="public-summary-item" key={`${sourceId || 'question'}-${itemIndex}`}><p>{label(item, 'text')}</p>
+                {authored ? <small>Authored question · {label(item, 'author_display_name') || 'Author unknown'} · {label(item, 'authored_at') || 'Time unknown'}</small> :
+                  source && <small><Shield size={12}/>{String(source.type || 'Source')} · version {String(val(source, 'version') ?? 'unknown')}</small>}
+              </div>;
+            })}
+          </section>;
+        })}
+        <div className="summary-guard"><Shield size={15}/> Read-only copy. It does not include live device data.</div>
+      </article> : null}
+  </main>;
+}
 
 function NoteSharingDialog({note,grants,busy,onClose,onSave}:{note:Row;grants:Row[];busy:boolean;onClose:()=>void;onSave:(ids:string[])=>void}) {const eligible=grants.filter(g=>g.relationship!=='owner'&&Array.isArray(g.scopes)&&((g.scopes as string[]).includes('*')||((g.scopes as string[]).includes('read:notes')||(g.scopes as string[]).includes('read:dashboard'))));const existing=Array.isArray(note.shared_with_user_ids)?note.shared_with_user_ids as string[]:[];const [selected,setSelected]=useState(existing);return <div className="modal-backdrop"><section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="note-sharing-title"><div className="modal-head"><div><div className="eyebrow">Private by default</div><h2 id="note-sharing-title">Choose who can see this note</h2></div><button className="icon-button" onClick={onClose} aria-label="Close"><X size={18}/></button></div><p className="section-intro">Changing access may invalidate summaries that cite this note. Removing everyone makes it private again.</p>{eligible.length?eligible.map((grant,i)=>{const user=(val(grant,'user')||{}) as Row;const id=String(user.id||'');return <label className="share-recipient" key={String(grant.id||i)}><input type="checkbox" checked={selected.includes(id)} onChange={e=>setSelected(e.target.checked?[...selected,id]:selected.filter(x=>x!==id))}/><span><b>{label(user,'name')||'Caregiver'}</b><small>{label(user,'email')||'Authorised account'}</small></span></label>;}):<Empty title="No eligible caregiver accounts" text="Add a person with read:notes or read:dashboard access in sharing settings first."/>}<div className="modal-note"><Shield size={15}/> Only the people checked above will see this health note.</div><div className="modal-actions"><button className="button" onClick={onClose}>Cancel</button><button className="button button-primary" disabled={busy} onClick={()=>onSave(selected)}>{busy?'Saving…':'Save sharing'}</button></div></section></div>;}
 

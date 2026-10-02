@@ -72,6 +72,26 @@ def test_vocabulary_migration_adds_snapshot_and_preserves_review_audit(legacy):
         assert c.execute(text('SELECT COUNT(*) FROM care_vocabulary_audits')).scalar_one() == 1
 
 
+def test_summary_purpose_migration_preserves_legacy_review(legacy):
+    migrate.upgrade(legacy, '0006_care_vocabulary')
+    with legacy.begin() as c:
+        c.execute(text("INSERT INTO users (id,name,email,role,password_hash,active) VALUES ('reviewer','Reviewer','reviewer@example.invalid','owner','fixture',true)"))
+        c.execute(text("INSERT INTO visit_summaries (id,patient_id,start_date,end_date,sections,source_refs,omitted_source_ids,status,created_by_user_id,created_at) VALUES ('summary_legacy','single','2026-09-01','2026-09-30','[]','[]','[]','reviewed','reviewer',CURRENT_TIMESTAMP)"))
+    migrate.upgrade(legacy)
+    with legacy.connect() as c:
+        row = c.execute(text("SELECT purpose,template_version,questions,sections,status FROM visit_summaries WHERE id='summary_legacy'")).one()
+        assert row.purpose == 'doctor_visit'
+        assert row.template_version == 1
+        assert row.questions == '[]' or row.questions == []
+        assert row.sections == '[]' or row.sections == []
+        assert row.status == 'reviewed'
+    with legacy.begin() as c:
+        c.execute(text("UPDATE visit_summaries SET purpose='family_handoff' WHERE id='summary_legacy'"))
+    with pytest.raises(RuntimeError, match='discard reviewed content'):
+        with legacy.begin() as c:
+            command.downgrade(migrate.configuration(c), '0006_care_vocabulary')
+
+
 def test_capture_intent_migration_preserves_older_turns(legacy):
     migrate.upgrade(legacy, '0004_phone_notifications')
     with legacy.begin() as c:

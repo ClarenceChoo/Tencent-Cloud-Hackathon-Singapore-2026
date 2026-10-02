@@ -44,6 +44,7 @@ from .schemas import (
     VocabularyUpdate,
 )
 from .vocabulary_service import VocabularyTerm, read_vocabulary, update_vocabulary, vocabulary_suggestions
+from .summary_templates import present_summary
 from .security import (
     authenticate_device_header,
     authenticate_device_websocket,
@@ -211,9 +212,17 @@ def _dashboard(db: Session, patient: m.Patient, scopes: list, viewer_user_id: st
     summaries = db.scalars(select(m.VisitSummary).where(m.VisitSummary.patient_id == patient.id).order_by(m.VisitSummary.created_at.desc())).all() if ("*" in scopes or "manage:sharing" in scopes) else []
     summary_rows = []
     for summary in summaries:
+        if "*" not in scopes and summary.created_by_user_id != viewer_user_id:
+            continue
         value = summary_dict(summary)
+        current = not summary.invalidated_at and summary_sources_current(db, summary, viewer_user_id)
+        value["source_access_current"] = current
+        if not current:
+            value["sections"] = []
+            value["sources"] = []
+            value["questions"] = []
         active_share = None
-        if summary.status == "reviewed" and not summary.invalidated_at and summary_sources_current(db, summary):
+        if summary.status == "reviewed" and current:
             active_share = db.scalar(select(m.SummaryShare).where(m.SummaryShare.summary_id == summary.id, m.SummaryShare.revoked_at.is_(None), m.SummaryShare.expires_at > now).order_by(m.SummaryShare.expires_at.desc()))
         value["share_active"] = bool(active_share)
         value["share_expires_at"] = iso(active_share.expires_at) if active_share else None
@@ -645,7 +654,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
     def summary_create(patient_id: str, data: SummaryCreate, request: Request, db: Session = Depends(get_db)):
         user, row, grant, scopes = _patient_access(request, db, patient_id, "manage:sharing")
         require_csrf(request, row)
-        summary = make_summary(db, patient_id, data.start_date, data.end_date, user.id)
+        summary = make_summary(db, patient_id, data.start_date, data.end_date, user.id, data.purpose, data.questions)
         db.commit()
         return summary_dict(summary)
 
@@ -654,8 +663,11 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         summary = db.get(m.VisitSummary, summary_id)
         if not summary:
             raise HTTPException(status_code=404, detail="Summary not found")
-        user, row, grant, scopes = _patient_access(request, db, summary.patient_id, "manage:sharing")
+        user, row, grant, scopes = _patient_access(request, db, summary.patient_id, "manage:sharing", serialize=True)
         require_csrf(request, row)
+        db.refresh(summary)
+        if "*" not in scopes and summary.created_by_user_id != user.id:
+            raise HTTPException(status_code=403, detail="Summary access is not permitted")
         if summary.invalidated_at:
             raise HTTPException(status_code=409, detail="Summary sources changed; regenerate the summary")
         if not summary_sources_current(db, summary):
@@ -663,11 +675,21 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
             summary.status = "invalidated"
             db.commit()
             raise HTTPException(status_code=409, detail="Summary sources changed; regenerate the summary")
+        if not summary_sources_current(db, summary, user.id):
+            raise HTTPException(status_code=403, detail="Summary source access is not permitted")
         source_ids = {ref["id"] for ref in summary.source_refs}
         if not set(data.omitted_source_ids).issubset(source_ids):
             raise HTTPException(status_code=422, detail="Omitted source is not part of this summary")
         sanitised_sections = []
+        stored_question_section = next((section for section in (summary.sections or []) if section.get("kind") == "authored_questions"), None)
+        legacy_unlinked = {item.get("text") for section in (summary.sections or []) if section.get("kind") != "authored_questions"
+                           for item in (section.get("items") or []) if not item.get("source_id")}
+        included_source_ids = []
         for section in data.sections:
+            if isinstance(section, dict) and section.get("kind") == "authored_questions":
+                if section != stored_question_section:
+                    raise HTTPException(status_code=422, detail="Authored questions must be submitted as question text")
+                continue
             if set(section) != {"title", "items"} or not isinstance(section["title"], str) or not isinstance(section["items"], list):
                 raise HTTPException(status_code=422, detail="Each summary section must contain only title and items")
             items = []
@@ -677,10 +699,33 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
                 source_id = item.get("source_id")
                 if source_id and source_id not in source_ids:
                     raise HTTPException(status_code=422, detail="Summary contains an unknown source link")
+                if not source_id and item["text"] not in legacy_unlinked:
+                    raise HTTPException(status_code=422, detail="New unsourced text must be an authored question")
                 if source_id not in data.omitted_source_ids:
                     items.append({"text": item["text"].strip(), **({"source_id": source_id} if source_id else {})})
+                    if source_id:
+                        included_source_ids.append(source_id)
             sanitised_sections.append({"title": section["title"].strip(), "items": items})
-        summary.sections, summary.omitted_source_ids = sanitised_sections, data.omitted_source_ids
+        if len(included_source_ids) != len(set(included_source_ids)) or set(included_source_ids) != source_ids - set(data.omitted_source_ids):
+            raise HTTPException(status_code=422, detail="Review every source or explicitly omit it")
+        previous_questions = list(summary.questions or [])
+        question_texts = data.questions if data.questions is not None else [question["text"] for question in previous_questions]
+        unused = previous_questions.copy()
+        authored = []
+        for text in question_texts:
+            matched = next((question for question in unused if question.get("text") == text), None)
+            if matched:
+                unused.remove(matched)
+                authored.append(matched)
+            else:
+                authored.append({"text": text, "author_id": user.id,
+                                 "author_display_name": user.name, "authored_at": iso(utcnow())})
+        summary.questions = authored
+        summary.sections = present_summary(summary.purpose or "doctor_visit", sanitised_sections, [
+            {**question, "authored_at": datetime.fromisoformat(question["authored_at"].replace("Z", "+00:00"))}
+            for question in authored
+        ])
+        summary.omitted_source_ids = data.omitted_source_ids
         summary.status, summary.reviewed_at = "reviewed", utcnow()
         active_shares = db.scalars(select(m.SummaryShare).where(m.SummaryShare.summary_id == summary.id, m.SummaryShare.revoked_at.is_(None))).all()
         for share in active_shares:
@@ -693,8 +738,11 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         summary = db.get(m.VisitSummary, summary_id)
         if not summary:
             raise HTTPException(status_code=404, detail="Summary not found")
-        user, row, grant, scopes = _patient_access(request, db, summary.patient_id, "manage:sharing")
+        user, row, grant, scopes = _patient_access(request, db, summary.patient_id, "manage:sharing", serialize=True)
         require_csrf(request, row)
+        db.refresh(summary)
+        if "*" not in scopes and summary.created_by_user_id != user.id:
+            raise HTTPException(status_code=403, detail="Summary access is not permitted")
         if summary.status != "reviewed" or summary.invalidated_at:
             raise HTTPException(status_code=409, detail="Only a current reviewed summary can be shared")
         if not summary_sources_current(db, summary):
@@ -702,6 +750,8 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
             summary.status = "invalidated"
             db.commit()
             raise HTTPException(status_code=409, detail="Summary sources changed; regenerate the summary")
+        if not summary_sources_current(db, summary, user.id):
+            raise HTTPException(status_code=403, detail="Summary source access is not permitted")
         token = secrets.token_urlsafe(32)
         expires = utcnow() + timedelta(seconds=data.expires_in_seconds)
         share = m.SummaryShare(summary_id=summary.id, token_hash=sha256(token), expires_at=expires)
@@ -721,6 +771,32 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
             share.revoked_at = utcnow()
         db.commit()
         return {"id": summary.id, "status": "revoked", "revoked_links": len(shares)}
+
+    @app.get("/v1/app/summaries/{summary_id}/print")
+    def summary_print(summary_id: str, request: Request, response: Response, db: Session = Depends(get_db)):
+        try:
+            summary = db.get(m.VisitSummary, summary_id)
+            if not summary:
+                raise HTTPException(status_code=404, detail="Summary not found")
+            user, row, grant, scopes = _patient_access(request, db, summary.patient_id,
+                                                        "manage:sharing", serialize=True)
+            db.refresh(summary)
+            if "*" not in scopes and summary.created_by_user_id != user.id:
+                raise HTTPException(status_code=403, detail="Summary access is not permitted")
+            if summary.status != "reviewed" or not summary.reviewed_at or summary.invalidated_at:
+                raise HTTPException(status_code=409, detail="A current review is required before printing")
+            if not summary_sources_current(db, summary):
+                summary.invalidated_at = utcnow()
+                summary.status = "invalidated"
+                db.commit()
+                raise HTTPException(status_code=409, detail="Summary sources changed; prepare a fresh draft")
+            if not summary_sources_current(db, summary, user.id):
+                raise HTTPException(status_code=403, detail="Summary source access is not permitted")
+            response.headers["Cache-Control"] = "no-store"
+            return summary_dict(summary)
+        except HTTPException as error:
+            raise HTTPException(status_code=error.status_code, detail=error.detail,
+                                headers={**(error.headers or {}), "Cache-Control": "no-store"}) from error
 
     @app.get("/v1/shared/summaries/{token}")
     def shared_summary(token: str, db: Session = Depends(get_db)):

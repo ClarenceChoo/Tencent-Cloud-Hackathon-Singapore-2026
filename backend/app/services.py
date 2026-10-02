@@ -12,7 +12,8 @@ from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from . import models as m
-from .security import aware, iso, utcnow
+from .security import aware, grant_scopes, iso, utcnow
+from .summary_templates import SUMMARY_TEMPLATE_VERSION, present_summary
 
 
 PROPOSAL_TTL = timedelta(seconds=120)
@@ -479,29 +480,39 @@ def invalidate_summaries(db: Session, patient_id: str, source_id: Optional[str] 
             summary.status = "invalidated"
 
 
-def summary_sources_current(db: Session, summary: m.VisitSummary) -> bool:
+def summary_sources_current(db: Session, summary: m.VisitSummary, viewer_user_id: Optional[str] = None) -> bool:
+    viewer_user_id = viewer_user_id or summary.created_by_user_id
+    try:
+        grant, scopes = grant_scopes(db, viewer_user_id, summary.patient_id)
+    except HTTPException:
+        return False
+    if "*" not in scopes and "manage:sharing" not in scopes:
+        return False
+    all_access = "*" in scopes
+    def collection_allowed(name: str) -> bool:
+        return all_access or "read:dashboard" in scopes or ("read:%s" % name) in scopes
     allowed = {"health_note", "measurement", "medication_report", "preventive_task", "support_request", "followup"}
     for ref in summary.source_refs or []:
         if set(ref) != {"type", "id", "version"} or ref["type"] not in allowed or not isinstance(ref["version"], int):
             return False
         if ref["type"] == "health_note":
             row = db.get(m.HealthNote, ref["id"])
-            valid = row and row.patient_id == summary.patient_id and not row.deleted_at and row.version == ref["version"]
+            valid = row and row.patient_id == summary.patient_id and not row.deleted_at and row.version == ref["version"] and collection_allowed("notes") and (all_access or viewer_user_id in (row.shared_with_user_ids or []))
         elif ref["type"] == "measurement":
             row = db.get(m.Measurement, ref["id"])
-            valid = row and row.patient_id == summary.patient_id and not row.superseded_at and row.version == ref["version"]
+            valid = row and row.patient_id == summary.patient_id and not row.superseded_at and row.version == ref["version"] and collection_allowed("measurements")
         elif ref["type"] == "medication_report":
             row = db.get(m.DoseInstance, ref["id"])
-            valid = row and row.patient_id == summary.patient_id and row.plan_version == ref["version"]
+            valid = row and row.patient_id == summary.patient_id and row.plan_version == ref["version"] and collection_allowed("medications")
         elif ref["type"] == "preventive_task":
             row = db.get(m.PreventiveTask, ref["id"])
-            valid = row and row.patient_id == summary.patient_id and row.version == ref["version"]
+            valid = row and row.patient_id == summary.patient_id and row.version == ref["version"] and collection_allowed("preventive_tasks")
         elif ref["type"] == "support_request":
             row = db.get(m.SupportRequest, ref["id"])
-            valid = row and row.patient_id == summary.patient_id and ref["version"] == 1
+            valid = row and row.patient_id == summary.patient_id and ref["version"] == 1 and collection_allowed("support") and (all_access or row.recipient_user_id == viewer_user_id)
         else:
             row = db.get(m.FollowUp, ref["id"])
-            valid = row and row.patient_id == summary.patient_id and ref["version"] == 1
+            valid = row and row.patient_id == summary.patient_id and ref["version"] == 1 and collection_allowed("followups") and (all_access or viewer_user_id in (row.permitted_user_ids or []))
         if not valid:
             return False
     return True
@@ -821,8 +832,13 @@ def plan_dict(plan: m.MedicationPlanVersion) -> dict:
     return {"id": plan.id, "version": plan.version, "timezone": plan.timezone, "source": plan.source, "checked_by": plan.checked_by_name, "checked_at": iso(plan.checked_at), "active": plan.active, "medicines": plan.medicines, "schedule": plan.schedule}
 
 
-def make_summary(db: Session, patient_id: str, start_date: date, end_date: date, user_id: str) -> m.VisitSummary:
+def make_summary(db: Session, patient_id: str, start_date: date, end_date: date, user_id: str,
+                 purpose: str = "doctor_visit", questions: Optional[list[str]] = None) -> m.VisitSummary:
     patient = db.get(m.Patient, patient_id)
+    grant, scopes = grant_scopes(db, user_id, patient_id)
+    all_access = "*" in scopes
+    def collection_allowed(name: str) -> bool:
+        return all_access or "read:dashboard" in scopes or ("read:%s" % name) in scopes
     try:
         patient_tz = ZoneInfo(patient.timezone)
     except ZoneInfoNotFoundError:
@@ -833,7 +849,7 @@ def make_summary(db: Session, patient_id: str, start_date: date, end_date: date,
     refs = []
 
     all_notes = db.scalars(select(m.HealthNote).where(m.HealthNote.patient_id == patient_id, m.HealthNote.deleted_at.is_(None))).all()
-    notes = [item for item in all_notes if start_dt <= aware(item.occurred_at or item.created_at) <= end_dt]
+    notes = [item for item in all_notes if collection_allowed("notes") and (all_access or user_id in (item.shared_with_user_ids or [])) and start_dt <= aware(item.occurred_at or item.created_at) <= end_dt]
     if notes:
         items = []
         for item in notes:
@@ -843,7 +859,7 @@ def make_summary(db: Session, patient_id: str, start_date: date, end_date: date,
         sections.append({"title": "Reported health notes", "items": items})
 
     all_measurements = db.scalars(select(m.Measurement).where(m.Measurement.patient_id == patient_id, m.Measurement.superseded_at.is_(None))).all()
-    measurements = [item for item in all_measurements if start_dt <= aware(item.occurred_at or item.created_at) <= end_dt]
+    measurements = [item for item in all_measurements if collection_allowed("measurements") and start_dt <= aware(item.occurred_at or item.created_at) <= end_dt]
     if measurements:
         items = []
         for item in measurements:
@@ -852,7 +868,7 @@ def make_summary(db: Session, patient_id: str, start_date: date, end_date: date,
             refs.append({"type": "measurement", "id": item.id, "version": item.version})
         sections.append({"title": "Reported measurements", "items": items})
 
-    doses = db.scalars(select(m.DoseInstance).where(m.DoseInstance.patient_id == patient_id, m.DoseInstance.scheduled_at.between(start_dt, end_dt))).all()
+    doses = db.scalars(select(m.DoseInstance).where(m.DoseInstance.patient_id == patient_id, m.DoseInstance.scheduled_at.between(start_dt, end_dt))).all() if collection_allowed("medications") else []
     if doses:
         items = []
         for item in doses:
@@ -860,7 +876,7 @@ def make_summary(db: Session, patient_id: str, start_date: date, end_date: date,
             refs.append({"type": "medication_report", "id": item.id, "version": item.plan_version})
         sections.append({"title": "Medication reports", "items": items})
 
-    tasks = db.scalars(select(m.PreventiveTask).where(m.PreventiveTask.patient_id == patient_id)).all()
+    tasks = db.scalars(select(m.PreventiveTask).where(m.PreventiveTask.patient_id == patient_id)).all() if collection_allowed("preventive_tasks") else []
     if tasks:
         items = []
         for item in tasks:
@@ -868,8 +884,11 @@ def make_summary(db: Session, patient_id: str, start_date: date, end_date: date,
             refs.append({"type": "preventive_task", "id": item.id, "version": item.version})
         sections.append({"title": "Current preventive care context at summary generation", "items": items})
 
-    supports = db.scalars(select(m.SupportRequest).where(m.SupportRequest.patient_id == patient_id, m.SupportRequest.status != "resolved", m.SupportRequest.created_at.between(start_dt, end_dt))).all()
-    followups = db.scalars(select(m.FollowUp).where(m.FollowUp.patient_id == patient_id, m.FollowUp.resolution_state == "open")).all()
+    supports = db.scalars(select(m.SupportRequest).where(m.SupportRequest.patient_id == patient_id, m.SupportRequest.status != "resolved", m.SupportRequest.created_at.between(start_dt, end_dt))).all() if collection_allowed("support") else []
+    followups = db.scalars(select(m.FollowUp).where(m.FollowUp.patient_id == patient_id, m.FollowUp.resolution_state == "open")).all() if collection_allowed("followups") else []
+    if not all_access:
+        supports = [item for item in supports if item.recipient_user_id == user_id]
+        followups = [item for item in followups if user_id in (item.permitted_user_ids or [])]
     if supports or followups:
         items = []
         for item in supports:
@@ -883,7 +902,17 @@ def make_summary(db: Session, patient_id: str, start_date: date, end_date: date,
             refs.append({"type": "followup", "id": item.id, "version": 1})
         sections.append({"title": "Unresolved support and follow-up", "items": items})
 
-    summary = m.VisitSummary(patient_id=patient_id, start_date=start_date, end_date=end_date, sections=sections, source_refs=refs, created_by_user_id=user_id)
+    user = db.get(m.User, user_id)
+    authored_at = utcnow()
+    authored = [{"text": text, "author_id": user_id, "author_display_name": user.name,
+                 "authored_at": authored_at} for text in (questions or [])]
+    summary = m.VisitSummary(
+        patient_id=patient_id, start_date=start_date, end_date=end_date,
+        purpose=purpose, template_version=SUMMARY_TEMPLATE_VERSION,
+        sections=present_summary(purpose, sections, authored), source_refs=refs,
+        questions=[{**question, "authored_at": iso(authored_at)} for question in authored],
+        created_by_user_id=user_id,
+    )
     db.add(summary)
     db.flush()
     return summary
@@ -891,7 +920,37 @@ def make_summary(db: Session, patient_id: str, start_date: date, end_date: date,
 
 def summary_dict(summary: m.VisitSummary, public: bool = False) -> dict:
     omitted = set(summary.omitted_source_ids or [])
-    result = {"id": summary.id, "start_date": iso(summary.start_date), "end_date": iso(summary.end_date), "sections": summary.sections, "sources": [ref for ref in (summary.source_refs or []) if ref["id"] not in omitted], "status": summary.status, "created_at": iso(summary.created_at), "reviewed_at": iso(summary.reviewed_at), "invalidated_at": iso(summary.invalidated_at)}
+    questions = summary.questions or []
+    def public_name(value: str) -> str:
+        if not value or "@" in value or re.search(r"(?:usr_[0-9a-f]{32}|\b[0-9a-f]{32}\b|\b[0-9a-f]{8}-[0-9a-f-]{27,}\b)", value, re.I):
+            return "Author"
+        return value
+    if public:
+        visible_questions = [{"text": question.get("text", ""),
+                              "author_display_name": public_name(question.get("author_display_name", "")),
+                              "authored_at": question.get("authored_at")} for question in questions]
+        visible_sections = []
+        for section in summary.sections or []:
+            if section.get("kind") == "authored_questions":
+                visible_sections.append({"kind": "authored_questions", "title": section.get("title", "Authored questions"),
+                                         "items": [{"text": item.get("text", ""),
+                                                    "author_display_name": public_name(item.get("author_display_name", "")),
+                                                    "authored_at": item.get("authored_at")} for item in section.get("items", [])]})
+            else:
+                visible_sections.append({"title": section.get("title", "Care reports"),
+                                         "items": [{"text": item.get("text", ""),
+                                                    **({"source_id": item["source_id"]} if item.get("source_id") else {})}
+                                                   for item in section.get("items", [])]})
+    else:
+        visible_questions = questions
+        visible_sections = summary.sections
+    result = {"id": summary.id, "start_date": iso(summary.start_date), "end_date": iso(summary.end_date),
+              "purpose": summary.purpose or "doctor_visit", "template_version": summary.template_version or 1,
+              "questions": visible_questions,
+              "sections": visible_sections,
+              "sources": [ref for ref in (summary.source_refs or []) if ref["id"] not in omitted],
+              "status": summary.status, "created_at": iso(summary.created_at),
+              "reviewed_at": iso(summary.reviewed_at), "invalidated_at": iso(summary.invalidated_at)}
     if not public:
         result["patient_id"] = summary.patient_id
         result["omitted_source_ids"] = summary.omitted_source_ids

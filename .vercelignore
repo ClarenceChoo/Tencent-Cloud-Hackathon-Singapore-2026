@@ -12,6 +12,8 @@ api/*
 
 frontend/*
 !frontend/index.html
+!frontend/landing
+!frontend/public
 !frontend/package.json
 !frontend/package-lock.json
 !frontend/tsconfig.json

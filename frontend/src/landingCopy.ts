@@ -1,0 +1,87 @@
+// Page copy for the approved "At home" landing design.
+// Examples are fictional. Product claims follow the repository's product docs.
+export const landingCopy = {
+  nav: { story: 'Why Parse', process: 'How it works', faq: 'Questions', app: 'Open Parse' },
+  hero: {
+    lines: ['Care, in your', 'own words.'],
+    intro: 'Record a short care update. Check what was heard, and choose who can see it.',
+    primary: 'Explore Parse',
+  },
+  story: {
+    label: 'Why Parse',
+    title: 'It can be hard to remember what to bring up later.',
+    paragraphs: [
+      'A concern can slip your mind before an appointment. A medication update can get buried in family messages. Caregivers may be unsure whether a dose was skipped or someone simply has not replied.',
+      'Parse gives those updates a place to go. An older adult can describe what happened, check the note, and share it with a caregiver they have chosen. Each confirmed record keeps the person’s words and its source.',
+    ],
+    exampleLabel: 'Medication reports',
+    exampleReport: 'I took my morning tablet today.',
+    exampleRecord: 'Reported taken',
+    exampleExplanation: 'That is a self-report, not proof a tablet was taken. No response stays different from a skipped dose.',
+  },
+  process: {
+    label: 'How it works',
+    title: 'Check the note before it’s saved.',
+    intro: 'Open the paired browser companion, tap to record a short update, and check the note Parse prepares.',
+    steps: [
+      { title: 'Speak', text: 'Capture a concern, medication report, reading from an external monitor, task, or request for help.' },
+      { title: 'Review', text: 'Read or hear the note back. Correct it or cancel it before anything is saved.' },
+      { title: 'Choose who sees it', text: 'Confirm the wording and whether to share it with a permitted caregiver.' },
+    ],
+  },
+  demo: {
+    label: 'Fictional example',
+    description: 'Choose a sample, edit the note, and decide whether Alex can see it. This example stays on this page. It does not use your microphone, contact Parse, or store your input.',
+    reviewLabel: 'Check and edit the sample note',
+    shareLabel: 'Share this sample with Alex',
+    recipient: 'Fictional permitted caregiver',
+    hint: 'You can still edit or cancel before confirming the sample.',
+    reviewButton: 'Review',
+    shareButton: 'Confirm and share',
+    privateButton: 'Confirm privately',
+    cancelButton: 'Cancel',
+    resetButton: 'Try another sample',
+    timelineLabel: 'Alex’s sample timeline',
+    awaitingTitle: 'Nothing shared yet',
+    awaitingText: 'Alex can see a sample note only after you confirm it and choose to share.',
+    privateTitle: 'Kept private',
+    privateText: 'Alex’s sample timeline stays empty.',
+    caveat: 'Fictional example. No care space is connected.',
+  },
+  coverage: {
+    label: 'Features',
+    title: 'Simple, useful records for everyday care.',
+    items: [
+      { title: 'Care notes', text: 'Keep a concern or question in the person’s own words.' },
+      { title: 'Medication reports', text: 'Record a reported status. Skipped and unanswered remain separate.' },
+      { title: 'Outside readings', text: 'Enter a reading from an external monitor with its source. Parse does not take the measurement.' },
+      { title: 'Tasks and requests', text: 'Keep care tasks and practical requests together.' },
+      { title: 'Visit summaries', text: 'Draft from confirmed records, review and edit, then choose whether to share a read-only copy.' },
+    ],
+  },
+  sharing: {
+    label: 'Sharing',
+    title: 'You choose who has access.',
+    paragraphs: [
+      'Only confirmed notes are shared with caregivers you permit. You can review, correct, or cancel a note before it is saved.',
+      'The owner grants and revokes caregiver access. Sharing a visit summary is a separate choice after review. Its read-only link can expire or be revoked.',
+    ],
+    adultLink: 'See the browser companion',
+    caregiverLink: 'Open the caregiver space',
+  },
+  status: {
+    label: 'Prototype',
+    text: 'Parse is a Tencent Cloud Hackathon Singapore 2026 prototype. Current checks cover software and browser behavior, not a clinical pilot. English is the current test language.',
+  },
+  faqs: [
+    { question: 'Who can use Parse?', answer: 'Parse is a prototype for older adults who want to record care updates and share them with caregivers they choose. Caregivers can view permitted confirmed records and prepare a visit summary for review.' },
+    { question: 'How do I connect the browser companion?', answer: 'Open the browser companion and request a pairing code. The owner approves it in Settings. Voice recording needs HTTPS, microphone permission, and an active, open page.' },
+    { question: 'Is the microphone always on?', answer: 'No. You tap to start a short recording. The browser companion does not listen continuously or record with the page closed.' },
+    { question: 'What can a caregiver see?', answer: 'A caregiver sees confirmed records within the permissions the owner grants. The owner can revoke access. A visit summary uses a separate read-only share link that can expire or be revoked.' },
+    { question: 'What does a medication status mean?', answer: 'It records what someone reports. A report that a medicine was taken is not proof of ingestion. A skipped dose and no response are different states.' },
+    { question: 'Do I need an app or a device?', answer: 'The browser companion needs neither an app installation nor physical hardware. A native app and an ESP32-S3 cardholder are separate prototype paths. Physical cardholder testing remains outstanding.' },
+    { question: 'Does it work offline or send alerts when closed?', answer: 'The browser companion needs an internet connection and an active page. It does not record offline or deliver alerts after the page closes.' },
+    { question: 'Does Parse give medical advice?', answer: 'Parse records and shares information. It does not diagnose, recommend medicine changes, measure vital signs, or monitor emergencies. The prototype has not been clinically validated, and language support beyond current English tests has not been verified.' },
+  ],
+  closing: { text: 'See how care notes, tasks, and visit summaries come together.', action: 'Open Parse' },
+} as const;

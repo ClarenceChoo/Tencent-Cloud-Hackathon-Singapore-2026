@@ -1,0 +1,98 @@
+{
+  "logo": {
+    "src": "/brand/parse-aurora-logo-light.png",
+    "width": 2135,
+    "height": 736,
+    "shownWidth": 158
+  },
+  "alpha": [
+    {
+      "file": "parse-aurora-logo-light.png",
+      "width": 2135,
+      "height": 736,
+      "cornerAlpha": 0,
+      "transparentFraction": 0.6386849607982894,
+      "opaqueFraction": 0.00040538132573057734
+    },
+    {
+      "file": "parse-aurora-mark.png",
+      "width": 1254,
+      "height": 1254,
+      "cornerAlpha": 0,
+      "transparentFraction": 0.6402459498027365,
+      "opaqueFraction": 0.00046803975285466095
+    }
+  ],
+  "responsive": [
+    {
+      "width": 768,
+      "noOverflow": true
+    },
+    {
+      "width": 390,
+      "noOverflow": true
+    },
+    {
+      "width": 320,
+      "noOverflow": true
+    }
+  ],
+  "dashboardViews": [
+    {
+      "name": "Today",
+      "heading": "Today’s care",
+      "noOverflow": true
+    },
+    {
+      "name": "Timeline",
+      "heading": "Maya’s care timeline",
+      "noOverflow": true
+    },
+    {
+      "name": "Medications",
+      "heading": "Medications",
+      "noOverflow": true
+    },
+    {
+      "name": "Care plan",
+      "heading": "Care plan",
+      "noOverflow": true
+    },
+    {
+      "name": "Support",
+      "heading": "Support",
+      "noOverflow": true
+    },
+    {
+      "name": "Visit summary",
+      "heading": "Visit summary",
+      "noOverflow": true
+    },
+    {
+      "name": "Settings",
+      "heading": "Care preferences",
+      "noOverflow": true
+    }
+  ],
+  "landingDemo": {
+    "review": true,
+    "privateConfirmation": true,
+    "chosenRecipientSharing": true,
+    "emptyNoteBlocked": true,
+    "cancel": true,
+    "apiCalls": 0,
+    "storage": {
+      "local": 0,
+      "session": 0
+    }
+  },
+  "dashboardPreview": {
+    "noBackendCalls": true,
+    "mobileMenu": true
+  },
+  "normalModes": {
+    "login": true,
+    "companionUnpaired": true
+  },
+  "pageErrors": []
+}

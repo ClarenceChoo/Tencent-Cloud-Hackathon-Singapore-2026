@@ -1,0 +1,14 @@
+{
+  "generationMode": "built-in image_gen",
+  "reference": "design/parse-logos-2026-10-02/care-conversation-themes/01-aurora-pearl.png",
+  "assets": [
+    {
+      "file": "frontend/public/brand/parse-aurora-logo.png",
+      "prompt": "Use case: background-extraction. Asset type: transparent website brand logo. Image 1 is the exact approved Parse Aurora Pearl artwork, the edit target. Extract ONLY the complete existing horizontal logo: the two facing pearlescent aqua/lilac/champagne profiles with the speech-shaped gap, and the warm ivory word Parse. Keep the original exact profile contours, speech opening, P-a-r-s-e letterforms, proportions, spacing, satin highlights, pearlescent reflections, and shallow dimensional edges. Remove the entire blue/teal background and all diffuse background illumination, yielding genuine alpha transparency around the logo and inside the speech-shaped gap and letter counters. Retain a tiny soft local edge glow and shallow shadow only where it is part of the logo, without any opaque dark field or rectangular halo. TIGHTLY CROP to a wide horizontal canvas around the complete logo, roughly 3.2:1 aspect ratio, with small even safe margins; remove the large empty top, bottom, left, and right regions. This is a brand asset, not a new design. No other text, icons, scenery, backdrop, checkerboard pixels, mockup, perspective changes, watermark, or changed lettering. Return a clean high-resolution transparent PNG."
+    },
+    {
+      "file": "frontend/public/brand/parse-aurora-mark.png",
+      "prompt": "Use case: background-extraction. Asset type: transparent website brand icon and favicon. Image 1 is the exact approved Parse Aurora Pearl artwork, the edit target. Extract ONLY its existing two-facing-profile emblem; remove all of the Parse wordmark and the entire midnight-blue/teal background. Keep the exact silhouettes, head contours, speech-shaped gap, rounded lower edge, aqua/lilac/champagne pearlescent colors, satin reflections and shallow dimensional edges. The surrounding area and central speech-shaped gap must be genuinely transparent alpha, without a dark opaque plate. Center this unchanged emblem on a tightly composed square canvas with a small equal safety margin, allowing it to occupy most of the square while fitting the complete original contours. Keep it readable when small; do not add face detail, change its profile shapes, redraw its speech opening, add text, add symbols, add checkerboard pixels, place it on a panel, rotate it, or use a new style. Retain only a tiny soft local rim glow. Return a high-resolution transparent PNG."
+    }
+  ]
+}

@@ -91,7 +91,11 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
     if (skipSession) {
       setLoading(false);
     } else {
-      refreshSession().then(value=>{if(!value.patients.length)setLoading(false);}).catch(() => {setSession(null);setLoading(false);});
+      refreshSession().then(value=>{if(!value.patients.length)setLoading(false);}).catch(err => {
+        setSession(null);
+        if (err instanceof ApiError && err.status >= 500) setLoginError(err.message);
+        setLoading(false);
+      });
     }
   }, [refreshSession, sharedToken, skipSession]);
   useEffect(() => { if (session && patientId) loadDashboard(patientId); }, [session, patientId, loadDashboard]);

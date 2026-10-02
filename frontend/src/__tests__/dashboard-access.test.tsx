@@ -20,6 +20,15 @@ async function setup() {
   return { poll: () => act(async () => { await poll(); }), setDashboard: (next: typeof dashboard) => { dashboard = next; } };
 }
 
+it('shows an unavailable backend when the initial session request returns 503', async () => {
+  vi.stubGlobal('scrollTo', vi.fn());
+  vi.stubGlobal('fetch', vi.fn(async () => response({ detail: 'Backend service is not deployed for this preview.' }, 503)));
+  render(<App/>);
+  expect((await screen.findByRole('alert')).textContent).toBe('Backend service is not deployed for this preview.');
+  expect(screen.getByRole('heading', { name: 'Sign in to your care space' })).toBeTruthy();
+  expect(screen.queryByRole('heading', { name: /care timeline/i })).toBeNull();
+});
+
 it.each([401, 403])('clears an open care view on HTTP %s instead of retaining denied records', async status => {
   const app = await setup();
   app.setDashboard(async () => response({ detail: 'No longer authorized' }, status));

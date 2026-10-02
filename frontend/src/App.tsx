@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Activity, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronRight, CircleHelp, Clock3, FileText, Heart, ListChecks, LogOut, Menu, Pill, Plus, RefreshCw, Settings, Shield, Sparkles, Stethoscope, Users, X } from 'lucide-react';
-import { api, ApiError, Dashboard, label, localDay, niceDate, Patient, Proposal, Row, Session, setCsrf, str, val } from './api';
+import { api, ApiError, CareQueryItem, Dashboard, label, localDay, niceDate, Patient, Proposal, Row, Session, setCsrf, str, val } from './api';
 
 import DeviceSetup from './DeviceSetup';
 import { useSharedSummary } from './useSharedSummary';
@@ -10,10 +10,11 @@ import { uiPreview } from './uiPreview';
 import BrandLogo from './BrandLogo';
 import { buildCareActions, CareAction } from './careActions';
 import { CareActionInbox } from './CareActionInbox';
+import { AskParse } from './AskParse';
 
-type View = 'overview' | 'timeline' | 'medications' | 'care' | 'support' | 'summary' | 'settings';
+type View = 'overview' | 'ask' | 'timeline' | 'medications' | 'care' | 'support' | 'summary' | 'settings';
 const nav: { id: View; title: string; icon: typeof Heart }[] = [
-  { id: 'overview', title: 'Today', icon: Activity }, { id: 'timeline', title: 'Timeline', icon: CalendarDays },
+  { id: 'overview', title: 'Today', icon: Activity }, { id: 'ask', title: 'Ask Parse', icon: Sparkles }, { id: 'timeline', title: 'Timeline', icon: CalendarDays },
   { id: 'medications', title: 'Medications', icon: Pill }, { id: 'care', title: 'Care plan', icon: ListChecks },
   { id: 'support', title: 'Support', icon: Users }, { id: 'summary', title: 'Visit summary', icon: FileText }, { id: 'settings', title: 'Settings', icon: Settings },
 ];
@@ -153,11 +154,26 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
   const canManageDevices = hasPermission(dashboard?.permissions, 'manage:devices');
   const canManageProfile = hasPermission(dashboard?.permissions, 'manage:profile');
   const actions = useMemo(() => dashboard?.patient.id === patientId && session ? buildCareActions(dashboard, session.user.id, Date.now()) : [], [dashboard, patientId, session]);
+  const evidenceRevision = useMemo(() => dashboard?.patient.id === patientId ? JSON.stringify({
+    permissions: dashboard.permissions,
+    measurements: dashboard.measurements.map(row => [row.id, row.version, row.superseded_at]),
+    support: dashboard.support_requests.map(row => [row.id, row.status, row.recipient_user_id, row.resolved_at]),
+    doses: dashboard.doses.map(row => [row.id, row.report_state, row.report_time, row.confirmation_proposal_id]),
+  }) : '', [dashboard, patientId]);
   const [focusAction, setFocusAction] = useState<string | null>(null);
   useEffect(() => {
     if (!focusAction) return;
-    const target = Array.from(document.querySelectorAll<HTMLElement>('[data-action-source]')).find(element => element.dataset.actionSource === focusAction);
-    if (target) { target.focus(); target.scrollIntoView?.({ block: 'center' }); setFocusAction(null); }
+    const focus = () => {
+      const target = Array.from(document.querySelectorAll<HTMLElement>('[data-action-source]')).find(element => element.dataset.actionSource === focusAction);
+      if (!target) return false;
+      target.focus(); target.scrollIntoView?.({ block: 'center' }); setFocusAction(null);
+      return true;
+    };
+    if (focus()) return;
+    const observer = new MutationObserver(() => { if (focus()) observer.disconnect(); });
+    observer.observe(document.body, { childList: true, subtree: true });
+    const timeout = window.setTimeout(() => observer.disconnect(), 2000);
+    return () => { observer.disconnect(); window.clearTimeout(timeout); };
   }, [focusAction, view, dashboard]);
   function openCareAction(item: CareAction) {
     if (item.kind === 'proposal' && item.action === 'review') {
@@ -167,6 +183,28 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
     }
     setFocusAction(item.key);
     setView(item.targetView);
+  }
+  async function openQuerySource(source: CareQueryItem) {
+    const sourcePatient = patientId;
+    const generation = patientGeneration.current;
+    const request = ++dashboardRequest.current;
+    try {
+      const latest = await api.dashboard(sourcePatient);
+      if (!currentPatient(sourcePatient, generation) || request !== dashboardRequest.current) return;
+      setDashboard(latest);
+      const viewFor = { measurement: 'timeline', support_request: 'support', dose: 'medications' } as const;
+      const collection = source.source_type === 'measurement' ? latest.measurements :
+        source.source_type === 'support_request' ? latest.support_requests : latest.doses;
+      if (collection.some(row => row.id === source.source_id)) {
+        setFocusAction(`${source.source_type}:${source.source_id}`);
+        setView(viewFor[source.source_type]);
+      } else {
+        setToast('This source is current, but it is outside the recent dashboard view. Its details remain in Ask Parse.');
+      }
+    } catch (error) {
+      if (currentPatient(sourcePatient, generation) && !accessFailed(error))
+        setToast('The source is current, but the detailed view could not be refreshed. Its details remain in Ask Parse.');
+    }
   }
   function choosePatient(id: string) {
     patientGeneration.current++;
@@ -265,7 +303,7 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
     finally { if (currentPatient(sourcePatient, generation)) setBusy(false); }
   }
   function beginComposer(kind:string,seed:Record<string,unknown>={}) { setComposerKind(kind); setComposerSeed(seed); setComposer(true); }
-  const greeting = view === 'timeline' ? `${displayName(patient)}’s care timeline` : ({overview:'Today’s care', medications:'Medications', care:'Care plan', support:'Support', summary:'Visit summary', settings:'Care preferences'} as Partial<Record<View,string>>)[view];
+  const greeting = view === 'timeline' ? `${displayName(patient)}’s care timeline` : ({overview:'Today’s care', ask:'Ask Parse', medications:'Medications', care:'Care plan', support:'Support', summary:'Visit summary', settings:'Care preferences'} as Partial<Record<View,string>>)[view];
 
   if (sharedToken) return <SharedSummaryPublic data={publicView.data} loading={publicView.loading} error={publicView.error} />;
   if (!session) return <Login onSubmit={login} loading={loading || busy} error={loginError} />;
@@ -286,7 +324,8 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
         {refreshWarning && <p className="source-note" role="status">{refreshWarning}</p>}
         {loading ? <div className="loading-card"><span className="spinner" /><p>Loading confirmed care information…</p></div> : error && !d ? <div className="empty-card"><CircleHelp size={24} /><h2>This care space isn’t available</h2><p>Check your access or try again. No new information has been saved.</p><button className="button" onClick={() => loadDashboard(patientId)}>Try again</button></div> : d ? <>
           {view === 'overview' && <><CareActionInbox items={actions} onOpen={openCareAction}/><Overview data={d} canWriteCare={canWriteCare} onNavigate={setView} canShareNote={canManageSharing} canDeleteNote={canWriteCare} onShareNote={setNoteForSharing} onDeleteNote={deleteNote} onCompose={beginComposer} /></>}
-    {view === 'timeline' && <Timeline key={patientId} data={d} onNavigate={setView} onReviewProposal={openReview} onCorrect={row=>beginComposer('measurement',measurementSeed(row))} canWriteCare={canWriteCare} canShareNote={canManageSharing} canDeleteNote={canWriteCare} onShareNote={setNoteForSharing} onDeleteNote={deleteNote} />}
+          {view === 'ask' && <AskParse key={patientId} patientId={patientId} timezone={d.patient.timezone} sessionKey={session.csrf_token} evidenceRevision={evidenceRevision} preview={uiPreview} onOpenSource={openQuerySource} onSessionExpired={() => onAccessLost('Your session ended. Sign in again to view current care information.')}/>}
+    {view === 'timeline' && <Timeline key={patientId} data={d} focusSource={focusAction} onNavigate={setView} onReviewProposal={openReview} onCorrect={row=>beginComposer('measurement',measurementSeed(row))} canWriteCare={canWriteCare} canShareNote={canManageSharing} canDeleteNote={canWriteCare} onShareNote={setNoteForSharing} onDeleteNote={deleteNote} />}
           {view === 'medications' && <Medications data={d} canWriteCare={canWriteCare} onCompose={beginComposer} onPlan={payload => mutate('Medication plan saved after review.', () => api.createMedicationPlan(patientId, payload))} busy={busy} />}
           {view === 'care' && <CarePlan data={d} canWriteCare={canWriteCare} onCompose={beginComposer} onCreate={(kind,payload) => propose(kind,payload)} />}
           {view === 'support' && <Support data={d} currentUserId={session.user.id} canWriteCare={canWriteCare} onCompose={beginComposer} onCreate={(kind,payload)=>propose(kind,payload)} onAcknowledge={id => mutate('Request acknowledged.', () => api.acknowledge(id))} onResolve={(id,outcome) => mutate('Resolution saved.', () => api.resolve(id,outcome))} />}
@@ -367,7 +406,7 @@ function timelineMeta(kind: string, row: Row) {
   if (kind === 'Care plan update') return `Care plan · ${prettyState(stateText(row))}`;
   return `Support request · ${prettyState(stateText(row))}`;
 }
-function Timeline({data,onNavigate,onReviewProposal,canShareNote,canDeleteNote,canWriteCare,onShareNote,onDeleteNote,onCorrect}: {data:Dashboard;onNavigate:(view:View)=>void;onCorrect:(measurement:Row)=>void;onReviewProposal:(proposal:Proposal)=>void;canWriteCare:boolean;canShareNote:boolean;canDeleteNote:boolean;onShareNote:(note:Row)=>void;onDeleteNote:(note:Row)=>void}) {
+function Timeline({data,focusSource,onNavigate,onReviewProposal,canShareNote,canDeleteNote,canWriteCare,onShareNote,onDeleteNote,onCorrect}: {data:Dashboard;focusSource?:string|null;onNavigate:(view:View)=>void;onCorrect:(measurement:Row)=>void;onReviewProposal:(proposal:Proposal)=>void;canWriteCare:boolean;canShareNote:boolean;canDeleteNote:boolean;onShareNote:(note:Row)=>void;onDeleteNote:(note:Row)=>void}) {
   const [filter,setFilter] = useState<TimelineFilter>('All entries');
   const [expanded,setExpanded] = useState<string | null>(null);
   const [visibleCount,setVisibleCount] = useState(12);
@@ -380,6 +419,11 @@ function Timeline({data,onNavigate,onReviewProposal,canShareNote,canDeleteNote,c
   const all = categories.flatMap(([kind,rows]) => rows.map(row => ({kind,row,date:entryDate(row)})))
     .filter(entry => filter === 'All entries' || entry.kind === ({Medication:'Medication report',Notes:'Confirmed note',Readings:'Blood pressure reading'} as Partial<Record<TimelineFilter,string>>)[filter])
     .sort((a,b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
+  useEffect(() => {
+    if (!focusSource) return;
+    const index = all.findIndex(entry => `${entry.kind === 'Blood pressure reading' ? 'measurement' : entry.kind === 'Support request' ? 'support_request' : entry.kind === 'Medication report' ? 'dose' : ''}:${entry.row.id}` === focusSource);
+    if (index >= 0) setVisibleCount(Math.max(12, index + 1));
+  }, [focusSource, data]);
   const groups = new Map<string,TimelineEntry[]>();
   for (const entry of all.slice(0,visibleCount)) {
     const day = entry.date ? localDay(entry.date,timezone) : 'undated';
@@ -394,7 +438,7 @@ function Timeline({data,onNavigate,onReviewProposal,canShareNote,canDeleteNote,c
           <div className="timeline">{entries.sort((a,b) => (a.date?.getTime() ?? 0)-(b.date?.getTime() ?? 0)).map(({kind,row,date},i) => {
             const key = `${kind}-${row.id || i}`;
             const open = expanded === key;
-            return <article className="timeline-item" key={key}>
+            return <article className="timeline-item" key={key} data-action-source={`${kind === 'Blood pressure reading' ? 'measurement' : kind === 'Support request' ? 'support_request' : kind === 'Medication report' ? 'dose' : ''}:${String(row.id)}`} tabIndex={-1}>
               <time className="timeline-time" dateTime={date?.toISOString()}>{date ? clockTime(date,timezone) : '—'}</time>
               <div className="timeline-rail"><span className="timeline-dot"/></div>
               <div className="timeline-content"><div className="timeline-heading"><div><h3>{timelineTitle(kind,row)}</h3><p className="timeline-meta">{timelineMeta(kind,row)}</p><RecordSource row={row}/></div><button className="timeline-view" aria-expanded={open} aria-controls={`entry-${key}`} onClick={() => setExpanded(open ? null : key)}>{open ? 'Close' : 'View'}<ChevronRight size={17}/></button></div>
@@ -443,7 +487,7 @@ function Medications({data,onCompose,onPlan,busy,canWriteCare}:{data:Dashboard;c
  const savePlan=()=>{const oldMeds=Array.isArray(active?.medicines)?active.medicines as Row[]:[];const oldSchedule=Array.isArray(active?.schedule)?active.schedule as Row[]:[];const medId=editingId||`med_${Date.now()}`;const medicine={id:medId,name:form.name,instructions:form.instructions,reviewed_reference:form.instructions,reference_source:form.source};const medicines=editingId?oldMeds.map(m=>String(val(m,'id'))===editingId?medicine:m):[...oldMeds,medicine];const schedule=editingId?oldSchedule.map(item=>String(val(item,'medicine_id'))===editingId?{...item,local_time:form.schedule}:item):[...oldSchedule,{medicine_id:medId,local_time:form.schedule}];onPlan({timezone:form.timezone||data.patient?.timezone||'',source:[active?.source?`Existing plan: ${String(active.source)}`:'',`Reviewed entry: ${form.source}`].filter(Boolean).join(' · '),checked:true,medicines,schedule});};
  return <div className="view-stack"><section className="card"><SectionHead eyebrow="Checked medication plan" title="Current instructions" action={canWriteCare&&<button className="button button-primary" onClick={()=>{if(add){setAdd(false);setEditingId('');setChecked(false);}else{setForm(emptyForm);setEditingId('');setChecked(false);setAdd(true);}}}><Plus size={15}/>{add?'Close':active?'Add medicine':'Create plan'}</button>}/><p className="section-intro">Only activate a plan after checking each medicine and instruction against the current prescription or label. Parse does not suggest dose changes.</p>{add&&<div className="form-card"><h3>{editingId?'Edit a checked medication entry':'Review a medication entry'}</h3><div className="form-grid"><Field label="Medicine name" value={form.name} onChange={v=>change('name',v)}/><Field label="Instructions from label" value={form.instructions} onChange={v=>change('instructions',v)}/><Field label="Schedule and time" value={form.schedule} onChange={v=>change('schedule',v)} type="time"/><Field label="Timezone" value={form.timezone} onChange={v=>change('timezone',v)}/><Field label="Source (e.g. current prescription)" value={form.source} onChange={v=>change('source',v)}/></div><label className="checkline"><input type="checkbox" checked={checked} onChange={e=>setChecked(e.target.checked)}/> I checked these details against the current prescription or medicine label.</label><button className="button button-deep" disabled={busy||!checked||!form.name.trim()||!form.instructions.trim()||!form.schedule||!form.source.trim()} onClick={savePlan}>{busy?'Saving…':editingId?'Save reviewed version':'Save checked plan'}</button></div>}
  {plans.length ? plans.flatMap((plan,i)=>{const medicines=Array.isArray(plan.medicines)?plan.medicines as Row[]:[plan];return medicines.map((medicine,j)=><div className="med-plan-row" key={`${String(plan.id||i)}-${j}`}><span className="med-plan-icon"><Pill size={18}/></span><div className="med-plan-main"><h3>{label(medicine,'name','medicine_name')||'Medication'}</h3><p>{label(medicine,'instructions','dose')||'Instructions not provided'}</p><div className="med-plan-meta"><span>{Array.isArray(plan.schedule)?(plan.schedule as Row[]).filter(item=>val(item,'medicine_id')===val(medicine,'id')).map(item=>label(item,'local_time')).join(', ')||'Schedule not provided':label(plan,'schedule','timing')||'Schedule not provided'}</span><span>·</span><span>{label(plan,'timezone')||data.patient?.timezone||'Timezone not provided'}</span></div><div className="source-note">Source: {label(plan,'source')||'Not provided'} · {val(plan,'checked_at')?`Checked ${niceDate(val(plan,'checked_at'))}`:'Check date unavailable'}</div></div><Status>{val(plan,'active')===false?'Inactive':'Checked'}</Status>{canWriteCare&&val(plan,'active')!==false&&<button className="button" onClick={()=>editMedicine(medicine,plan)}>Edit</button>}</div>);}) : <Empty title="No checked medication plan" text="Add the current label details and source after checking them with the person’s prescription."/>}</section>
- <section className="card"><SectionHead title="Dose reports"/><p className="section-intro">A scheduled reminder, delivered audio, or silence is not a dose report. Each status is recorded only after explicit confirmation.</p>{data.doses.length?<div className="table-wrap"><table><thead><tr><th>Medicine</th><th>Scheduled occurrence</th><th>Reported status</th><th>Report time</th></tr></thead><tbody>{data.doses.map((r,i)=><tr key={String(r.id||i)}><td>{label(r,'medicine_name','medication_name','name')||'Medication'}</td><td>{niceDate(val(r,'scheduled_at','due_at'))}</td><td><Status warm={!stateText(r).includes('taken')}>{prettyState(stateText(r))}</Status></td><td>{niceDate(val(r,'reported_at','report_time'),'Not reported')}{r.report_time ? <><RecordSource row={r}/><RecordHistory row={r}/></> : null}</td></tr>)}</tbody></table></div>:<Empty title="No dose reports" text="Reported taken, skipped, not yet, uncertain and no-response states remain separate."/>}</section>
+ <section className="card"><SectionHead title="Dose reports"/><p className="section-intro">A scheduled reminder, delivered audio, or silence is not a dose report. Each status is recorded only after explicit confirmation.</p>{data.doses.length?<div className="table-wrap"><table><thead><tr><th>Medicine</th><th>Scheduled occurrence</th><th>Reported status</th><th>Report time</th></tr></thead><tbody>{data.doses.map((r,i)=><tr key={String(r.id||i)} data-action-source={`dose:${String(r.id||i)}`} tabIndex={-1}><td>{label(r,'medicine_name','medication_name','name')||'Medication'}</td><td>{niceDate(val(r,'scheduled_at','due_at'))}</td><td><Status warm={!stateText(r).includes('taken')}>{prettyState(stateText(r))}</Status></td><td>{niceDate(val(r,'reported_at','report_time'),'Not reported')}{r.report_time ? <><RecordSource row={r}/><RecordHistory row={r}/></> : null}</td></tr>)}</tbody></table></div>:<Empty title="No dose reports" text="Reported taken, skipped, not yet, uncertain and no-response states remain separate."/>}</section>
  {canWriteCare&&<section className="card"><SectionHead title="Report a dose"/><div className="compact-form"><p>Start a proposal for a specific scheduled medicine occurrence. Review the medicine, time and reported status before confirming.</p><button className="button" onClick={()=>onCompose('medication_report')}>Create a medication report</button></div></section>}</div>;
 }
 function Field({label:lab,value,onChange,type='text'}:{label:string;value:string;onChange:(v:string)=>void;type?:string}) {return <label>{lab}<input type={type} value={value} onChange={e=>onChange(e.target.value)}/></label>;}

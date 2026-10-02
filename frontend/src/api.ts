@@ -4,6 +4,19 @@ export type User = { id: string; name: string; email: string; role: string };
 export type Patient = { id: string; name: string; timezone: string; preferred_name?: string; language?: string; daily_check_in_enabled?: boolean; daily_check_in_local_time?: string | null; calling_route?: string | null };
 export type Session = { user: User; patients: Patient[]; csrf_token: string };
 export type Proposal = { id: string; kind: string; payload: Record<string, unknown>; readback: string; status: string; expires_at?: string };
+export type CareQueryKind = 'latest_reading' | 'open_support' | 'medication_reports';
+export type CareQuerySourceType = 'measurement' | 'support_request' | 'dose';
+export type CareQueryItem = {
+  source_type: CareQuerySourceType; source_id: string; source_version: number | null;
+  recorded_at: string | null; occurred_at: string | null;
+  provenance?: Record<string, unknown> | null;
+  [key: string]: unknown;
+};
+export type CareQueryResponse = {
+  kind: CareQueryKind; generated_at: string; timezone: string;
+  date_basis: 'recorded_at' | 'scheduled_local_date'; local_date: string | null;
+  items: CareQueryItem[]; truncated: boolean;
+};
 export type Row = Record<string, unknown> & { id?: string };
 export type DeviceSetupStatus = {
   service_address: string | null;
@@ -61,6 +74,12 @@ export const api = {
   session: () => request<Session>('/auth/session'),
   logout: () => request<void>('/auth/logout', json('POST')),
   dashboard: (patientId: string) => request<Dashboard>(`/app/patients/${encodeURIComponent(patientId)}/dashboard`),
+  careQuery: (patientId: string, kind: CareQueryKind, localDate?: string, signal?: AbortSignal) =>
+    request<CareQueryResponse>(`/app/patients/${encodeURIComponent(patientId)}/queries`,
+      { ...json('POST', { kind, ...(kind === 'medication_reports' ? { local_date: localDate } : {}) }), signal, cache: 'no-store' }),
+  careQuerySource: (patientId: string, kind: CareQuerySourceType, sourceId: string, signal?: AbortSignal) =>
+    request<CareQueryItem>(`/app/patients/${encodeURIComponent(patientId)}/query-sources/${encodeURIComponent(kind)}/${encodeURIComponent(sourceId)}`,
+      { signal, cache: 'no-store' }),
   updateProfile: (patientId: string, payload: Record<string, unknown>) => request<Row>(`/app/patients/${encodeURIComponent(patientId)}/profile`, json('PUT', payload)),
   createProposal: (patientId: string, kind: string, payload: Record<string, unknown>) => request<Proposal>(`/app/patients/${encodeURIComponent(patientId)}/proposals`, json('POST', { kind, payload })),
   reviseProposal: (id: string, payload: Record<string, unknown>) => request<Proposal>(`/app/proposals/${encodeURIComponent(id)}/revise`, json('POST', { payload })),

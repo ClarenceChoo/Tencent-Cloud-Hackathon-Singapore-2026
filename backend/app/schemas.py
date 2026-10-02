@@ -22,6 +22,19 @@ class ProposalConfirm(BaseModel):
     confirmed: Literal[True]
 
 
+class QueryRequest(BaseModel):
+    kind: Literal["latest_reading", "open_support", "medication_reports"]
+    local_date: Optional[date] = None
+
+    @model_validator(mode="after")
+    def date_matches_kind(self):
+        if self.kind == "medication_reports" and self.local_date is None:
+            raise ValueError("local_date is required for medication_reports")
+        if self.kind != "medication_reports" and self.local_date is not None:
+            raise ValueError("local_date is only accepted for medication_reports")
+        return self
+
+
 class Medicine(BaseModel):
     id: str = Field(min_length=1, max_length=100)
     name: str = Field(min_length=1, max_length=200)

@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from . import models as m
 from .config import Settings, get_settings
+from .care_queries import load_query_source, run_care_query
 from .database import Database
 from .device_setup import device_status, service_readiness, PROTOCOL
 from .phone import EnrollmentLimiter, router as phone_router
@@ -35,6 +36,7 @@ from .schemas import (
     ProposalConfirm,
     ProposalCreate,
     ProposalRevise,
+    QueryRequest,
     ResolveRequest,
     SummaryCreate,
     SummaryShareCreate,
@@ -293,7 +295,8 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
     @app.middleware("http")
     async def web_no_store(request: Request, call_next):
         response = await call_next(request)
-        if request.url.path.startswith("/v1/web/"):
+        if (request.url.path.startswith("/v1/web/") or
+                "/queries" in request.url.path or "/query-sources/" in request.url.path):
             response.headers["Cache-Control"] = "private, no-store"
         return response
 
@@ -338,6 +341,27 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         if any(scope in scopes for scope in ('*', 'manage:devices', 'read:devices', 'read:dashboard')):
             result['device_setup'] = service_readiness(request.app)
         return result
+
+    @app.post("/v1/app/patients/{patient_id}/queries")
+    def care_query(patient_id: str, data: QueryRequest, request: Request,
+                   response: Response, db: Session = Depends(get_db)):
+        user, browser_session, _, scopes = _patient_access(request, db, patient_id)
+        require_csrf(request, browser_session)
+        patient = db.get(m.Patient, patient_id)
+        if patient is None:
+            raise HTTPException(status_code=403, detail="Patient access is not permitted")
+        response.headers["Cache-Control"] = "private, no-store"
+        return run_care_query(db, patient, user.id, scopes, data)
+
+    @app.get("/v1/app/patients/{patient_id}/query-sources/{kind}/{source_id}")
+    def care_query_source(patient_id: str, kind: str, source_id: str,
+                          request: Request, response: Response, db: Session = Depends(get_db)):
+        user, _, _, scopes = _patient_access(request, db, patient_id)
+        patient = db.get(m.Patient, patient_id)
+        if patient is None or kind not in {"measurement", "support_request", "dose"}:
+            raise HTTPException(status_code=404, detail="Source is unavailable")
+        response.headers["Cache-Control"] = "private, no-store"
+        return load_query_source(db, patient, user.id, scopes, kind, source_id)
 
     @app.post("/v1/app/patients/{patient_id}/proposals", status_code=201)
     def proposal_create(patient_id: str, data: ProposalCreate, request: Request, db: Session = Depends(get_db)):

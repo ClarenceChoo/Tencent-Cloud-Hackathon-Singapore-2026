@@ -11,7 +11,7 @@ const pending = { key, context: null, createdAt: Date.now(), deviceId: 'device_1
 const storage = () => { const entries = new Map<string,string>(); return { getItem: (key: string) => entries.get(key) ?? null, setItem: (key: string, value: string) => { entries.set(key, value); }, removeItem: (key: string) => { entries.delete(key); }, clear: () => entries.clear() }; };
 const home = (): Home => ({ device_id: 'device_123', patient: { id: 'patient_1', name: 'Mei', preferred_name: 'Mei', timezone: 'Asia/Singapore', calling_route: null }, active_companion: { device_id: null, generation: 1 }, voice: { voice_service: 'simulated', scheduler_enabled: false }, current_proposal: null, medication_plan: null, doses: [], notes: [], measurements: [], preventive_tasks: [], support_requests: [], followups: [], permitted_recipients: [] });
 const result = (status: string, eventStatus?: string): TurnStatus => ({ turn_id: 'turn_12345678', status, received_at: '2026-10-02T01:00:00Z', error: null, event: eventStatus ? { expires_at: '2026-10-01T00:00:00Z', payload: { status: eventStatus, record_type: 'health_note', record_id: 'note_1', spoken_text: 'Old audio' } } : null });
-const deferred = <T,>() => { let resolve!: (value: T) => void; const promise = new Promise<T>(done => { resolve = done; }); return { promise, resolve }; };
+const deferred = <T,>() => { let resolve!: (value: T) => void; let reject!: (reason: Error) => void; const promise = new Promise<T>((done, fail) => { resolve = done; reject = fail; }); return { promise, resolve, reject }; };
 let currentHome: Home;
 let currentEnrollment: { status: 'paired'; device_id: string; patient: { id: string; name: string } };
 
@@ -191,6 +191,71 @@ it.each(['patient', 'device'])('clears an old %s receipt before a late callback 
   request.resolve(result('committed', 'committed'));
   await waitFor(() => expect(screen.queryByText('Receipt unknown')).toBeNull());
   expect(screen.queryByText('Health note saved')).toBeNull(); expect(api.confirm).not.toHaveBeenCalled();
+});
+
+it('hides old care and draft text while a changed enrollment home is delayed or fails', async () => {
+  sessionStorage.clear(); const user = userEvent.setup();
+  const oldProposal = { id: 'prop_old', context_id: 'ctx_old1234', kind: 'health_note', status: 'pending', readback: 'Old private read-back', payload: { wording: 'Old private draft' }, expires_at: '2099-01-01T00:00:00Z' };
+  currentHome = { ...home(), notes: [{ id: 'old_note', wording: 'Old private note' }], current_proposal: oldProposal };
+  const nextHome = { ...home(), patient: { ...home().patient, id: 'patient_2', name: 'Bo', preferred_name: 'Bo' }, notes: [], current_proposal: null };
+  const pendingHome = deferred<Home>();
+  api.enrollment.mockResolvedValueOnce(currentEnrollment).mockResolvedValue({ status: 'paired', device_id: 'device_123', patient: { id: 'patient_2', name: 'Bo' } });
+  api.home.mockResolvedValueOnce(currentHome).mockReturnValueOnce(pendingHome.promise).mockResolvedValue(nextHome);
+  render(<Companion />);
+  await screen.findByText('Old private note');
+  await user.click(screen.getByRole('button', { name: 'Change wording' }));
+  expect(screen.getByDisplayValue('Old private draft')).toBeTruthy();
+  await user.click(screen.getByRole('button', { name: 'Refresh care details' }));
+  await screen.findByText('Opening Parse…');
+  expect(screen.queryByText('Old private note')).toBeNull();
+  expect(screen.queryByText('Old private read-back')).toBeNull();
+  expect(screen.queryByDisplayValue('Old private draft')).toBeNull();
+  pendingHome.promise.catch(() => {});
+  pendingHome.reject(new Error('temporary network error'));
+  expect(await screen.findByText(/Connection interrupted while checking the new care space/)).toBeTruthy();
+  expect(screen.queryByText('Old private note')).toBeNull();
+  expect(screen.queryByDisplayValue('Old private draft')).toBeNull();
+  await user.click(screen.getByRole('button', { name: 'Try again' }));
+  expect(await screen.findByText('Hello, Bo.')).toBeTruthy();
+  expect(screen.queryByText('Old private note')).toBeNull();
+});
+
+it('drops an unsaved draft when the installation disappears before a new pairing', async () => {
+  sessionStorage.clear(); const user = userEvent.setup();
+  const oldProposal = { id: 'prop_old', context_id: 'ctx_old1234', kind: 'health_note', status: 'pending', readback: 'Old private read-back', payload: { wording: 'Old private draft' }, expires_at: '2099-01-01T00:00:00Z' };
+  const newProposal = { ...oldProposal, id: 'prop_new', context_id: 'ctx_new1234', readback: 'New read-back', payload: { wording: 'New draft' } };
+  currentHome = { ...home(), current_proposal: oldProposal };
+  const newEnrollment = { status: 'paired' as const, device_id: 'device_456', patient: { id: 'patient_2', name: 'Bo' } };
+  const newHome = { ...home(), device_id: 'device_456', patient: { ...home().patient, id: 'patient_2', name: 'Bo', preferred_name: 'Bo' }, current_proposal: newProposal };
+  api.session.mockResolvedValueOnce({ has_installation: true, csrf_token: 'csrf' }).mockResolvedValueOnce({ has_installation: false, csrf_token: '' }).mockResolvedValue({ has_installation: true, csrf_token: 'new-csrf' });
+  api.enrollment.mockResolvedValueOnce(currentEnrollment).mockResolvedValue(newEnrollment);
+  api.home.mockResolvedValueOnce(currentHome).mockResolvedValue(newHome);
+  api.enroll.mockResolvedValue(newEnrollment);
+  render(<Companion />);
+  await screen.findByText('Old private read-back');
+  await user.click(screen.getByRole('button', { name: 'Change wording' }));
+  expect(screen.getByDisplayValue('Old private draft')).toBeTruthy();
+  await user.click(screen.getByRole('button', { name: 'Refresh care details' }));
+  await screen.findByRole('button', { name: 'Connect this browser' });
+  expect(screen.queryByDisplayValue('Old private draft')).toBeNull();
+  await user.click(screen.getByRole('button', { name: 'Connect this browser' }));
+  expect(await screen.findByText('New read-back')).toBeTruthy();
+  expect(screen.queryByDisplayValue('Old private draft')).toBeNull();
+  expect(screen.queryByLabelText('How should this note read?')).toBeNull();
+});
+
+it('drops an unsaved draft as soon as the browser installation is denied', async () => {
+  sessionStorage.clear(); const user = userEvent.setup();
+  currentHome = { ...home(), current_proposal: { id: 'prop_old', context_id: 'ctx_old1234', kind: 'health_note', status: 'pending', readback: 'Old private read-back', payload: { wording: 'Old private draft' }, expires_at: '2099-01-01T00:00:00Z' } };
+  api.session.mockResolvedValueOnce({ has_installation: true, csrf_token: 'csrf' }).mockRejectedValueOnce(new CompanionApiError('revoked', 403));
+  render(<Companion />);
+  await screen.findByText('Old private read-back');
+  await user.click(screen.getByRole('button', { name: 'Change wording' }));
+  expect(screen.getByDisplayValue('Old private draft')).toBeTruthy();
+  await user.click(screen.getByRole('button', { name: 'Refresh care details' }));
+  await screen.findByText(/no longer has access/);
+  expect(screen.queryByDisplayValue('Old private draft')).toBeNull();
+  expect(screen.queryByText('Old private read-back')).toBeNull();
 });
 
 it('clears old care content when result enrichment returns a different patient', async () => {

@@ -159,3 +159,18 @@
 .companion-receipt-committed { border-color:#a6d4c4; background:#f1faf4; }
 .companion-receipt-failed,.companion-receipt-expired { border-color:#e2c7ab; background:#fffaf2; }
 @media(max-width:420px) { .companion-receipt .companion-button { width:100%; } }
+
+.companion-onboarding{margin:0 0 24px;padding:clamp(20px,4vw,32px);border:1px solid #b9d4d5;border-radius:22px;background:#fbfdfb;box-shadow:0 10px 25px rgba(20,55,76,.06)}
+.companion-onboarding-head{display:flex;align-items:start;justify-content:space-between;gap:18px}
+.companion-onboarding h2{font-size:clamp(28px,4vw,36px);margin:6px 0 12px}
+.companion-onboarding p{max-width:75ch;margin:9px 0;color:#40576a}
+.companion-onboarding-steps{list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:9px;margin:20px 0;padding:0}
+.companion-onboarding-steps li{display:flex;flex-direction:column;gap:5px;padding:12px;border:1px solid #d8e4e3;border-radius:12px;background:#f4f7f5;font-size:15px}
+.companion-onboarding-steps li span{color:#526673}
+.companion-onboarding-steps li.is-done{background:#e7f3ea;border-color:#a9d2b8}
+.companion-onboarding-steps li.is-current{background:#e6f2f2;border-color:#85bbc3}
+.companion-onboarding .companion-button{margin-top:12px}
+.companion-tutorial{margin-top:18px;padding-top:15px;border-top:1px solid #cbdcdd}
+.companion-tutorial summary{cursor:pointer;color:#145d6d;font-weight:700;min-height:44px}
+.companion-reopen-guide{margin-bottom:20px}
+@media(max-width:600px){.companion-onboarding-head{display:block}.companion-onboarding-head .companion-plain{margin-top:4px}}

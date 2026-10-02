@@ -54,6 +54,16 @@ def test_populated_legacy_upgrade_backfills_only_unambiguous_route(legacy):
         assert c.execute(text("SELECT COUNT(*) FROM devices WHERE device_type='pendant'")).scalar_one() == 3
 
 
+def test_capture_intent_migration_preserves_older_turns(legacy):
+    migrate.upgrade(legacy, '0004_phone_notifications')
+    with legacy.begin() as c:
+        c.execute(text("INSERT INTO voice_turns (id,device_id,patient_id,idempotency_key,content_sha256,received_at,status) VALUES ('turn_legacy','d1','single','legacy-key','digest',CURRENT_TIMESTAMP,'completed')"))
+    migrate.upgrade(legacy)
+    with legacy.connect() as c:
+        assert 'capture_intent' in {column['name'] for column in inspect(c).get_columns('voice_turns')}
+        assert c.execute(text("SELECT capture_intent FROM voice_turns WHERE id='turn_legacy'")).scalar_one() is None
+
+
 def test_failed_upgrade_rolls_back_schema_data_and_stamp(legacy, monkeypatch):
     original = command.upgrade
     def failed(config, revision):

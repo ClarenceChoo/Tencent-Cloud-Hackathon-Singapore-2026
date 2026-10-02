@@ -1,7 +1,20 @@
 from datetime import date, datetime
 from typing import Any, Dict, List, Literal, Optional
 
+from fastapi import HTTPException
+
 from pydantic import BaseModel, Field, field_validator, model_validator
+
+CaptureIntent = Literal["health_note", "medication_report", "measurement", "support_request"]
+CAPTURE_INTENTS = frozenset(("health_note", "medication_report", "measurement", "support_request"))
+
+
+def validate_capture_intent(value: str | None) -> str | None:
+    if value is None:
+        return None
+    if value not in CAPTURE_INTENTS:
+        raise HTTPException(status_code=422, detail="X-Care-Intent is not a supported capture purpose")
+    return value
 
 
 class LoginRequest(BaseModel):

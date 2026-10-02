@@ -7,9 +7,12 @@ import TurnReceipt from './RecordingReceipt';
 import { deriveReceipt, type ConfirmationResult, type ReceiptPhase } from './turnReceipt';
 import CompanionOnboarding from './CompanionOnboarding';
 import { deriveSetupProgress } from './setupJourney';
+import { capturePurposes, isCaptureIntent, type CaptureIntent } from './carePurpose';
+import ProposalDetails from './ProposalDetails';
+import ProposalCorrection from './ProposalCorrection';
 import './companion.css';
 
-type Pending = { key: string; context: string | null; turnId?: string; createdAt: number; deviceId?: string; patientId?: string };
+type Pending = { key: string; context: string | null; captureIntent?: CaptureIntent | null; turnId?: string; createdAt: number; deviceId?: string; patientId?: string };
 type Phase = 'ready' | 'permission' | 'recording' | 'sending' | 'waiting' | 'reply';
 const pendingKey = 'parse.web.pending.v1';
 const ledgerKey = 'parse.web.playback.v1';
@@ -18,7 +21,7 @@ const validId = /^[a-z0-9_-]{8,100}$/i;
 const validScopeId = /^[a-z0-9_-]{1,100}$/i;
 const safePending = (): Pending | null => {
   try { const v = JSON.parse(sessionStorage.getItem(pendingKey) || 'null') as Pending | null;
-    return v && /^[0-9a-f-]{36}$/i.test(v.key) && (!v.turnId || validId.test(v.turnId)) && (!v.context || validId.test(v.context)) && Number.isFinite(v.createdAt) && (!v.deviceId || validScopeId.test(v.deviceId)) && (!v.patientId || validScopeId.test(v.patientId)) ? v : null;
+    return v && /^[0-9a-f-]{36}$/i.test(v.key) && (!v.turnId || validId.test(v.turnId)) && (!v.context || validId.test(v.context)) && (!v.captureIntent || isCaptureIntent(v.captureIntent)) && Number.isFinite(v.createdAt) && (!v.deviceId || validScopeId.test(v.deviceId)) && (!v.patientId || validScopeId.test(v.patientId)) ? v : null;
   } catch { return null; }
 };
 function savePending(v: Pending | null) { if (v) sessionStorage.setItem(pendingKey, JSON.stringify(v)); else sessionStorage.removeItem(pendingKey); }
@@ -53,7 +56,7 @@ export default function Companion() {
   const [elapsed, setElapsed] = useState(0);
   const [reply, setReply] = useState<TurnEvent | null>(null);
   const [reminder, setReminder] = useState<Reminder | null>(null);
-  const [wording, setWording] = useState('');
+  const [captureIntent, setCaptureIntent] = useState<CaptureIntent | null>(null);
   const [changing, setChanging] = useState(false);
   const [recovery, setRecovery] = useState<Pending | null>(safePending);
   const recoveryRef = useRef(recovery);
@@ -73,6 +76,7 @@ export default function Companion() {
   const firstUpdateContext = useRef<string | null>(null);
   const mounted = useRef(true);
   const loadRun = useRef(0);
+  const proposalMutation = useRef(0);
   const denied = useRef(false);
   const epoch = useRef(0);
   const identity = useRef<string | null>(null);
@@ -126,7 +130,7 @@ export default function Companion() {
     savePending(null); setRecovery(null); setReceiptPhase(null); setReceiptStatus(null);
     setConfirmation(null); setReceiptHome(null); setReply(null); setReminder(null);
     setEnrollment(null); setHome(null); setConnected(false);
-    setWording(''); setChanging(false); setNotice(''); setError(''); setBooting(true);
+    setCaptureIntent(null); setChanging(false); setNotice(''); setError(''); setBooting(true);
   }, [interrupt, resetSetup]);
   const deny = useCallback((err: unknown) => {
     if (!(err instanceof CompanionApiError) || ![401, 403].includes(err.status)) return false;
@@ -214,7 +218,8 @@ export default function Companion() {
   async function resolve(pending: Pending) {
     const controller = new AbortController(); turnAbort.current = controller;
     const startingIdentity = identity.current;
-    const current = () => mounted.current && !denied.current && !controller.signal.aborted && document.visibilityState === 'visible' && identity.current === startingIdentity;
+    const startingProposalMutation = proposalMutation.current;
+    const current = () => mounted.current && !denied.current && !controller.signal.aborted && document.visibilityState === 'visible' && identity.current === startingIdentity && proposalMutation.current === startingProposalMutation;
     setPhase('waiting'); setMessage('Checking your recording. No second upload will be sent.');
     setReceiptPhase('receipt_unknown'); setReceiptHome(null);
     try {
@@ -266,7 +271,7 @@ export default function Companion() {
 
   async function sendRecording(blob: Blob, context: string | null) {
     if (blob.size < 12 || blob.size > maxBytes) { setPhase('ready'); setError('Recording is empty or over 2 MB. Please try again.'); return; }
-    const pending: Pending = { key: crypto.randomUUID(), context, createdAt: Date.now(), deviceId: home?.device_id, patientId: home?.patient.id };
+    const pending: Pending = { key: crypto.randomUUID(), context, captureIntent: context ? null : captureIntent, createdAt: Date.now(), deviceId: home?.device_id, patientId: home?.patient.id };
     if (firstUpdateIntent.current === identity.current) { firstUpdateKey.current = pending.key; firstUpdateContext.current = null; }
     try { savePending(pending); } catch { setPhase('ready'); setError('This browser cannot retain a recording receipt. Allow session storage before sending.'); return; }
     setRecovery(pending); setPhase('sending'); setMessage('Sending your recording…');
@@ -274,7 +279,7 @@ export default function Companion() {
     const controller = new AbortController(); turnAbort.current = controller;
     const startingIdentity = identity.current;
     try {
-      const receipt = await companionApi.upload(blob, pending.key, context, controller.signal);
+      const receipt = await companionApi.upload(blob, pending.key, context, controller.signal, pending.captureIntent);
       if (controller.signal.aborted || !mounted.current || denied.current || identity.current !== startingIdentity) return;
       const accepted = { ...pending, turnId: receipt.turn_id }; savePending(accepted); setRecovery(accepted);
       await resolve(accepted);
@@ -316,8 +321,9 @@ export default function Companion() {
   }
 
   const proposal = home?.current_proposal || null;
-  async function proposalAction(action: 'confirm' | 'cancel' | 'revise' | 'speech') {
-    if (!proposal || busy || !connected) return;
+  async function proposalAction(action: 'confirm' | 'cancel' | 'revise' | 'speech', revisedPayload?: Record<string, unknown>) {
+    if (!proposal || busy || mutationActive.current || !connected || (action === 'revise' && !revisedPayload) || (action === 'confirm' && changing)) return;
+    proposalMutation.current++;
     mutationActive.current = true; loadRun.current++;
     setBusy(true); setError(''); stopAudio();
     const startingIdentity = identity.current;
@@ -328,13 +334,13 @@ export default function Companion() {
         const result = await companionApi.confirm(proposal);
         if (!current()) return;
         if (result.status !== 'committed') throw new Error('Parse has not confirmed this record as saved.');
-        setConfirmation(result); setReceiptHome(null); setReceiptPhase('committed'); setNotice('Confirmed and saved.'); setChanging(false);
+        setConfirmation(result); setReceiptHome(null); setReceiptPhase('committed'); setNotice('Confirmed and saved.'); setChanging(false); setCaptureIntent(null);
         if (result.record_id && firstUpdateContext.current === proposal.context_id && firstUpdateIntent.current === startingIdentity) {
           setSetupEvidence(previous => ({ ...previous, firstCommittedRecordId: result.record_id || null }));
           firstUpdateIntent.current = null; firstUpdateKey.current = null; firstUpdateContext.current = null;
         }
-      } else if (action === 'cancel') { await companionApi.cancel(proposal); if (!current()) return; if (firstUpdateContext.current === proposal.context_id) firstUpdateContext.current = null; setReceiptPhase('cancelled'); setReceiptStatus(null); setConfirmation(null); setReceiptHome(null); setNotice('Proposal cancelled. No record was saved.'); setChanging(false); }
-      else if (action === 'revise') { const updated = await companionApi.revise(proposal, { ...proposal.payload, wording: wording.trim() }); if (!current()) return; if (firstUpdateContext.current === proposal.context_id) firstUpdateContext.current = updated.context_id; setHome(previous => previous ? { ...previous, current_proposal: updated } : previous); setReceiptStatus(null); setReceiptPhase('review'); setNotice('Wording changed. Review the new read-back before confirming.'); setChanging(false); }
+      } else if (action === 'cancel') { await companionApi.cancel(proposal); if (!current()) return; if (firstUpdateContext.current === proposal.context_id) firstUpdateContext.current = null; setReceiptPhase('cancelled'); setReceiptStatus(null); setConfirmation(null); setReceiptHome(null); setNotice('Proposal cancelled. No record was saved.'); setChanging(false); setCaptureIntent(null); }
+      else if (action === 'revise') { const updated = await companionApi.revise(proposal, revisedPayload!); if (!current()) return; if (firstUpdateContext.current === proposal.context_id) firstUpdateContext.current = updated.context_id; savePending(null); setRecovery(null); setHome(previous => previous ? { ...previous, current_proposal: updated } : previous); setReceiptStatus(null); setReceiptPhase('review'); setNotice('Details changed. Review the new read-back before confirming.'); setChanging(false); }
       else { const event = await companionApi.speech(proposal); if (!current()) return; setReply(event); setNotice('Tap Play reply to hear the current read-back.'); }
       if (action !== 'speech') {
         try {
@@ -344,7 +350,16 @@ export default function Companion() {
           setHome(fresh); if (action === 'confirm') setReceiptHome(fresh);
         } catch (err) { if (!current()) return; if (!deny(err)) { if (action === 'confirm') setNotice('Confirmed and saved. Current details are unavailable; refresh your care space.'); else setError('Could not refresh the current proposal. Check care details before acting again.'); setHome(null); } }
       }
-    } catch (err) { if (current() && !deny(err)) setError(err instanceof Error ? err.message : 'The proposal could not be updated. It is not saved.'); }
+    } catch (err) { if (current() && !deny(err)) {
+      if (err instanceof CompanionApiError && err.status === 409) {
+        try { const fresh = await companionApi.home(); if (current()) {
+          if (`${fresh.device_id}:${fresh.patient.id}` !== startingIdentity) { clearIdentity(); reloadIdentity = true; }
+          else setHome(fresh);
+        } }
+        catch { if (current()) setHome(null); }
+        if (current()) setError('Care details changed. Review the current proposal before trying again. Nothing new was saved.');
+      } else setError(err instanceof Error ? err.message : 'The proposal could not be updated. It is not saved.');
+    } }
     finally { mutationActive.current = false; setBusy(false); if (reloadIdentity) void load(); }
   }
 
@@ -490,12 +505,20 @@ export default function Companion() {
       <section className="companion-talk" aria-label="Talk to Parse"><div className="companion-talk-heading"><div className="companion-talk-icon"><AudioLines size={25}/></div><div><p className="companion-eyebrow">A moment to speak</p><h2>Talk to Parse</h2></div></div><p aria-live="polite">{message}</p>
         {receiptPhase && <TurnReceipt view={deriveReceipt({ phase: receiptPhase, pending: recovery, status: receiptStatus, proposal: receiptHome?.current_proposal, home: receiptHome, confirmation, nowMs: Date.now() })} busy={phase === 'waiting' || busy || !connected} onCheck={() => { if (recovery) void resolve(recovery); }} onReview={() => document.querySelector('.companion-review')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })}/>}
         {recovery && <div className="companion-recovery"><button className="companion-plain" onClick={() => { savePending(null); setRecovery(null); setReceiptPhase(null); setReceiptStatus(null); setMessage('Recording lookup dismissed. Its outcome may still appear in current care details.'); }}>Dismiss lookup</button></div>}
+        <div className="companion-purpose" role="group" aria-label="Recording purpose">
+          <p className="companion-small">Choose a prompt if it helps, or just speak naturally. Choosing a prompt does not start recording.</p>
+          <div className="companion-purpose-options">
+            <button type="button" aria-pressed={captureIntent === null} disabled={!connected || busy || !!recovery || !['ready', 'reply'].includes(phase) || !!home?.current_proposal} onClick={() => setCaptureIntent(null)}>Speak freely</button>
+            {capturePurposes.map(purpose => <button key={purpose.id} type="button" aria-pressed={captureIntent === purpose.id} disabled={!connected || busy || !!recovery || !['ready', 'reply'].includes(phase) || !!home?.current_proposal} onClick={() => setCaptureIntent(purpose.id)}>{purpose.label}</button>)}
+          </div>
+          {captureIntent && <p className="companion-small" role="status">{capturePurposes.find(purpose => purpose.id === captureIntent)?.prompt}</p>}
+        </div>
         <div className="companion-record-actions">{(phase === 'ready' || phase === 'reply') && <button className="companion-record" disabled={!home || !connected || !!recovery || busy} onClick={() => void beginRecording()}><Mic size={34}/> Tap to record</button>}{phase === 'permission' && <button className="companion-record companion-muted" onClick={() => interrupt()}><X size={30}/> Cancel</button>}{phase === 'recording' && <><div className="companion-record-time" aria-live="off"><span className="companion-record-dot"/> {elapsed}s / 19s</div><button className="companion-record" onClick={() => stopRecording(true)}><Send size={31}/> Tap to send</button><button className="companion-button companion-secondary" onClick={() => stopRecording(false)}>Cancel recording</button></>}{(phase === 'sending' || phase === 'waiting') && <button className="companion-button companion-secondary" onClick={() => { turnAbort.current?.abort(); setPhase('ready'); setReceiptPhase('receipt_unknown'); setMessage('Check recording to see whether Parse received it.'); }}>Stop waiting</button>}</div>
         <p className="companion-small">Microphone access starts only when you tap. Recordings stop if you leave this page. Keep this page open for in-page reminders.</p>
       </section>
       {reminder && <section className="companion-reminder" aria-label="Current reminder"><p className="companion-eyebrow">For this moment</p><h2>{reminder.type === 'checkin.play' ? 'A check-in from Parse' : 'A care reminder'}</h2><p>{reminder.payload.greeting_text || 'A reminder is ready to hear.'}</p><p className="companion-small">Available until {stamp(reminder.expires_at)}. Tap to play; browsers may block automatic sound.</p><div className="companion-actions"><button className="companion-button companion-primary" onClick={() => void playReminder()}><Play size={19}/> Play reminder</button><button className="companion-button companion-secondary" onClick={() => void dismissReminder()}>Dismiss</button></div></section>}
-      {proposal && proposal.status === 'pending' && Date.parse(proposal.expires_at) > Date.now() && <section className="companion-review" aria-label="Review before saving"><p className="companion-eyebrow">Please check this first</p><h2>{kindName(proposal.kind)}</h2><p className="companion-readback">{proposal.readback}</p><div className="companion-facts"><b>Material details</b>{Object.entries(proposal.payload).filter(([key]) => !key.endsWith('_id') && !key.endsWith('_ids') && key !== 'timezone' && key !== 'share_with_names').map(([key,value]) => <p key={key}><span>{key.replaceAll('_',' ')}</span><strong>{Array.isArray(value) ? value.filter(item => typeof item === 'string' && !validId.test(item)).join(', ') || 'See read-back' : String(value ?? 'Not stated')}</strong></p>)}{proposal.kind === 'support_request' && <p><span>Recipient</span><strong>{home?.permitted_recipients.find(item => item.id === proposal.payload.recipient_user_id)?.name as string || 'Review the read-back'}</strong></p>}{proposal.kind === 'health_note' && <p><span>Shared with</span><strong>{Array.isArray(proposal.payload.share_with_user_ids) && proposal.payload.share_with_user_ids.length ? home?.permitted_recipients.filter(item => (proposal.payload.share_with_user_ids as unknown[]).includes(item.id)).map(item => item.name).join(', ') || 'Named recipients in read-back' : 'Only your care space'}</strong></p>}</div>
-        {proposal.kind === 'health_note' && <div className="companion-change"><button className="companion-plain" onClick={() => { setWording(field(proposal.payload, 'wording')); setChanging(!changing); }}>Change wording</button>{changing && <div><label htmlFor="companion-wording">How should this note read?</label><textarea id="companion-wording" value={wording} onChange={e => setWording(e.target.value)} rows={3}/><button className="companion-button companion-secondary" disabled={busy || !wording.trim() || wording.trim() === field(proposal.payload, 'wording')} onClick={() => void proposalAction('revise')}>Review changed note</button></div>}</div>}
+      {proposal && proposal.status === 'pending' && Date.parse(proposal.expires_at) > Date.now() && <section className="companion-review" aria-label="Review before saving"><p className="companion-eyebrow">Please check this first</p><h2>{kindName(proposal.kind)}</h2><p className="companion-readback">{proposal.readback}</p>{home && <ProposalDetails proposal={proposal} home={home}/>}
+        {home && <ProposalCorrection proposal={proposal} home={home} busy={busy} onEditingChange={setChanging} onRevise={payload => proposalAction('revise', payload)}/> }
         <div className="companion-actions"><button className="companion-button companion-primary" disabled={busy || changing} onClick={() => void proposalAction('confirm')}><Check size={20}/> Confirm and save</button><button className="companion-button companion-secondary" disabled={busy} onClick={() => void proposalAction('cancel')}>Cancel</button><button className="companion-button companion-secondary" disabled={busy} onClick={() => void proposalAction('speech')}>Hear read-back</button></div><p className="companion-small">To speak a correction, tap the record button above. Nothing is saved until you confirm this exact read-back. Expires {stamp(proposal.expires_at)}.</p>
       </section>}
       {reply && <section className="companion-reply"><p className="companion-eyebrow">Parse replied</p><h2>{reply.payload.spoken_text || 'Your reply is ready'}</h2><p>Tap Play reply to hear it. Browser sound needs your tap. The written care details above remain available if audio expires.</p><div className="companion-actions"><button className="companion-button companion-primary" disabled={playing || !connected} onClick={() => void play(reply)}><Play size={19}/> {playing ? 'Playing…' : 'Play reply'}</button><button className="companion-button companion-secondary" onClick={() => stopAudio()}><Square size={18}/> Stop</button><button className="companion-button companion-secondary" disabled={playing || !connected} onClick={() => void play(reply)}>Repeat</button></div></section>}

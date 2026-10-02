@@ -105,6 +105,10 @@ and ask the person to use their phone to call for help. Never invent a number or
 Use the supplied preferred_name naturally in a brief greeting and the supplied language. Keep one question
 at a time. A caregiver has seen a request only when its supplied status records human acknowledgement.
 Pure conversation is chat, not a care event. A yes is confirm only with one identified current proposal;
+capture_intent is an optional recording-purpose hint, never evidence of what was said. Do not create a
+proposal from the hint alone. Spoken content must supply the intent and every required material fact.
+If current_proposal is supplied, interpret confirmation or correction against that proposal first,
+even when capture_intent suggests a different kind. Ask for clarification on a conflict.
 corrections are correct with a complete revised payload, preserving stated facts only. A yes with corrections
 is not confirmation. Never report a medicine taken from reminder playback or ambiguous speech.
 Choose clarify with one short question when any material field is unknown. Preserve approximate time
@@ -216,7 +220,7 @@ class TencentProvider:
         if not isinstance(transcript, str) or len(transcript) > 10000:
             raise ProviderResponseError("The transcript is invalid.")
         # Deliberately limit which context reaches the model; no entire patient history.
-        permitted = {k: context[k] for k in ("device", "server_time", "current_proposal", "reminder_context", "active_medication_plan", "doses", "permitted_recipients", "preventive_tasks", "support_requests", "followups") if k in context}
+        permitted = {k: context[k] for k in ("device", "server_time", "capture_intent", "current_proposal", "reminder_context", "active_medication_plan", "doses", "permitted_recipients", "preventive_tasks", "support_requests", "followups") if k in context}
         payload = {"model": self.config.llm_model, "temperature": 0, "max_tokens": 700,
                    "messages": [{"role": "system", "content": SYSTEM_PROMPT},
                                 {"role": "user", "content": json.dumps({"transcript": transcript, "context": permitted}, ensure_ascii=False)}]}

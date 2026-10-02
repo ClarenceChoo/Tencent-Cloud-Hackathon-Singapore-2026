@@ -290,7 +290,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
     from .notification_api import router as notification_router
     app.include_router(notification_router)
     app.state.fixture_transcripts = {} if settings.testing else None
-    app.add_middleware(CORSMiddleware, allow_origins=settings.allowed_origins, allow_credentials=True, allow_methods=["GET", "POST", "PUT", "DELETE"], allow_headers=["Content-Type", "X-CSRF-Token", "X-Parse-Web", "Idempotency-Key", "X-Context-Id", "Authorization"])
+    app.add_middleware(CORSMiddleware, allow_origins=settings.allowed_origins, allow_credentials=True, allow_methods=["GET", "POST", "PUT", "DELETE"], allow_headers=["Content-Type", "X-CSRF-Token", "X-Parse-Web", "Idempotency-Key", "X-Context-Id", "X-Care-Intent", "Authorization"])
 
     @app.middleware("http")
     async def web_no_store(request: Request, call_next):
@@ -720,7 +720,9 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
                 **service_readiness(request.app)}
 
     @app.post("/v1/device/turns", status_code=202)
-    async def device_turn(request: Request, background: BackgroundTasks, authorization: Optional[str] = Header(default=None), idempotency_key: Optional[str] = Header(default=None, alias="Idempotency-Key"), context_id: Optional[str] = Header(default=None, alias="X-Context-Id"), db: Session = Depends(get_db)):
+    async def device_turn(request: Request, background: BackgroundTasks, authorization: Optional[str] = Header(default=None), idempotency_key: Optional[str] = Header(default=None, alias="Idempotency-Key"), context_id: Optional[str] = Header(default=None, alias="X-Context-Id"), capture_intent: Optional[str] = Header(default=None, alias="X-Care-Intent"), db: Session = Depends(get_db)):
+        from .schemas import validate_capture_intent
+        capture_intent = validate_capture_intent(capture_intent)
         device = authenticate_device_header(db, authorization)
         if request.headers.get("content-type", "").split(";", 1)[0].strip().lower() != "audio/wav":
             raise HTTPException(status_code=400, detail="Content-Type must be audio/wav")
@@ -748,7 +750,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc))
         from .turns import accept_turn
-        return accept_turn(request.app, db, device, body, sha_bytes(body), idempotency_key, context_id, background)
+        return accept_turn(request.app, db, device, body, sha_bytes(body), idempotency_key, context_id, background, capture_intent=capture_intent)
 
     @app.get("/v1/device/turns/{turn_id}")
     def device_turn_status(turn_id: str, authorization: Optional[str] = Header(default=None), db: Session = Depends(get_db)):

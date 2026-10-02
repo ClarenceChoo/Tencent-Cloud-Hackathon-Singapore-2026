@@ -72,6 +72,23 @@ it('requires review and a fresh confirmation after textual health-note correctio
   expect(await screen.findByText('Confirmed and saved.')).toBeTruthy();
 });
 
+it('refreshes a stale correction and never confirms the obsolete proposal', async () => {
+  const user = userEvent.setup();
+  const replacement = { ...proposal, id: 'prop_latest', context_id: 'ctx_latest', readback: 'Review the newer note?', payload: { wording: 'Newer note', share_with_user_ids: [] } };
+  api.revise.mockImplementationOnce(async () => { current = { ...current, current_proposal: replacement }; throw new CompanionApiError('stale proposal', 409); });
+  render(<Companion />);
+  await screen.findByText(proposal.readback);
+  await user.click(screen.getByRole('button', { name: 'Change wording' }));
+  await user.clear(screen.getByLabelText('How should this note read?'));
+  await user.type(screen.getByLabelText('How should this note read?'), 'Edited old note');
+  await user.click(screen.getByRole('button', { name: 'Review changed note' }));
+  expect(await screen.findByText('Review the newer note?')).toBeTruthy();
+  expect(screen.queryByText(proposal.readback)).toBeNull();
+  expect(api.confirm).not.toHaveBeenCalled();
+  await user.click(screen.getByRole('button', { name: 'Confirm and save' }));
+  await waitFor(() => expect(api.confirm).toHaveBeenCalledWith(replacement));
+});
+
 it('stops a late microphone grant after the page loses focus and never uploads', async () => {
   const user = userEvent.setup(); let grant!: (value: MediaStream) => void;
   const getUserMedia = vi.fn(() => new Promise<MediaStream>(resolve => { grant = resolve; }));

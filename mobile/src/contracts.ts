@@ -64,6 +64,7 @@ export type TurnStatus = Receipt & {
 export type PendingTurn = {
   key: string;
   context: string | null;
+  captureIntent?: 'health_note' | 'medication_report' | 'measurement' | 'support_request' | null;
   turnId?: string;
   createdAt: number;
 };

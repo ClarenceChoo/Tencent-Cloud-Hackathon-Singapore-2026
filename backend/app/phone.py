@@ -342,11 +342,14 @@ def home(request: Request, response: Response, authorization: str | None = Heade
 async def phone_turn(request: Request, background: BackgroundTasks,
                      authorization: str | None = Header(default=None),
                      idempotency_key: str | None = Header(default=None),
-                     context_id: str | None = Header(default=None, alias='X-Context-Id'), db=Depends(phone_db)):
+                     context_id: str | None = Header(default=None, alias='X-Context-Id'),
+                     capture_intent: str | None = Header(default=None, alias='X-Care-Intent'), db=Depends(phone_db)):
     from starlette.concurrency import run_in_threadpool
     from .phone_audio import MAX_INPUT, normalize_phone_audio
     from .services import sha_bytes
     from .turns import accept_turn
+    from .schemas import validate_capture_intent
+    capture_intent = validate_capture_intent(capture_intent)
     device = authenticate_phone(db, authorization)
     try:
         key = str(UUID(idempotency_key or ''))
@@ -364,7 +367,7 @@ async def phone_turn(request: Request, background: BackgroundTasks,
         proposal = db.scalar(select(m.ConfirmationProposal).where(m.ConfirmationProposal.context_id == context_id))
         if proposal:
             phone_proposal(db, device, proposal.id, context_id)
-    return accept_turn(request.app, db, device, canonical, sha_bytes(original), key, context_id, background)
+    return accept_turn(request.app, db, device, canonical, sha_bytes(original), key, context_id, background, capture_intent=capture_intent)
 
 
 @router.get('/turn-receipts/{idempotency_key}')

@@ -152,6 +152,7 @@ class VoiceTurn(Base):
     idempotency_key: Mapped[str] = mapped_column(String(36))
     content_sha256: Mapped[str] = mapped_column(String(64))
     context_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    capture_intent: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     status: Mapped[str] = mapped_column(String(40), default="accepted")
     transcript: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

@@ -195,6 +195,9 @@ async def process_turn(app, turn_id: str) -> None:
         db.commit()
         turn = db.get(m.VoiceTurn, turn_id)
         context = _context(db, device, turn.context_id)
+        # A purpose is advisory context for interpreting the spoken audio. The
+        # explicit conversation context remains authoritative for corrections.
+        context["capture_intent"] = turn.capture_intent
         db.commit()
         raw = await provider.interpret_turn(turn.transcript, context)
         require_active_device()
@@ -211,8 +214,9 @@ async def process_turn(app, turn_id: str) -> None:
         action = None
         status_guard = None
         kind = interpretation.kind
-        if interpretation.intent == "proposal" or interpretation.intent == "correct" and current:
-            kind = current["kind"] if interpretation.intent == "correct" else kind
+        if interpretation.intent == "proposal" or (interpretation.intent == "correct" and current):
+            if current:
+                kind = current["kind"]
             if not kind:
                 raise ValueError("Proposal intent omitted a kind")
             clean, _ = validate_payload(db, turn.patient_id, kind, interpretation.payload)

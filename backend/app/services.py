@@ -387,6 +387,27 @@ def create_proposal(
 ) -> m.ConfirmationProposal:
     from .routing import lock_patient
     lock_patient(db, patient_id)
+    if replaces:
+        db.refresh(replaces)
+        if replaces.status != "pending" or aware(replaces.expires_at) <= utcnow():
+            raise HTTPException(409, "Only a current pending proposal can be revised")
+        if replaces.kind == "medication_report":
+            prior_dose = db.get(m.DoseInstance, replaces.payload.get("dose_instance_id"), populate_existing=True)
+            prior_plan = db.get(m.MedicationPlanVersion, prior_dose.plan_id, populate_existing=True) if prior_dose else None
+            if (not prior_dose or not prior_plan or not prior_plan.active
+                    or prior_dose.plan_version != replaces.plan_version
+                    or prior_dose.report_state != replaces.payload.get("previous_report_state", "unconfirmed")
+                    or prior_dose.confirmation_proposal_id != replaces.payload.get("previous_confirmation_proposal_id")):
+                raise HTTPException(409, "Medication plan or dose report changed; start a fresh review")
+        if replaces.kind in {"health_note", "support_request"}:
+            prior_recipients = (replaces.payload.get("share_with_user_ids", []) if replaces.kind == "health_note"
+                                else [replaces.payload.get("recipient_user_id")])
+            for user_id in prior_recipients:
+                grant = db.scalar(select(m.AccessGrant).where(
+                    m.AccessGrant.patient_id == patient_id, m.AccessGrant.user_id == user_id,
+                    m.AccessGrant.revoked_at.is_(None)).execution_options(populate_existing=True))
+                if not grant or (grant.expires_at and aware(grant.expires_at) <= utcnow()):
+                    raise HTTPException(409, "Recipient access changed; start a fresh review")
     source = db.get(m.VoiceTurn, source_turn_id) if source_turn_id else None
     device = db.get(m.Device, source.device_id, populate_existing=True) if source else None
     if device and device.device_type == "phone":

@@ -1,4 +1,5 @@
 import type { Enrollment, Home, Proposal, Receipt, TurnEvent, TurnStatus, Reminder } from '../../mobile/src/contracts';
+import type { CaptureIntent } from './carePurpose';
 
 export type { Enrollment, Home, Proposal, Receipt, TurnEvent, TurnStatus, Reminder };
 export class CompanionApiError extends Error {
@@ -93,7 +94,7 @@ export const companionApi = {
   enroll: () => request<Enrollment & { csrf_token?: string }>('/enrollments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: json({ display_name: 'Parse browser' }) }),
   enrollment: () => request<Enrollment>('/enrollments/current'),
   home: () => request<Home>('/home'),
-  upload: (bytes: Blob, key: string, context: string | null, signal: AbortSignal) => request<Receipt>('/turns', { method: 'POST', body: bytes, signal, headers: { 'Content-Type': bytes.type, 'Idempotency-Key': key, ...(context ? { 'X-Context-Id': context } : {}) } }),
+  upload: (bytes: Blob, key: string, context: string | null, signal: AbortSignal, captureIntent: CaptureIntent | null = null) => request<Receipt>('/turns', { method: 'POST', body: bytes, signal, headers: { 'Content-Type': bytes.type, 'Idempotency-Key': key, ...(context ? { 'X-Context-Id': context } : {}), ...(!context && captureIntent ? { 'X-Care-Intent': captureIntent } : {}) } }),
   receipt: (key: string, signal?: AbortSignal) => request<Receipt>('/turn-receipts/' + encodeURIComponent(key), { signal }),
   turn: (id: string, signal?: AbortSignal) => request<TurnStatus>('/turns/' + encodeURIComponent(id), { signal }),
   confirm: (proposal: Proposal) => request<{ status: string; record_type?: string; record_id?: string }>('/proposals/' + encodeURIComponent(proposal.id) + '/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: json({ context_id: proposal.context_id, confirmed: true }) }),

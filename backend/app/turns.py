@@ -7,10 +7,10 @@ from .security import aware, iso, utcnow
 from .worker import process_turn
 from .routing import current_attempt, lock_patient
 
-def accept_turn(app, db, device, body, digest, idempotency_key, context_id, background):
+def accept_turn(app, db, device, body, digest, idempotency_key, context_id, background, *, capture_intent: str | None = None):
     existing = db.scalar(select(m.VoiceTurn).where(m.VoiceTurn.device_id == device.id, m.VoiceTurn.idempotency_key == idempotency_key))
     if existing:
-        if existing.content_sha256 != digest or existing.context_id != context_id:
+        if existing.content_sha256 != digest or existing.context_id != context_id or existing.capture_intent != capture_intent:
             raise HTTPException(status_code=409, detail="Idempotency key was already used for different turn content")
         return {"turn_id": existing.id, "status": existing.status, "received_at": iso(existing.received_at)}
     lock_patient(db, device.patient_id)
@@ -40,7 +40,7 @@ def accept_turn(app, db, device, body, digest, idempotency_key, context_id, back
             raise RuntimeError("unconfigured")
     except Exception:
         raise HTTPException(status_code=503, detail="Speech provider is not configured or unavailable")
-    turn = m.VoiceTurn(device_id=device.id, patient_id=device.patient_id, idempotency_key=idempotency_key, content_sha256=digest, context_id=context_id, raw_audio=body)
+    turn = m.VoiceTurn(device_id=device.id, patient_id=device.patient_id, idempotency_key=idempotency_key, content_sha256=digest, context_id=context_id, capture_intent=capture_intent, raw_audio=body)
     db.add(turn)
     device.last_seen = utcnow()
     try:
@@ -48,7 +48,7 @@ def accept_turn(app, db, device, body, digest, idempotency_key, context_id, back
     except IntegrityError:
         db.rollback()
         existing = db.scalar(select(m.VoiceTurn).where(m.VoiceTurn.device_id == device.id, m.VoiceTurn.idempotency_key == idempotency_key))
-        if not existing or existing.content_sha256 != digest or existing.context_id != context_id:
+        if not existing or existing.content_sha256 != digest or existing.context_id != context_id or existing.capture_intent != capture_intent:
             raise HTTPException(status_code=409, detail="Idempotency key was already used for different turn content")
         return {"turn_id": existing.id, "status": existing.status, "received_at": iso(existing.received_at)}
     background.add_task(process_turn, app, turn.id)

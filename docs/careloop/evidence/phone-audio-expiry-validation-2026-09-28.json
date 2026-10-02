@@ -1,0 +1,37 @@
+{
+  "date": "2026-09-28",
+  "change": "Stop and release expired native reply audio independently of stalled freshness requests; abort the in-flight request and clear the deadline on completion.",
+  "regressions": {
+    "before": {
+      "voice_tests_passed": 33,
+      "voice_tests_failed": 2,
+      "failure": "Loading and playing expiry cases observed no pause at the local deadline."
+    },
+    "after": {
+      "unit": 25,
+      "adapter_app": 118,
+      "total": 143,
+      "all_pass": true,
+      "typecheck_pass": true
+    }
+  },
+  "builds": {
+    "android_release_and_verification": "passed",
+    "ios_hermes_export": "passed; not native iOS compilation"
+  },
+  "source_sha256": {
+    "mobile/src/useVoice.ts": "f05583036e1888d98784b224f7be201ed5ab27df25f8408cb0b28883edd8250f",
+    "mobile/test/native/voice.test.tsx": "0b1f64ed6b9f5b95eb5c957994f79260ca70869ddc55d8b36a6f39e39ea84e89",
+    "tools/android_native_sequence.py": "7fee8aed7ac3a3c3d4fd4c63f18ecc5de4b566f219047db4c247e064f307e9ea",
+    "tools/android_native_fixture.py": "9e8d6f971127599677a610a6600d48054493b396fb236481c2ab0351a77a4b87",
+    "tools/android_native_fault_proxy.py": "55b329a9872a48208437904f8879e5aa5473704f7d367bc9dbba00ecbf60e30e"
+  },
+  "logs_sha256": {
+    "runtime/sequence-expiry-before.log": "f0a9921c52a80b2b25f512438477bd71a68be736b9512e4918e18b0472cbd6c9",
+    "runtime/sequence-expiry-validation.log": "ef2d0d5bc5fa4983491c5fd2479181f5b8164449cb5b541438aca1d9de01379f",
+    "runtime/sequence-expiry-build.log": "a470d536ea26ed3a52b0349330d9dda79e17c117f3b069f7cd4da8dd7eff69b0",
+    "runtime/sequence-expiry-signature.log": "779b75b032a8f23d45d558b304ab6276bf5894001fa1fafb79c17eaf8f89a272",
+    "runtime/sequence-expiry-ios-export.log": "69d6e58b9d5acb2a9f3e4338f9c871d5650ea9899bfff867cb9bb75bbef70fd8"
+  },
+  "limits": "Controlled React adapters and Android emulator tones do not establish physical audibility, live speech or native iOS acceptance."
+}

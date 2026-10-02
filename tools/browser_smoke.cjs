@@ -98,6 +98,15 @@ async function main() {
       await page.getByLabel('Reported status', { exact: true }).selectOption('reported_not_yet');
       await proposal(); await confirm();
       assert.equal((await dashboard()).doses.find(d => d.id === dose.id).report_state, 'reported_not_yet');
+      await composer('medication_report');
+      await page.getByLabel('Scheduled dose', { exact: true }).selectOption(dose.id);
+      await page.getByLabel('Reported status', { exact: true }).selectOption('reported_taken');
+      await proposal();
+      await page.getByRole('dialog').getByText(/update the previous not yet report to taken/).waitFor();
+      await confirm();
+      const updatedDose = (await dashboard()).doses.find(d => d.id === dose.id);
+      assert.equal(updatedDose.report_state, 'reported_taken');
+      assert.deepEqual(updatedDose.report_history.map(report => report.report_state), ['reported_not_yet', 'reported_taken']);
     });
     let task;
     await step('Preventive task moves due → arranged → completed through confirmations', async () => {

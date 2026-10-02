@@ -14,6 +14,7 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 #include "careloop_wav.h"
+#include "careloop_network_poll.h"
 
 static const char *TAG="careloop_net"; static careloop_app_t *g_app; static esp_websocket_client_handle_t ws; static int64_t last_authoritative_plan_sync_us;
 #define CARELOOP_JSON_MAX 16384U
@@ -84,5 +85,54 @@ esp_err_t careloop_upload_turn(careloop_app_t *a,const uint8_t *wav,size_t len,c
 static void ws_reset_message(void){free(ws_message.data);memset(&ws_message,0,sizeof(ws_message));}
 static void ws_event(void *arg,esp_event_base_t base,int32_t id,void *data){(void)arg;(void)base;esp_websocket_event_data_t*e=data;if(id!=WEBSOCKET_EVENT_DATA)return;if(e->payload_offset==0){ws_reset_message();if(e->op_code!=WS_TRANSPORT_OPCODES_TEXT||e->payload_len<=0||e->payload_len>CARELOOP_JSON_MAX)return;ws_message.data=calloc(1,(size_t)e->payload_len+1);if(!ws_message.data)return;ws_message.expected=(size_t)e->payload_len;}if(!ws_message.data||(size_t)e->payload_offset+(size_t)e->data_len>ws_message.expected){ws_reset_message();return;}memcpy(ws_message.data+e->payload_offset,e->data_ptr,e->data_len);ws_message.len+=e->data_len;if(ws_message.len==ws_message.expected){char*message=ws_message.data;ws_message=(ws_message_t){0};if(!ws_queue||xQueueSend(ws_queue,&message,0)!=pdTRUE)free(message);}}
 static void drain_ws_messages(careloop_app_t *a) { char *message; while(ws_queue&&xQueueReceive(ws_queue,&message,0)==pdTRUE){careloop_network_handle_json(a,message,strlen(message));free(message);} }
-static void ws_task(void *arg) { careloop_app_t*a=arg;while(1){if(!careloop_wifi_connected()||!a->settings.device_token[0]){vTaskDelay(pdMS_TO_TICKS(1000));continue;}reconcile(a);char uri[CARELOOP_URL_MAX+32],headers[300];snprintf(uri,sizeof(uri),"wss://%s/v1/device/events",a->settings.backend_url+8);snprintf(headers,sizeof(headers),"Authorization: Bearer %s\r\n",a->settings.device_token);esp_websocket_client_config_t c={.uri=uri,.headers=headers,.crt_bundle_attach=esp_crt_bundle_attach,.network_timeout_ms=10000,.disable_auto_reconnect=false};ws=esp_websocket_client_init(&c);if(!ws){vTaskDelay(pdMS_TO_TICKS(1000));continue;}esp_websocket_register_events(ws,WEBSOCKET_EVENT_ANY,ws_event,NULL);esp_websocket_client_start(ws);while(careloop_wifi_connected()){if(esp_websocket_client_is_connected(ws)){if(esp_timer_get_time()-last_authoritative_plan_sync_us>=5000000LL)reconcile(a);char hb[120];snprintf(hb,sizeof(hb),"{\"type\":\"heartbeat\",\"firmware_version\":\"0.1.0\"}");esp_websocket_client_send_text(ws,hb,strlen(hb),pdMS_TO_TICKS(1000));drain_ws_messages(a);recover_turn(a);vTaskDelay(pdMS_TO_TICKS(5000));}else vTaskDelay(pdMS_TO_TICKS(1000));}esp_websocket_client_stop(ws);esp_websocket_client_destroy(ws);ws=NULL;ws_reset_message();}}
+static void poll_drain(void *context) { drain_ws_messages(context); }
+static void poll_reconcile(void *context) { reconcile(context); }
+static void poll_recover(void *context) { recover_turn(context); }
+static void poll_heartbeat(void *context) {
+  (void)context;
+  const char *heartbeat = "{\"type\":\"heartbeat\",\"firmware_version\":\"0.1.0\"}";
+  esp_websocket_client_send_text(ws, heartbeat, strlen(heartbeat), pdMS_TO_TICKS(1000));
+}
+static void ws_task(void *arg) {
+  careloop_app_t *a = arg;
+  const careloop_network_ops_t ops = {poll_drain, poll_reconcile, poll_recover, poll_heartbeat};
+  while (1) {
+    if (!careloop_wifi_connected() || !a->settings.device_token[0]) {
+      vTaskDelay(pdMS_TO_TICKS(1000));
+      continue;
+    }
+    careloop_network_poll_t poll = {0};
+    int64_t next_ws_attempt_us = 0;
+    char uri[CARELOOP_URL_MAX + 32], headers[300];
+    snprintf(uri, sizeof(uri), "wss://%s/v1/device/events", a->settings.backend_url + 8);
+    snprintf(headers, sizeof(headers), "Authorization: Bearer %s\r\n", a->settings.device_token);
+    esp_websocket_client_config_t config = {
+      .uri = uri, .headers = headers, .crt_bundle_attach = esp_crt_bundle_attach,
+      .network_timeout_ms = 10000, .disable_auto_reconnect = false
+    };
+    while (careloop_wifi_connected() && a->settings.device_token[0]) {
+      int64_t now = esp_timer_get_time();
+      if (!ws && now >= next_ws_attempt_us) {
+        next_ws_attempt_us = now + CARELOOP_NETWORK_POLL_US;
+        ws = esp_websocket_client_init(&config);
+        if (ws) {
+          esp_websocket_register_events(ws, WEBSOCKET_EVENT_ANY, ws_event, NULL);
+          if (esp_websocket_client_start(ws) != ESP_OK) {
+            esp_websocket_client_destroy(ws);
+            ws = NULL;
+          }
+        }
+      }
+      careloop_network_tick(&poll, esp_timer_get_time(), true,
+                            ws && esp_websocket_client_is_connected(ws), &ops, a);
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+    if (ws) {
+      esp_websocket_client_stop(ws);
+      esp_websocket_client_destroy(ws);
+      ws = NULL;
+    }
+    ws_reset_message();
+  }
+}
 void careloop_network_start(careloop_app_t *a) { g_app=a;ws_queue=xQueueCreate(4,sizeof(char*));esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);esp_sntp_setservername(0,"pool.ntp.org");esp_sntp_init();xTaskCreate(ws_task,"careloop_wss",6144,a,5,NULL); }

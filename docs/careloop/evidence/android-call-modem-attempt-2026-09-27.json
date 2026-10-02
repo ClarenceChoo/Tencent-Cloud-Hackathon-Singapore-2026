@@ -1,0 +1,29 @@
+{
+  "at": "2026-09-27T13:03:31.208Z",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "environment": "Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and fixture tone replies. No real speech or acoustic audibility evidence.",
+  "source_sha256": {
+    "mobile/src/App.tsx": "040650c4ba7d61a35e2c5926c616a0f09a051f03da778766a3241dcd2ccdb275",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "mobile/src/api.ts": "c47f9fd49c83ec14df83d1939a941d6a2b48cddd8548807d123941b523b328cf",
+    "mobile/src/storage.ts": "d617df7a010d6cc68f0cd5dc6e3dfac021b1684bc6e10bc5fa50963871f3d99f",
+    "tools/android_native_fixture.py": "02f47605eb96b79595ccfb991cd8c2ecf72808bc3680386853d97b2113b75271",
+    "tools/android_native_smoke.cjs": "5d752505c8b2727f28188126df5ae11917fd960b873174c168cf2bdf97443e50",
+    "tools/android_native_care.cjs": "48be6db43584dba70abb17294f000c2e29741f389a531b2ba656b4373bf2897b",
+    "tools/android_native_calls.cjs": "2bdbee0725f67461cbb471925f062ec3637685f06e70dfa96041555d7db1a1f7",
+    "tools/android_native_control.py": "1eb84875cdf78321e5ba6cd2f796e6533f2a23bd828ef62208994e8b414f8980"
+  },
+  "checks": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    }
+  ],
+  "installed_apk_sha256": "6b774f9ae08a14e32a0c089ae469c6d649bae2f06f1f82d54360c1b7702a2c0f",
+  "mode": "calls",
+  "enrollmentCreatedInThisRun": false,
+  "calls": [],
+  "call_simulation": "Android emulator GSM modem and native dialer; no external call, physical handset or acoustic audibility evidence",
+  "failure": "Error: Emulated incoming call did not reach the modem"
+}

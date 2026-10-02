@@ -1,0 +1,260 @@
+{
+  "at": "2026-09-27T13:24:05.834Z",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "environment": "Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and fixture tone replies. No real speech or acoustic audibility evidence.",
+  "source_sha256": {
+    "mobile/src/App.tsx": "040650c4ba7d61a35e2c5926c616a0f09a051f03da778766a3241dcd2ccdb275",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "mobile/src/api.ts": "c47f9fd49c83ec14df83d1939a941d6a2b48cddd8548807d123941b523b328cf",
+    "mobile/src/storage.ts": "d617df7a010d6cc68f0cd5dc6e3dfac021b1684bc6e10bc5fa50963871f3d99f",
+    "tools/android_native_fixture.py": "02f47605eb96b79595ccfb991cd8c2ecf72808bc3680386853d97b2113b75271",
+    "tools/android_native_smoke.cjs": "1b235e41ae155a906782d9ef93f686f3039f7ef2213200806a7798cfe266e9d3",
+    "tools/android_native_care.cjs": "48be6db43584dba70abb17294f000c2e29741f389a531b2ba656b4373bf2897b",
+    "mobile/src/useTalkMode.ts": "c159dcedbad3b79d5a76b7238391bf7a4cc9d310b2b02bfae4aabef7ab1cc941",
+    "tools/android_native_large_text.cjs": "e97e2783e2a0c3903834fb47a140757ebe798fb531389c3e9f78f531ea672469"
+  },
+  "checks": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    }
+  ],
+  "installed_apk_sha256": "6b774f9ae08a14e32a0c089ae469c6d649bae2f06f1f82d54360c1b7702a2c0f",
+  "mode": "large-text",
+  "enrollmentCreatedInThisRun": false,
+  "large_text": {
+    "scale": 2,
+    "original_scale": "1.0",
+    "density_dpi": 420,
+    "screen_reader_tested": false,
+    "controls": [
+      {
+        "label": "Tap to start recording",
+        "bounds": "[63,1371][1017,1912]",
+        "width_dp": 363.42857142857144,
+        "height_dp": 206.0952380952381
+      },
+      {
+        "label": "Tap to start recording",
+        "bounds": "[63,1371][1017,1912]",
+        "width_dp": 363.42857142857144,
+        "height_dp": 206.0952380952381
+      }
+    ],
+    "baseline_note_ids": [
+      "note_274df94653ac4332aeb5e10c1add1a14",
+      "note_da2714b3ddfa45ed87cef8c72046e6e4",
+      "note_e3cac52e3601453bba0eab7c2746ba6e",
+      "note_e880d910db694a28b93939f9a3e6e37f"
+    ],
+    "cancel_observations": [
+      [
+        {
+          "text": "How are you&#10;feeling today?",
+          "label": "",
+          "bounds": "[63,128][1017,231]",
+          "enabled": "true"
+        },
+        {
+          "text": "Your microphone turns on only when you choose to speak. Parse checks the details with you before saving.",
+          "label": "",
+          "bounds": "[63,279][1017,769]",
+          "enabled": "true"
+        },
+        {
+          "text": "Test speech is enabled on this server. These responses are simulated.",
+          "label": "",
+          "bounds": "[110,863][970,1255]",
+          "enabled": "true"
+        },
+        {
+          "text": "",
+          "label": "Recording. Tap to send.",
+          "bounds": "[63,1371][1017,1912]",
+          "enabled": "true"
+        },
+        {
+          "text": "●",
+          "label": "",
+          "bounds": "[500,1464][580,1646]",
+          "enabled": "true"
+        },
+        {
+          "text": "Tap to finish",
+          "label": "",
+          "bounds": "[272,1688][808,1818]",
+          "enabled": "true"
+        },
+        {
+          "text": "Listening. Tap to send, or choose Cancel recording.",
+          "label": "",
+          "bounds": "[63,1959][1017,2155]",
+          "enabled": "true"
+        },
+        {
+          "text": "Tap to start and stop",
+          "label": "",
+          "bounds": "[63,2216][796,2274]",
+          "enabled": "true"
+        },
+        {
+          "text": "",
+          "label": "Use tap instead of hold to record",
+          "bounds": "[891,2202][1017,2274]",
+          "enabled": "false"
+        },
+        {
+          "text": "",
+          "label": "Cancel recording",
+          "bounds": "[63,2375][1017,2274]",
+          "enabled": "true"
+        }
+      ],
+      [
+        {
+          "text": "Recent care",
+          "label": "",
+          "bounds": "[63,128][1017,129]",
+          "enabled": "true"
+        },
+        {
+          "text": "9/27/2026, 7:52:29 PM",
+          "label": "",
+          "bounds": "[120,200][1017,297]",
+          "enabled": "true"
+        },
+        {
+          "text": "Fictional recovered 503 note 1790509900081",
+          "label": "",
+          "bounds": "[120,318][1017,514]",
+          "enabled": "true"
+        },
+        {
+          "text": "Recorded via Parse phone",
+          "label": "",
+          "bounds": "[120,535][1017,729]",
+          "enabled": "true"
+        },
+        {
+          "text": "9/27/2026, 7:48:15 PM",
+          "label": "",
+          "bounds": "[120,824][1017,921]",
+          "enabled": "true"
+        },
+        {
+          "text": "Fictional recovered disconnect note 1790509646844",
+          "label": "",
+          "bounds": "[120,942][1017,1236]",
+          "enabled": "true"
+        },
+        {
+          "text": "Recorded via Parse phone",
+          "label": "",
+          "bounds": "[120,1257][1017,1451]",
+          "enabled": "true"
+        },
+        {
+          "text": "9/27/2026, 7:18:44 PM",
+          "label": "",
+          "bounds": "[120,1545][1017,1642]",
+          "enabled": "true"
+        },
+        {
+          "text": "Fictional spoken confirmation 1790507881824",
+          "label": "",
+          "bounds": "[120,1663][1017,1957]",
+          "enabled": "true"
+        },
+        {
+          "text": "Recorded via Parse phone",
+          "label": "",
+          "bounds": "[120,1978][1017,2172]",
+          "enabled": "true"
+        },
+        {
+          "text": "9/27/2026, 6:32:20 PM",
+          "label": "",
+          "bounds": "[120,2266][1017,2274]",
+          "enabled": "true"
+        },
+        {
+          "text": "Fictional native left knee concern",
+          "label": "",
+          "bounds": "[120,2384][1017,2274]",
+          "enabled": "true"
+        }
+      ],
+      [
+        {
+          "text": "Recorded via Parse phone",
+          "label": "",
+          "bounds": "[120,128][1017,141]",
+          "enabled": "true"
+        },
+        {
+          "text": "9/27/2026, 6:32:20 PM",
+          "label": "",
+          "bounds": "[120,235][1017,332]",
+          "enabled": "true"
+        },
+        {
+          "text": "Fictional native left knee concern",
+          "label": "",
+          "bounds": "[120,353][1017,549]",
+          "enabled": "true"
+        },
+        {
+          "text": "Reported time: after a fictional walk",
+          "label": "",
+          "bounds": "[120,570][1017,764]",
+          "enabled": "true"
+        },
+        {
+          "text": "Recorded via Parse phone",
+          "label": "",
+          "bounds": "[120,785][1017,979]",
+          "enabled": "true"
+        },
+        {
+          "text": "125/78 mmHg",
+          "label": "",
+          "bounds": "[120,1074][1017,1174]",
+          "enabled": "true"
+        },
+        {
+          "text": "Existing fictional cuff",
+          "label": "",
+          "bounds": "[120,1195][1017,1293]",
+          "enabled": "true"
+        },
+        {
+          "text": "Reported time: after fictional breakfast",
+          "label": "",
+          "bounds": "[120,1314][1017,1508]",
+          "enabled": "true"
+        },
+        {
+          "text": "Reporter: patient",
+          "label": "",
+          "bounds": "[120,1529][1017,1626]",
+          "enabled": "true"
+        },
+        {
+          "text": "Recorded via Parse phone",
+          "label": "",
+          "bounds": "[120,1647][1017,1841]",
+          "enabled": "true"
+        },
+        {
+          "text": "Small moments. A clearer picture of care.",
+          "label": "",
+          "bounds": "[63,1970][1017,2143]",
+          "enabled": "true"
+        }
+      ]
+    ],
+    "restored_font_scale": "1.0"
+  },
+  "failure": "Error: Large-text control not fully reachable: Cancel recording"
+}

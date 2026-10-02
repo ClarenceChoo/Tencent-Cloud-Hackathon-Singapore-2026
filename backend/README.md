@@ -22,6 +22,7 @@ OpenAPI is at `http://127.0.0.1:8000/docs`; the frontend/device contract and exa
 - `CARELOOP_ALLOWED_ORIGINS`: comma-separated exact browser origins.
 - `CARELOOP_COOKIE_SECURE`: keep `true` behind production HTTPS.
 - `CARELOOP_PROVIDER`: provider adapter selected by `app/providers.py`; no implicit live fallback.
+- `CARELOOP_PUBLIC_BASE_URL`: the public HTTPS origin displayed in device setup; no path, credentials or query string.
 - `CARELOOP_DEVELOPMENT_SEED`: must be `true` only while creating fictional local fixtures.
 
 Provider failures are reported as unavailable; the service does not label tones or fixture audio as live speech. Raw uploaded audio is removed after transcription or terminal processing failure, with abandoned input cleaned within the configured maximum.
@@ -40,7 +41,15 @@ CARELOOP_ADMIN_ENABLED=true uv run python -m app.admin create-patient \
 CARELOOP_ADMIN_ENABLED=true uv run python -m app.admin provision-device --claim-minutes 60
 ```
 
-The device command prints its unique credential and one-time claim code once. Place the credential in the device secret configuration; do not store it in source control or ordinary logs.
+The legacy `provision-device` command prints the credential once. Prefer the private setup-pack workflow for a physical pendant:
+
+```sh
+CARELOOP_ADMIN_ENABLED=true uv run python -m app.admin prepare-device \
+  --backend-url https://YOUR-ACTUAL-DOMAIN --output-dir /PRIVATE/NEW/pendant-001
+CARELOOP_ADMIN_ENABLED=true uv run python -m app.admin renew-claim --device-id DEVICE-ID
+```
+
+`prepare-device` writes per-unit NVS input and an owner setup sheet into a new private directory without printing the credential. `renew-claim` replaces the code only for an unclaimed, unrevoked unit, preserving its flashed credential. Run both against the same database used by the deployed API. Follow the [hardware pairing runbook](../docs/careloop/Hardware-Pairing-Runbook.md) for generation, flashing and acceptance.
 
 ## Tests
 

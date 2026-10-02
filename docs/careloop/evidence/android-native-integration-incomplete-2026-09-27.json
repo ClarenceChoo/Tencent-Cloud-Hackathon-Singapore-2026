@@ -1,0 +1,21 @@
+{
+  "at": "2026-09-27T10:13:26.111Z",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "environment": "Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and one-second tone replies. No real speech or acoustic audibility evidence.",
+  "source_sha256": {
+    "mobile/src/App.tsx": "ce94ad4cc0e61e502abb0751db1485a3503618dbba869218bd865bf221ef8dd3",
+    "mobile/src/useVoice.ts": "306b9127c41b946530fb71c7388a77bce51e49e48505324bed917df8eddce35d",
+    "mobile/src/api.ts": "430b8e0a7f4c276446076bdf2131243b5c091d439be700ef71101113e63d0815",
+    "tools/android_native_fixture.py": "50ea3b7c883b251a86240b45f35a062757e90c309dfaf5d6d8e9de077383a6a3",
+    "tools/android_native_smoke.cjs": "5355ea28d6275bd3212069d9e59ab4415f9461ecc7c45553c3e7bbb12a7e03db"
+  },
+  "checks": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    }
+  ],
+  "enrollmentCreatedInThisRun": false,
+  "failure": "AssertionError [ERR_ASSERTION]: Native audio did not reach scripted provider"
+}

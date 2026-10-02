@@ -20,6 +20,14 @@ def auth(ids):
     return {"Authorization": "Bearer %s" % ids["credential"]}
 
 
+def occurrence(db, dose):
+    row = m.ReminderOccurrence(patient_id=dose.patient_id, kind="medication", dose_instance_id=dose.id,
+                               expires_at=dose.scheduled_at + timedelta(minutes=2))
+    db.add(row)
+    db.flush()
+    return row.id
+
+
 def test_worker_splits_when_real_tencent_adapter_rejects_valid_oversize_pcm():
     requested = []
     original = "This deliberately produces an oversized provider clip and must be split safely."
@@ -54,7 +62,7 @@ def test_wav_validation_device_scope_and_idempotency(env, monkeypatch):
     client, app, ids = env
 
     class FakeProvider:
-        async def transcribe_audio(self, wav):
+        async def transcribe_audio(self, wav, *, vocabulary=None):
             return "I have a sore knee"
 
         async def interpret_turn(self, transcript, context):
@@ -96,7 +104,7 @@ def test_playback_ack_does_not_report_dose_taken(env):
     asset = m.AudioAsset(device_id=ids["device"], wav_bytes=audio, content_sha256=sha_bytes(audio), duration_ms=400, expires_at=utcnow() + timedelta(minutes=2))
     db.add(asset)
     db.flush()
-    command = m.ReminderCommand(device_id=ids["device"], dose_instance_id=dose.id, plan_version=1, audio_asset_id=asset.id, expires_at=utcnow() + timedelta(minutes=2))
+    command = m.ReminderCommand(occurrence_id=occurrence(db, dose), route_generation=1, device_id=ids["device"], dose_instance_id=dose.id, plan_version=1, audio_asset_id=asset.id, expires_at=utcnow() + timedelta(minutes=2))
     db.add(command)
     db.commit()
     command_id, dose_id = command.id, dose.id
@@ -130,7 +138,7 @@ def test_pending_commands_expose_current_plan_version_and_filter_stale(env):
     audio = wav_bytes(); asset = m.AudioAsset(device_id=ids["device"], wav_bytes=audio, content_sha256=sha_bytes(audio), duration_ms=400, expires_at=utcnow()+timedelta(minutes=2)); db.add(asset); db.flush()
     for plan in [old, current]:
         dose = m.DoseInstance(patient_id=ids["patient"], plan_id=plan.id, plan_version=plan.version, medicine_id="m", medicine_name="Demo", scheduled_at=utcnow()); db.add(dose); db.flush()
-        db.add(m.ReminderCommand(device_id=ids["device"], dose_instance_id=dose.id, plan_version=plan.version, audio_asset_id=asset.id, expires_at=utcnow()+timedelta(minutes=2)))
+        db.add(m.ReminderCommand(occurrence_id=occurrence(db, dose), route_generation=1, device_id=ids["device"], dose_instance_id=dose.id, plan_version=plan.version, audio_asset_id=asset.id, expires_at=utcnow()+timedelta(minutes=2)))
     db.commit(); db.close()
     response = client.get("/v1/device/pending-commands", headers=auth(ids))
     assert response.status_code == 200
@@ -145,7 +153,7 @@ def test_retry_after_confirmation_commit_returns_original_turn(env, monkeypatch)
     proposal = client.post("/v1/app/patients/%s/proposals" % ids["patient"], json={"kind": "health_note", "payload": {"wording": "Awaiting device confirmation"}}, headers=owner_headers).json()
 
     class FakeProvider:
-        async def transcribe_audio(self, wav):
+        async def transcribe_audio(self, wav, *, vocabulary=None):
             return "yes save that"
         async def interpret_turn(self, transcript, context):
             return {"intent": "confirm", "kind": None, "payload": {}, "spoken_text": ""}
@@ -176,7 +184,7 @@ def test_stale_plan_audio_and_playback_start_are_rejected(env):
     dose = m.DoseInstance(patient_id=ids["patient"], plan_id=old.id, plan_version=1, medicine_id="m", medicine_name="Old", scheduled_at=utcnow())
     db.add(dose); db.flush()
     audio = wav_bytes(); asset = m.AudioAsset(device_id=ids["device"], wav_bytes=audio, content_sha256=sha_bytes(audio), duration_ms=400, expires_at=utcnow()+timedelta(minutes=2)); db.add(asset); db.flush()
-    command = m.ReminderCommand(device_id=ids["device"], dose_instance_id=dose.id, plan_version=1, audio_asset_id=asset.id, expires_at=utcnow()+timedelta(minutes=2)); db.add(command); db.commit()
+    command = m.ReminderCommand(occurrence_id=occurrence(db, dose), route_generation=1, device_id=ids["device"], dose_instance_id=dose.id, plan_version=1, audio_asset_id=asset.id, expires_at=utcnow()+timedelta(minutes=2)); db.add(command); db.commit()
     asset_id, command_id = asset.id, command.id; db.close()
     assert client.get("/v1/device/audio/%s" % asset_id, headers=auth(ids)).status_code == 410
     started = client.post("/v1/device/acks", json={"ack_id": str(uuid4()), "command_id": command_id, "stage": "playback_started"}, headers=auth(ids))
@@ -259,7 +267,7 @@ def test_turn_processing_claim_is_atomic_and_raw_audio_clears_after_asr(env, mon
     calls = {"transcribe": 0}
 
     class FakeProvider:
-        async def transcribe_audio(self, wav):
+        async def transcribe_audio(self, wav, *, vocabulary=None):
             calls["transcribe"] += 1
             await asyncio.sleep(0.02)
             return "hello"
@@ -294,7 +302,7 @@ def test_long_grounded_explanation_is_split_without_omission(env, monkeypatch):
     spoken_chunks = []
 
     class FakeProvider:
-        async def transcribe_audio(self, wav):
+        async def transcribe_audio(self, wav, *, vocabulary=None):
             return "Explain DemoMed"
 
         async def interpret_turn(self, transcript, context):

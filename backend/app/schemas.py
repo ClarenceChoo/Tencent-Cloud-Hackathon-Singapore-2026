@@ -1,7 +1,20 @@
 from datetime import date, datetime
 from typing import Any, Dict, List, Literal, Optional
 
+from fastapi import HTTPException
+
 from pydantic import BaseModel, Field, field_validator, model_validator
+
+CaptureIntent = Literal["health_note", "medication_report", "measurement", "support_request"]
+CAPTURE_INTENTS = frozenset(("health_note", "medication_report", "measurement", "support_request"))
+
+
+def validate_capture_intent(value: str | None) -> str | None:
+    if value is None:
+        return None
+    if value not in CAPTURE_INTENTS:
+        raise HTTPException(status_code=422, detail="X-Care-Intent is not a supported capture purpose")
+    return value
 
 
 class LoginRequest(BaseModel):
@@ -20,6 +33,30 @@ class ProposalRevise(BaseModel):
 
 class ProposalConfirm(BaseModel):
     confirmed: Literal[True]
+
+
+class QueryRequest(BaseModel):
+    kind: Literal["latest_reading", "open_support", "medication_reports"]
+    local_date: Optional[date] = None
+
+    @model_validator(mode="after")
+    def date_matches_kind(self):
+        if self.kind == "medication_reports" and self.local_date is None:
+            raise ValueError("local_date is required for medication_reports")
+        if self.kind != "medication_reports" and self.local_date is not None:
+            raise ValueError("local_date is only accepted for medication_reports")
+        return self
+
+
+class VocabularyTermInput(BaseModel):
+    canonical: str
+    aliases: List[str] = Field(default_factory=list)
+    category: Literal["medicine", "person", "other"]
+
+
+class VocabularyUpdate(BaseModel):
+    expected_version: int = Field(ge=0)
+    terms: List[VocabularyTermInput] = Field(max_length=100)
 
 
 class Medicine(BaseModel):
@@ -71,6 +108,17 @@ class DeviceClaim(BaseModel):
     patient_id: str
 
 
+class ActiveCompanionSelect(BaseModel):
+    device_id: Optional[str] = Field(default=None, max_length=64)
+    expected_generation: int = Field(ge=0)
+    other_pendants_powered_off: bool = False
+
+
+class RemovedPhoneRelease(BaseModel):
+    expected_generation: int = Field(ge=0)
+    app_removed_or_reset: Literal[True]
+
+
 class ResolveRequest(BaseModel):
     outcome: str = Field(min_length=1, max_length=2000)
 
@@ -108,9 +156,32 @@ class PatientProfileUpdate(BaseModel):
         return self
 
 
+SummaryPurpose = Literal["doctor_visit", "family_handoff", "weekly_review"]
+
+
+def _summary_questions(value: Optional[List[str]]) -> Optional[List[str]]:
+    if value is None:
+        return None
+    if len(value) > 10:
+        raise ValueError("A summary can have at most 10 questions")
+    cleaned = []
+    for text in value:
+        if not isinstance(text, str) or not text.strip() or len(text.strip()) > 500:
+            raise ValueError("Each question must contain 1 to 500 characters")
+        cleaned.append(text.strip())
+    return cleaned
+
+
 class SummaryCreate(BaseModel):
     start_date: date
     end_date: date
+    purpose: SummaryPurpose = "doctor_visit"
+    questions: List[str] = Field(default_factory=list)
+
+    @field_validator("questions")
+    @classmethod
+    def questions_valid(cls, value: List[str]) -> List[str]:
+        return _summary_questions(value) or []
 
     @model_validator(mode="after")
     def ordered(self):
@@ -123,6 +194,12 @@ class SummaryUpdate(BaseModel):
     sections: List[Dict[str, Any]]
     omitted_source_ids: List[str] = Field(default_factory=list)
     reviewed: Literal[True]
+    questions: Optional[List[str]] = None
+
+    @field_validator("questions")
+    @classmethod
+    def questions_valid(cls, value: Optional[List[str]]) -> Optional[List[str]]:
+        return _summary_questions(value)
 
 
 class SummaryShareCreate(BaseModel):

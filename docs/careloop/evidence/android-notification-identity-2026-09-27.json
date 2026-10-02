@@ -1,0 +1,8 @@
+{
+  "dose_id": "dose_59894c9971d94bb7ab72b12885dcc313",
+  "occurrence_id": "occ_c4e7aea987ef405a98af483c7a70fe1c",
+  "posted_identity": "parse.dev_5b702870fa704c5bb3ccebad18bb433b.occ_c4e7aea987ef405a98af483c7a70fe1c.g1",
+  "matches_expected_device_and_occurrence": true,
+  "raw_record_sha256": "1962aed2df089b5dac445673215ff254511b12d3d36cdd8711ab4492404e8efd",
+  "notification_delay_ms": 106254
+}

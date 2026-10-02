@@ -76,12 +76,13 @@ async function main() {
       assert(code && credential, 'Expected private output from provision-device');
       await nav('Settings');
       await page.getByLabel('One-use device code').fill(code);
-      await save(page.getByRole('button', { name: 'Claim device', exact: true }), '/devices/claim');
+      await save(page.getByRole('button', { name: 'Pair cardholder', exact: true }), '/devices/claim');
       const device = (await dashboard()).devices.find(item => !item.revoked_at);
       assert(device);
       const accepted = await context.request.get('/v1/device/pending-commands', { headers: { Authorization: `Bearer ${credential}` } });
       assert(accepted.ok());
-      await save(page.getByRole('button', { name: 'Revoke device access', exact: true }), `/devices/${device.id}/revoke`);
+      await page.getByRole('button', { name: 'Revoke device access', exact: true }).click();
+      await save(page.getByRole('dialog').getByRole('button', { name: 'Revoke access', exact: true }), `/devices/${device.id}/revoke`);
       const revoked = await context.request.get('/v1/device/pending-commands', { headers: { Authorization: `Bearer ${credential}` } });
       assert([401, 403].includes(revoked.status()));
       await page.getByLabel('One-use device code').waitFor();

@@ -2,6 +2,8 @@
 
 Version 0.3 · 22 September 2026 · Proposed MVP specification
 
+**27 September scope update:** The user now requires a phone companion that can replace the pendant. [Phone-Companion-PRD.md](Phone-Companion-PRD.md) supersedes this document's phone-voice exclusions and deferral of native phone notifications. The original care-record, confirmation, sharing and medication requirements remain in force. The phone extension is specified for implementation, not already delivered.
+
 **Product:** a voice companion inside a lanyard cardholder for older adults, connected to a phone-friendly care dashboard.
 
 **Ownership:** the supplier assembles and tests the hardware. The project team writes the ESP32 firmware, Tencent-hosted backend, AI integration, and dashboards.

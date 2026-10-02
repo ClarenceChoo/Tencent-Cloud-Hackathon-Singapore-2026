@@ -39,6 +39,24 @@ class Patient(Base):
     calling_route: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
 
 
+class CareVocabulary(Base):
+    __tablename__ = "care_vocabularies"
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), primary_key=True)
+    version: Mapped[int] = mapped_column(Integer)
+    terms: Mapped[list] = mapped_column(JSON)
+    reviewed_by_user_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    reviewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class CareVocabularyAudit(Base):
+    __tablename__ = "care_vocabulary_audits"
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), primary_key=True)
+    version: Mapped[int] = mapped_column(Integer, primary_key=True)
+    terms: Mapped[list] = mapped_column(JSON)
+    reviewed_by_user_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    reviewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
 class AccessGrant(Base):
     __tablename__ = "access_grants"
     __table_args__ = (UniqueConstraint("user_id", "patient_id", name="uq_user_patient_grant"),)
@@ -78,6 +96,25 @@ class Device(Base):
     rssi: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     firmware_version: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     capabilities: Mapped[list] = mapped_column(JSON, default=list)
+    device_type: Mapped[str] = mapped_column(String(20), default="pendant", server_default="pendant")
+    platform: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    display_name: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
+
+
+class PhoneEnrollment(Base):
+    __tablename__ = "phone_enrollments"
+    device_id: Mapped[str] = mapped_column(ForeignKey("devices.id"), primary_key=True)
+    idempotency_key: Mapped[str] = mapped_column(String(36), unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class CompanionRoute(Base):
+    __tablename__ = "companion_routes"
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), primary_key=True)
+    active_device_id: Mapped[Optional[str]] = mapped_column(ForeignKey("devices.id"), nullable=True)
+    generation: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    changed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class MedicationPlanVersion(Base):
@@ -117,6 +154,7 @@ class AudioAsset(Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: new_id("audio"))
     device_id: Mapped[str] = mapped_column(ForeignKey("devices.id"), index=True)
     wav_bytes: Mapped[bytes] = mapped_column(LargeBinary)
+    context_guard: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     content_sha256: Mapped[str] = mapped_column(String(64))
     duration_ms: Mapped[int] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
@@ -132,6 +170,8 @@ class VoiceTurn(Base):
     idempotency_key: Mapped[str] = mapped_column(String(36))
     content_sha256: Mapped[str] = mapped_column(String(64))
     context_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    capture_intent: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    vocabulary_version: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     status: Mapped[str] = mapped_column(String(40), default="accepted")
     transcript: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -269,12 +309,29 @@ class FollowUpResolution(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class ReminderOccurrence(Base):
+    __tablename__ = "reminder_occurrences"
+    __table_args__ = (UniqueConstraint("patient_id", "kind", "local_date", name="uq_checkin_occurrence"),)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: new_id("occ"))
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(20))
+    dose_instance_id: Mapped[Optional[str]] = mapped_column(ForeignKey("dose_instances.id"), unique=True, nullable=True)
+    local_date: Mapped[Optional[datetime]] = mapped_column(Date, nullable=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class ReminderCommand(Base):
     __tablename__ = "reminder_commands"
+    __table_args__ = (UniqueConstraint("occurrence_id", "route_generation", name="uq_reminder_route_attempt"),)
     id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: new_id("cmd"))
     event_id: Mapped[str] = mapped_column(String(64), unique=True, default=lambda: new_id("evt"))
     device_id: Mapped[str] = mapped_column(ForeignKey("devices.id"), index=True)
-    dose_instance_id: Mapped[str] = mapped_column(ForeignKey("dose_instances.id"), unique=True)
+    dose_instance_id: Mapped[str] = mapped_column(ForeignKey("dose_instances.id"), index=True)
+    occurrence_id: Mapped[str] = mapped_column(ForeignKey("reminder_occurrences.id"), index=True)
+    route_generation: Mapped[int] = mapped_column(Integer)
+    audio_accessed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    cancel_reason: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     plan_version: Mapped[int] = mapped_column(Integer)
     context_id: Mapped[str] = mapped_column(String(64), unique=True, default=lambda: new_id("ctx"))
     audio_asset_id: Mapped[str] = mapped_column(ForeignKey("audio_assets.id"))
@@ -300,11 +357,15 @@ class ReminderAck(Base):
 
 class CheckInDelivery(Base):
     __tablename__ = "checkin_deliveries"
-    __table_args__ = (UniqueConstraint("patient_id", "local_date", name="uq_patient_checkin_date"),)
+    __table_args__ = (UniqueConstraint("occurrence_id", "route_generation", name="uq_checkin_route_attempt"),)
     id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: new_id("checkin"))
     event_id: Mapped[str] = mapped_column(String(64), unique=True, default=lambda: new_id("evt"))
     device_id: Mapped[Optional[str]] = mapped_column(ForeignKey("devices.id"), nullable=True, index=True)
     patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
+    occurrence_id: Mapped[str] = mapped_column(ForeignKey("reminder_occurrences.id"), index=True)
+    route_generation: Mapped[int] = mapped_column(Integer)
+    audio_accessed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    cancel_reason: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     local_date: Mapped[datetime] = mapped_column(Date)
     context_id: Mapped[str] = mapped_column(String(64), unique=True, default=lambda: new_id("ctx"))
     greeting_text: Mapped[str] = mapped_column(Text)
@@ -333,6 +394,9 @@ class VisitSummary(Base):
     end_date: Mapped[datetime] = mapped_column(Date)
     sections: Mapped[list] = mapped_column(JSON)
     source_refs: Mapped[list] = mapped_column(JSON)
+    purpose: Mapped[str] = mapped_column(String(30), default="doctor_visit", server_default="doctor_visit")
+    template_version: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    questions: Mapped[list] = mapped_column(JSON, default=list, server_default="[]")
     omitted_source_ids: Mapped[list] = mapped_column(JSON, default=list)
     status: Mapped[str] = mapped_column(String(30), default="draft")
     created_by_user_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
@@ -362,3 +426,46 @@ class AuditEvent(Base):
     object_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     details: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
+class PhoneState(Base):
+    __tablename__ = 'phone_states'
+    device_id: Mapped[str] = mapped_column(ForeignKey('devices.id'), primary_key=True)
+    lifecycle: Mapped[str] = mapped_column(String(20), default='unknown')
+    microphone_permission: Mapped[str] = mapped_column(String(20), default='unknown')
+    notification_permission: Mapped[str] = mapped_column(String(20), default='unknown')
+    reported_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    scheduled_until: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    schedule_revision: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    push_token: Mapped[Optional[str]] = mapped_column(String(240), nullable=True, unique=True)
+    push_version: Mapped[int] = mapped_column(Integer, default=0)
+    push_disabled_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    push_snapshot: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+
+
+class NotificationEvidence(Base):
+    __tablename__ = 'notification_evidence'
+    __table_args__ = (UniqueConstraint('device_id', 'event_id', name='uq_notification_evidence'),)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: new_id('notice'))
+    device_id: Mapped[str] = mapped_column(ForeignKey('devices.id'), index=True)
+    event_id: Mapped[str] = mapped_column(String(36))
+    identity: Mapped[str] = mapped_column(String(160))
+    stage: Mapped[str] = mapped_column(String(30))
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class PushHint(Base):
+    __tablename__ = 'push_hints'
+    __table_args__ = (UniqueConstraint('device_id', 'fingerprint', name='uq_push_hint'),)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: new_id('push'))
+    device_id: Mapped[str] = mapped_column(ForeignKey('devices.id'), index=True)
+    fingerprint: Mapped[str] = mapped_column(String(64))
+    route_generation: Mapped[int] = mapped_column(Integer)
+    push_version: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(30), default='pending', index=True)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    ticket_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    error_code: Mapped[Optional[str]] = mapped_column(String(60), nullable=True)
+    next_attempt_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

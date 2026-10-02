@@ -1,0 +1,39 @@
+# Upload only the static frontend source, its one shared type file, and the
+# fail-closed API function. The project root must stay at the repository root.
+/*
+!vercel.mjs
+!.vercelignore
+!api
+!frontend
+!mobile
+
+api/*
+!api/unavailable.mjs
+
+frontend/*
+!frontend/index.html
+!frontend/landing
+!frontend/public
+!frontend/package.json
+!frontend/package-lock.json
+!frontend/tsconfig.json
+!frontend/vite.config.ts
+!frontend/src
+frontend/src/__tests__
+
+mobile/*
+!mobile/src
+mobile/src/*
+!mobile/src/contracts.ts
+
+# Defend against accidentally added secrets or build output in allowed trees.
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+**/*.p12
+**/*.csv
+**/*.bin
+**/node_modules/
+**/dist/
+**/runtime/

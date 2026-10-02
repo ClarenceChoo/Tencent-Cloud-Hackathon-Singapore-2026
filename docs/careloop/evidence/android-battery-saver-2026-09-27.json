@@ -1,0 +1,311 @@
+{
+  "at": "2026-09-27T15:14:33.662Z",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "environment": "Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and fixture tone replies. No real speech or acoustic audibility evidence.",
+  "source_sha256": {
+    "mobile/src/App.tsx": "040650c4ba7d61a35e2c5926c616a0f09a051f03da778766a3241dcd2ccdb275",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "mobile/src/api.ts": "c47f9fd49c83ec14df83d1939a941d6a2b48cddd8548807d123941b523b328cf",
+    "mobile/src/storage.ts": "d617df7a010d6cc68f0cd5dc6e3dfac021b1684bc6e10bc5fa50963871f3d99f",
+    "tools/android_native_fixture.py": "02f47605eb96b79595ccfb991cd8c2ecf72808bc3680386853d97b2113b75271",
+    "tools/android_native_smoke.cjs": "0a919bb550f212fb4c4021c65cbc5e9e31c8ed5ad7d3936e0bc45d7e6cc27a82",
+    "tools/android_native_care.cjs": "48be6db43584dba70abb17294f000c2e29741f389a531b2ba656b4373bf2897b",
+    "mobile/src/useReminders.ts": "ace3aff6d600a44a73aa5a7384cb15ee616624e42d17d42e13930aa2960ce269",
+    "mobile/src/alertSchedule.ts": "1c3f4f23ea35da5981b6fb4642e668444085f6120476238c101c6b1a477c051e",
+    "tools/android_native_alert_lifecycle.cjs": "e45a9359adcadec637c34dffba7b3a7d7d51f978f1d938d58bf1a94de04d6e63",
+    "tools/android_native_power.cjs": "6aec1e672db88eb18290ab7b5bf4f607cc67d960f5610eb860982f4227b57d8a",
+    "tools/android_native_revocation.cjs": "635bcd81c0f108720e78f95117035c96dbb77bf28534b81b8cf25a9a74ef1435",
+    "tools/android_native_fault_proxy.py": "8619dd07b52ca3a888d8126e4885d506a44fde5988c71a5bd75b6bea6ef2e7dd",
+    "tools/android_native_control.py": "868f5d6fc4867f05fa625e9ddb089bea4845be0af3799d9ada76cf0e87187f35",
+    "tools/android_native_battery.cjs": "f592d8bce1bb9bd81bd0d548c9c255b6ef883f64c8a35a76d597948778a1e75a"
+  },
+  "checks": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    },
+    {
+      "name": "Native alert is scheduled for the exact dose before entering battery-saver state",
+      "passed": true
+    },
+    {
+      "name": "Android posts the exact generic alert in battery-saver state without recording a dose",
+      "passed": true
+    },
+    {
+      "name": "Actual battery-saver notification tap opens the native app and remains separate from medication reporting",
+      "passed": true
+    }
+  ],
+  "installed_apk_sha256": "15ad0b843daad17bd030dad58e8db29d9269f2317707db3236dec80484b33c3e",
+  "mode": "alert-battery-saver",
+  "enrollmentCreatedInThisRun": false,
+  "alert_state": "battery-saver",
+  "original_lock_disabled": true,
+  "clocks_before": {
+    "host_before_ms": 1790522084955,
+    "host_after_ms": 1790522084973,
+    "android_ms": 1790522085295,
+    "android_minus_host_midpoint_ms": 331,
+    "roundtrip_ms": 18
+  },
+  "power": {
+    "kind": "battery-saver",
+    "original": {
+      "at": "2026-09-27T15:14:45.034Z",
+      "low_power": "0",
+      "sticky": "null",
+      "enabled": false,
+      "full": false,
+      "adaptive": false,
+      "force_all_apps_standby": false,
+      "powered": true,
+      "wakefulness": "Awake",
+      "deep_force": "false",
+      "full_policy": "advertise_is_enabled=true\n    disable_vibration=false\n    disable_animation=false\n    defer_full_backup=true\n    defer_keyvalue_backup=true\n    enable_firewall=true\n    enable_datasaver=false\n    disable_launch_boost=true\n    enable_brightness_adjustment=false\n    adjust_brightness_factor=0.5\n    location_mode=3\n    force_all_apps_standby=true\n    force_background_check=true\n    disable_optional_sensors=true\n    disable_aod=true\n    soundtrigger_mode=1\n    enable_quick_doze=true\n    enable_night_mode=true",
+      "battery": {
+        "frozen": false,
+        "ac": true,
+        "usb": false,
+        "wireless": false,
+        "dock": false,
+        "level": 100,
+        "status": 2
+      }
+    },
+    "note": "Real Android Battery Saver/background policy with simulated unplugged 15% battery on a disposable emulator. No physical battery-life, consumption, OEM or acoustic evidence.",
+    "entered": {
+      "at": "2026-09-27T15:15:17.741Z",
+      "low_power": "1",
+      "sticky": "1",
+      "enabled": true,
+      "full": true,
+      "adaptive": false,
+      "force_all_apps_standby": true,
+      "powered": false,
+      "wakefulness": "Awake",
+      "deep_force": "false",
+      "full_policy": "advertise_is_enabled=true\n    disable_vibration=false\n    disable_animation=false\n    defer_full_backup=true\n    defer_keyvalue_backup=true\n    enable_firewall=true\n    enable_datasaver=false\n    disable_launch_boost=true\n    enable_brightness_adjustment=false\n    adjust_brightness_factor=0.5\n    location_mode=3\n    force_all_apps_standby=true\n    force_background_check=true\n    disable_optional_sensors=true\n    disable_aod=true\n    soundtrigger_mode=1\n    enable_quick_doze=true\n    enable_night_mode=true",
+      "battery": {
+        "frozen": true,
+        "ac": false,
+        "usb": false,
+        "wireless": false,
+        "dock": false,
+        "level": 15,
+        "status": 3
+      }
+    },
+    "last_observed": {
+      "at": "2026-09-27T15:18:33.352Z",
+      "low_power": "1",
+      "sticky": "1",
+      "enabled": true,
+      "full": true,
+      "adaptive": false,
+      "force_all_apps_standby": true,
+      "powered": false,
+      "wakefulness": "Awake",
+      "deep_force": "false",
+      "full_policy": "advertise_is_enabled=true\n    disable_vibration=false\n    disable_animation=false\n    defer_full_backup=true\n    defer_keyvalue_backup=true\n    enable_firewall=true\n    enable_datasaver=false\n    disable_launch_boost=true\n    enable_brightness_adjustment=false\n    adjust_brightness_factor=0.5\n    location_mode=3\n    force_all_apps_standby=true\n    force_background_check=true\n    disable_optional_sensors=true\n    disable_aod=true\n    soundtrigger_mode=1\n    enable_quick_doze=true\n    enable_night_mode=true",
+      "battery": {
+        "frozen": true,
+        "ac": false,
+        "usb": false,
+        "wireless": false,
+        "dock": false,
+        "level": 15,
+        "status": 3
+      }
+    },
+    "at_due": {
+      "at": "2026-09-27T15:17:02.574Z",
+      "low_power": "1",
+      "sticky": "1",
+      "enabled": true,
+      "full": true,
+      "adaptive": false,
+      "force_all_apps_standby": true,
+      "powered": false,
+      "wakefulness": "Awake",
+      "deep_force": "false",
+      "full_policy": "advertise_is_enabled=true\n    disable_vibration=false\n    disable_animation=false\n    defer_full_backup=true\n    defer_keyvalue_backup=true\n    enable_firewall=true\n    enable_datasaver=false\n    disable_launch_boost=true\n    enable_brightness_adjustment=false\n    adjust_brightness_factor=0.5\n    location_mode=3\n    force_all_apps_standby=true\n    force_background_check=true\n    disable_optional_sensors=true\n    disable_aod=true\n    soundtrigger_mode=1\n    enable_quick_doze=true\n    enable_night_mode=true",
+      "battery": {
+        "frozen": true,
+        "ac": false,
+        "usb": false,
+        "wireless": false,
+        "dock": false,
+        "level": 15,
+        "status": 3
+      }
+    },
+    "delivery_phase": "during Battery Saver",
+    "at_notification": {
+      "at": "2026-09-27T15:18:22.025Z",
+      "low_power": "1",
+      "sticky": "1",
+      "enabled": true,
+      "full": true,
+      "adaptive": false,
+      "force_all_apps_standby": true,
+      "powered": false,
+      "wakefulness": "Awake",
+      "deep_force": "false",
+      "full_policy": "advertise_is_enabled=true\n    disable_vibration=false\n    disable_animation=false\n    defer_full_backup=true\n    defer_keyvalue_backup=true\n    enable_firewall=true\n    enable_datasaver=false\n    disable_launch_boost=true\n    enable_brightness_adjustment=false\n    adjust_brightness_factor=0.5\n    location_mode=3\n    force_all_apps_standby=true\n    force_background_check=true\n    disable_optional_sensors=true\n    disable_aod=true\n    soundtrigger_mode=1\n    enable_quick_doze=true\n    enable_night_mode=true",
+      "battery": {
+        "frozen": true,
+        "ac": false,
+        "usb": false,
+        "wireless": false,
+        "dock": false,
+        "level": 15,
+        "status": 3
+      }
+    },
+    "after_opening": {
+      "at": "2026-09-27T15:18:33.352Z",
+      "low_power": "1",
+      "sticky": "1",
+      "enabled": true,
+      "full": true,
+      "adaptive": false,
+      "force_all_apps_standby": true,
+      "powered": false,
+      "wakefulness": "Awake",
+      "deep_force": "false",
+      "full_policy": "advertise_is_enabled=true\n    disable_vibration=false\n    disable_animation=false\n    defer_full_backup=true\n    defer_keyvalue_backup=true\n    enable_firewall=true\n    enable_datasaver=false\n    disable_launch_boost=true\n    enable_brightness_adjustment=false\n    adjust_brightness_factor=0.5\n    location_mode=3\n    force_all_apps_standby=true\n    force_background_check=true\n    disable_optional_sensors=true\n    disable_aod=true\n    soundtrigger_mode=1\n    enable_quick_doze=true\n    enable_night_mode=true",
+      "battery": {
+        "frozen": true,
+        "ac": false,
+        "usb": false,
+        "wireless": false,
+        "dock": false,
+        "level": 15,
+        "status": 3
+      }
+    },
+    "before_release": {
+      "at": "2026-09-27T15:18:35.596Z",
+      "low_power": "1",
+      "sticky": "1",
+      "enabled": true,
+      "full": true,
+      "adaptive": false,
+      "force_all_apps_standby": true,
+      "powered": false,
+      "wakefulness": "Awake",
+      "deep_force": "false",
+      "full_policy": "advertise_is_enabled=true\n    disable_vibration=false\n    disable_animation=false\n    defer_full_backup=true\n    defer_keyvalue_backup=true\n    enable_firewall=true\n    enable_datasaver=false\n    disable_launch_boost=true\n    enable_brightness_adjustment=false\n    adjust_brightness_factor=0.5\n    location_mode=3\n    force_all_apps_standby=true\n    force_background_check=true\n    disable_optional_sensors=true\n    disable_aod=true\n    soundtrigger_mode=1\n    enable_quick_doze=true\n    enable_night_mode=true",
+      "battery": {
+        "frozen": true,
+        "ac": false,
+        "usb": false,
+        "wireless": false,
+        "dock": false,
+        "level": 15,
+        "status": 3
+      }
+    },
+    "release_reason": "test cleanup",
+    "released": {
+      "at": "2026-09-27T15:18:35.770Z",
+      "low_power": "0",
+      "sticky": "0",
+      "enabled": false,
+      "full": false,
+      "adaptive": false,
+      "force_all_apps_standby": false,
+      "powered": false,
+      "wakefulness": "Awake",
+      "deep_force": "false",
+      "full_policy": "advertise_is_enabled=true\n    disable_vibration=false\n    disable_animation=false\n    defer_full_backup=true\n    defer_keyvalue_backup=true\n    enable_firewall=true\n    enable_datasaver=false\n    disable_launch_boost=true\n    enable_brightness_adjustment=false\n    adjust_brightness_factor=0.5\n    location_mode=3\n    force_all_apps_standby=true\n    force_background_check=true\n    disable_optional_sensors=true\n    disable_aod=true\n    soundtrigger_mode=1\n    enable_quick_doze=true\n    enable_night_mode=true",
+      "battery": {
+        "frozen": true,
+        "ac": false,
+        "usb": false,
+        "wireless": false,
+        "dock": false,
+        "level": 15,
+        "status": 3
+      }
+    },
+    "restored": {
+      "at": "2026-09-27T15:18:36.054Z",
+      "low_power": "0",
+      "sticky": "null",
+      "enabled": false,
+      "full": false,
+      "adaptive": false,
+      "force_all_apps_standby": false,
+      "powered": true,
+      "wakefulness": "Awake",
+      "deep_force": "false",
+      "full_policy": "advertise_is_enabled=true\n    disable_vibration=false\n    disable_animation=false\n    defer_full_backup=true\n    defer_keyvalue_backup=true\n    enable_firewall=true\n    enable_datasaver=false\n    disable_launch_boost=true\n    enable_brightness_adjustment=false\n    adjust_brightness_factor=0.5\n    location_mode=3\n    force_all_apps_standby=true\n    force_background_check=true\n    disable_optional_sensors=true\n    disable_aod=true\n    soundtrigger_mode=1\n    enable_quick_doze=true\n    enable_night_mode=true",
+      "battery": {
+        "frozen": false,
+        "ac": true,
+        "usb": false,
+        "wireless": false,
+        "dock": false,
+        "level": 100,
+        "status": 2
+      }
+    }
+  },
+  "reminder_device_id": "dev_61c7c95d16034baaacd3220d4a41947d",
+  "plan_version": 19,
+  "dose_id": "dose_120cc7368deb4bd385f7ac5a0fa9372b",
+  "due_at": "2026-09-27T15:17:00Z",
+  "identity": "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_53f3263efc464067a1a4d4c09e99cb83.g15",
+  "native_scheduled_before": [
+    "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_53f3263efc464067a1a4d4c09e99cb83.g15",
+    "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_771de8a961ab4d5bbaca4ba396121910.g15"
+  ],
+  "notes_before": 5,
+  "observation_window_seconds_after_due": 420,
+  "command_while_battery_saver": {
+    "id": "cmd_81a49b57258e4cf295cae0271506bc42",
+    "dose_id": "dose_120cc7368deb4bd385f7ac5a0fa9372b",
+    "state": "queued",
+    "cancel_reason": null,
+    "audio_accessed": false,
+    "acks": []
+  },
+  "command_before_opening": {
+    "id": "cmd_81a49b57258e4cf295cae0271506bc42",
+    "dose_id": "dose_120cc7368deb4bd385f7ac5a0fa9372b",
+    "state": "queued",
+    "cancel_reason": null,
+    "audio_accessed": false,
+    "acks": []
+  },
+  "posted_at": "2026-09-27T15:18:20.918Z",
+  "delay_ms": 80918,
+  "clocks_after": {
+    "host_before_ms": 1790522302501,
+    "host_after_ms": 1790522302519,
+    "android_ms": 1790522302843,
+    "android_minus_host_midpoint_ms": 333,
+    "roundtrip_ms": 18
+  },
+  "clock_adjusted_delay_ms": 80585,
+  "raw_notification_sha256": "607912dbc339e8b6e86218de826214d198e117bd6abcf94e656685495fd6850e",
+  "pid_after_notification": "2111",
+  "opened": true,
+  "medication_report": "unconfirmed",
+  "command_after_opening": {
+    "id": "cmd_81a49b57258e4cf295cae0271506bc42",
+    "dose_id": "dose_120cc7368deb4bd385f7ac5a0fa9372b",
+    "state": "playback_completed",
+    "cancel_reason": null,
+    "audio_accessed": true,
+    "acks": [
+      "received",
+      "playback_started",
+      "playback_completed"
+    ]
+  },
+  "notes_after": 5
+}

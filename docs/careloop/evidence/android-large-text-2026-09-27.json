@@ -1,0 +1,296 @@
+{
+  "at": "2026-09-27T13:28:19.233Z",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "environment": "Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and fixture tone replies. No real speech or acoustic audibility evidence.",
+  "source_sha256": {
+    "mobile/src/App.tsx": "040650c4ba7d61a35e2c5926c616a0f09a051f03da778766a3241dcd2ccdb275",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "mobile/src/api.ts": "c47f9fd49c83ec14df83d1939a941d6a2b48cddd8548807d123941b523b328cf",
+    "mobile/src/storage.ts": "d617df7a010d6cc68f0cd5dc6e3dfac021b1684bc6e10bc5fa50963871f3d99f",
+    "tools/android_native_fixture.py": "02f47605eb96b79595ccfb991cd8c2ecf72808bc3680386853d97b2113b75271",
+    "tools/android_native_smoke.cjs": "1b235e41ae155a906782d9ef93f686f3039f7ef2213200806a7798cfe266e9d3",
+    "tools/android_native_care.cjs": "48be6db43584dba70abb17294f000c2e29741f389a531b2ba656b4373bf2897b",
+    "mobile/src/useTalkMode.ts": "c159dcedbad3b79d5a76b7238391bf7a4cc9d310b2b02bfae4aabef7ab1cc941",
+    "tools/android_native_large_text.cjs": "8a4505363548c9f61605d3cf57e2dc28ca30a58e2891dba86a75eb525a4ad00b"
+  },
+  "checks": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    },
+    {
+      "name": "At 200% native text size, Talk and Cancel are reachable with at least 48dp targets; cancellation deletes capture without upload",
+      "passed": true
+    },
+    {
+      "name": "At 200% native text size, read-back and both proposal actions remain reachable; explicit confirmation saves one permitted phone-sourced note",
+      "passed": true
+    },
+    {
+      "name": "At 200% text size, all four care tabs and Settings actions are reachable; restart preserves the one confirmed note",
+      "passed": true
+    }
+  ],
+  "installed_apk_sha256": "6b774f9ae08a14e32a0c089ae469c6d649bae2f06f1f82d54360c1b7702a2c0f",
+  "mode": "large-text",
+  "enrollmentCreatedInThisRun": false,
+  "large_text": {
+    "scale": 2,
+    "original_scale": "1.0",
+    "density_dpi": 420,
+    "screen_reader_tested": false,
+    "controls": [
+      {
+        "label": "Tap to start recording",
+        "bounds": "[63,1689][1017,2230]",
+        "width_dp": 363.42857142857144,
+        "height_dp": 206.0952380952381
+      },
+      {
+        "label": "Tap to start recording",
+        "bounds": "[63,1689][1017,2230]",
+        "width_dp": 363.42857142857144,
+        "height_dp": 206.0952380952381
+      },
+      {
+        "label": "Cancel recording",
+        "bounds": "[63,1970][1017,2155]",
+        "width_dp": 363.42857142857144,
+        "height_dp": 70.47619047619048
+      },
+      {
+        "label": "Tap to start recording",
+        "bounds": "[63,1675][1017,2216]",
+        "width_dp": 363.42857142857144,
+        "height_dp": 206.0952380952381
+      },
+      {
+        "label": "Tap to start recording",
+        "bounds": "[63,1675][1017,2216]",
+        "width_dp": 363.42857142857144,
+        "height_dp": 206.0952380952381
+      },
+      {
+        "label": "Recording. Tap to send.",
+        "bounds": "[63,1675][1017,2216]",
+        "width_dp": 363.42857142857144,
+        "height_dp": 206.0952380952381
+      },
+      {
+        "label": "Confirm and save",
+        "bounds": "[123,1838][957,2022]",
+        "width_dp": 317.7142857142857,
+        "height_dp": 70.0952380952381
+      },
+      {
+        "label": "Cancel this update",
+        "bounds": "[123,1641][957,1826]",
+        "width_dp": 317.7142857142857,
+        "height_dp": 70.47619047619048
+      },
+      {
+        "label": "Confirm and save",
+        "bounds": "[123,1933][957,2117]",
+        "width_dp": 317.7142857142857,
+        "height_dp": 70.0952380952381
+      },
+      {
+        "label": "Today",
+        "bounds": "[63,1824][360,1998]",
+        "width_dp": 113.14285714285714,
+        "height_dp": 66.28571428571429
+      },
+      {
+        "label": "Medicines",
+        "bounds": "[381,1834][827,2008]",
+        "width_dp": 169.9047619047619,
+        "height_dp": 66.28571428571429
+      },
+      {
+        "label": "Care",
+        "bounds": "[63,2025][310,2200]",
+        "width_dp": 94.0952380952381,
+        "height_dp": 66.66666666666667
+      },
+      {
+        "label": "Settings",
+        "bounds": "[331,2051][704,2226]",
+        "width_dp": 142.0952380952381,
+        "height_dp": 66.66666666666667
+      },
+      {
+        "label": "Open phone permission settings",
+        "bounds": "[123,1842][957,2118]",
+        "width_dp": 317.7142857142857,
+        "height_dp": 105.14285714285714
+      },
+      {
+        "label": "Open care dashboard",
+        "bounds": "[123,1736][957,1921]",
+        "width_dp": 317.7142857142857,
+        "height_dp": 70.47619047619048
+      },
+      {
+        "label": "Unpair this phone",
+        "bounds": "[123,1962][957,2147]",
+        "width_dp": 317.7142857142857,
+        "height_dp": 70.47619047619048
+      }
+    ],
+    "baseline_note_ids": [
+      "note_274df94653ac4332aeb5e10c1add1a14",
+      "note_da2714b3ddfa45ed87cef8c72046e6e4",
+      "note_e3cac52e3601453bba0eab7c2746ba6e",
+      "note_e880d910db694a28b93939f9a3e6e37f"
+    ],
+    "cancel_observations": [
+      [
+        {
+          "text": "YOUR CARE COMPANION",
+          "label": "",
+          "bounds": "[63,128][937,49]",
+          "enabled": "true"
+        },
+        {
+          "text": "HELLO, Mei",
+          "label": "",
+          "bounds": "[63,143][1017,228]",
+          "enabled": "true"
+        },
+        {
+          "text": "How are you&#10;feeling today?",
+          "label": "",
+          "bounds": "[63,275][1017,549]",
+          "enabled": "true"
+        },
+        {
+          "text": "Your microphone turns on only when you choose to speak. Parse checks the details with you before saving.",
+          "label": "",
+          "bounds": "[63,597][1017,1087]",
+          "enabled": "true"
+        },
+        {
+          "text": "Test speech is enabled on this server. These responses are simulated.",
+          "label": "",
+          "bounds": "[110,1181][970,1573]",
+          "enabled": "true"
+        },
+        {
+          "text": "",
+          "label": "Recording. Tap to send.",
+          "bounds": "[63,1689][1017,2230]",
+          "enabled": "true"
+        },
+        {
+          "text": "●",
+          "label": "",
+          "bounds": "[500,1782][580,1964]",
+          "enabled": "true"
+        },
+        {
+          "text": "Tap to finish",
+          "label": "",
+          "bounds": "[272,2006][808,2136]",
+          "enabled": "true"
+        },
+        {
+          "text": "Listening. Tap to send, or choose Cancel recording.",
+          "label": "",
+          "bounds": "[63,2277][1017,2274]",
+          "enabled": "true"
+        }
+      ],
+      [
+        {
+          "text": "Your microphone turns on only when you choose to speak. Parse checks the details with you before saving.",
+          "label": "",
+          "bounds": "[63,128][1017,364]",
+          "enabled": "true"
+        },
+        {
+          "text": "Test speech is enabled on this server. These responses are simulated.",
+          "label": "",
+          "bounds": "[110,458][970,850]",
+          "enabled": "true"
+        },
+        {
+          "text": "",
+          "label": "Recording. Tap to send.",
+          "bounds": "[63,966][1017,1507]",
+          "enabled": "true"
+        },
+        {
+          "text": "●",
+          "label": "",
+          "bounds": "[500,1059][580,1241]",
+          "enabled": "true"
+        },
+        {
+          "text": "Tap to finish",
+          "label": "",
+          "bounds": "[272,1283][808,1413]",
+          "enabled": "true"
+        },
+        {
+          "text": "Listening. Tap to send, or choose Cancel recording.",
+          "label": "",
+          "bounds": "[63,1554][1017,1750]",
+          "enabled": "true"
+        },
+        {
+          "text": "Tap to start and stop",
+          "label": "",
+          "bounds": "[63,1811][796,1909]",
+          "enabled": "true"
+        },
+        {
+          "text": "",
+          "label": "Use tap instead of hold to record",
+          "bounds": "[891,1797][1017,1923]",
+          "enabled": "false"
+        },
+        {
+          "text": "",
+          "label": "Cancel recording",
+          "bounds": "[63,1970][1017,2155]",
+          "enabled": "true"
+        },
+        {
+          "text": "Cancel recording",
+          "label": "",
+          "bounds": "[240,2009][840,2115]",
+          "enabled": "true"
+        },
+        {
+          "text": "",
+          "label": "Today",
+          "bounds": "[63,2255][360,2274]",
+          "enabled": "true"
+        },
+        {
+          "text": "Today",
+          "label": "",
+          "bounds": "[105,2289][318,2274]",
+          "enabled": "true"
+        },
+        {
+          "text": "",
+          "label": "Medicines",
+          "bounds": "[381,2255][827,2274]",
+          "enabled": "true"
+        },
+        {
+          "text": "Medicines",
+          "label": "",
+          "bounds": "[423,2289][785,2274]",
+          "enabled": "true"
+        }
+      ]
+    ],
+    "cancel_elapsed_ms": 5130,
+    "wording": "Fictional large-text review 1790515735893",
+    "note_id": "note_619566712e4247a08a009f9172fe7d22",
+    "restored_font_scale": "1.0"
+  }
+}

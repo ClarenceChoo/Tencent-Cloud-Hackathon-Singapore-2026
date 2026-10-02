@@ -1,0 +1,29 @@
+{
+  "installed_commit": "0c78e0c1f8ec69c013c070c75be6ba0afed365b3",
+  "installed_apk_sha256": "feb8ecbb3b91d7ab7dbc305974f701cd2473ac33d25392f657bb5790a50f5f2a",
+  "environment": "Android 16 AOSP emulator; adb root used only for cache filenames; host audio disabled",
+  "checks_before_failure": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    },
+    {
+      "name": "Native Cancel stops recording, removes its cache file and sends no upload",
+      "passed": true
+    },
+    {
+      "name": "Native backgrounding cancels capture without upload or automatic restart",
+      "passed": true
+    },
+    {
+      "name": "Native screen sleep cancels capture; waking does not resume recording",
+      "passed": true
+    }
+  ],
+  "orphaned_before_reopen": [
+    "Audio/recording-226e53dd-6855-4c76-82e9-aada9bea83c0.m4a"
+  ],
+  "after_reopen_audio_files": 1,
+  "expected_after_reopen_audio_files": 0,
+  "failure": "AssertionError [ERR_ASSERTION]: Transient recording remains in native cache\n\n1 !== 0\n"
+}

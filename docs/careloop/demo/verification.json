@@ -1,0 +1,71 @@
+{
+  "date": "2026-09-29",
+  "scope": "Fictional local browser demonstration with synthetic microphone input, actual MediaRecorder uploads, scripted transcription/interpretation and no audio track.",
+  "video": "parse-web-companion-demo.mp4",
+  "sha256": "fb398869df8e5747ab470ea13a7a11e8b409a0616bc952104569d93d4aec5fbd",
+  "media": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "h264",
+        "codec_type": "video",
+        "width": 1920,
+        "height": 1080,
+        "pix_fmt": "yuv420p",
+        "r_frame_rate": "30/1"
+      }
+    ],
+    "format": {
+      "duration": "60.500000",
+      "size": "2559046"
+    }
+  },
+  "page_errors": [],
+  "uploads": [
+    {
+      "mime": "audio/webm",
+      "bytes": 21477,
+      "sha256": "e1231ee111ccd6e2a206cb4a960210ea63339d8fb8b169502bca82adc11c2831",
+      "normalized_bytes": 42284
+    },
+    {
+      "mime": "audio/webm",
+      "bytes": 21477,
+      "sha256": "bbc04b724736d9149f5a2c0407c8107dcff74a8dd577170d1655c455ce18bab9",
+      "normalized_bytes": 42284
+    }
+  ],
+  "server_startup_source_sha256": {
+    "backend/app/worker.py": "c8f8f395f02039502b8f562da72f4afc9ba7848aea3410fb2dd2de7850641664",
+    "backend/app/phone_audio.py": "6946a462be2be4df885285bddd1a23b524ee39f1d5c0b12a1f7ea3f105ec9c5f",
+    "backend/app/phone.py": "10655ab413df0644a4b5e4cab13dac8b38d14a3d73c18eeff44df2789bd4e111",
+    "backend/app/services.py": "96fd030b2df1408ccdbc1f5cbdac9d8f67e031cc136b2dd4a1f26229e31f2247",
+    "backend/app/config.py": "6e1856ae28af6c068ee11bd92fb78f2176b496ae11f5d95e9491dc3952de35f5",
+    "backend/app/models.py": "6746f022d50c48683b72e475e884246c876109aad3b5eae3101034a81361e773",
+    "backend/app/database.py": "73fed4cd44eaeed7952cc488cf39ebf67a950a45ae4bc1b35cac69c54554b130",
+    "backend/app/security.py": "c8a26db3dc8c9b8d51ce2e33ffac1454622de2d70e8a4504ae67dd203c4de87d",
+    "backend/app/__init__.py": "a25ff3395d4375b2a25feda5f496e75adacd3fc0a5d0ce1e10dc227dc8310f65",
+    "backend/app/reminders.py": "686556f4fb6865b4db91dcb1986dcd8ecef2433c2b12f545737b5c9d50987a63",
+    "backend/app/care_status.py": "3c7f60ac315ddf39d60d6da5a7b0613eb009bf60fb75d12198df6de055da3b63",
+    "backend/app/providers.py": "3ed0d151b1847411a0f049b88c43a8e9335b9589049976cf829a35ac7e0c7a64",
+    "backend/app/notification_api.py": "4ba13411826785186110cfeb16cf8218c1cc534288fd6a81f73cb674f7c6cd92",
+    "backend/app/seed.py": "ed645cf432b61a11cf213e7a9fb76f7ef8fb1754cf5c9d52bbeabc10b5eaa190",
+    "backend/app/schemas.py": "c36a91131e91da6b436192dd3b65067d8fdfddd74eacb499b9ba10f1a4f37568",
+    "backend/app/admin.py": "4e2a96890853250631ab6a90f3b5483dff76afa9222aef6debff3e6ca69403c6",
+    "backend/app/turns.py": "fa51ecab9766dc7b5f7ce930a302a65057a4930a7018884f63c00ee6fd140a1e",
+    "backend/app/routing.py": "fb5c959ac5d56ac54778381bb1bd3b2b805280a7c726c9ada99b091f4d83bc07",
+    "backend/app/notifications.py": "2e456b7bd692dac229ded4fc1d3edf08c49cb3f44ad87e51bf64e75265494db2",
+    "backend/app/web_companion.py": "be84a9ae019f59e7422fc43068702a63db731a6ea8a5711dcf36e053bfe3085c",
+    "backend/app/provenance.py": "ec28cde06cc9a24660e770b23fb5f7970e0f534c97092b6ecb7ad7ee6f85ea95",
+    "backend/app/device_setup.py": "c63baa3029fa9d310dc91d78b7417b3da79dd70a002234702afa6791f4b868dd",
+    "backend/app/main.py": "3c9c34277ce5df10baba5164e97829453dbde455aa0f1c66d9ba8d8b5da4b093",
+    "backend/app/migrate.py": "4cacd5cdd7e044812a1bd3b1cbe3754ad811eb5621efbab2fd38030546e67a6b",
+    "backend/app/provisioning.py": "a71d94221f3787888060141e1fa7c170a61127e6fb8d94320e23e4d87ff81de4",
+    "backend/app/audio_subprocess.py": "62af1da5b0234afddd09ca99c4c85a71b31d058d484b22df388fc13ed207eca5",
+    "frontend/dist/index.html": "b1147cfe5efd3a6616b7efd822a41af8c793a74e5564f593a7b2774eaa271077",
+    "frontend/dist/assets/index-mdmybz3d.js": "3c3c9c2e2eec92c113152210c01e2bbbf488996676d365055f9ec4fd1f1f670b",
+    "frontend/dist/assets/index-BXIeW-zJ.css": "9160c9ff71a539acf26cda5aa54c6941a864d82448669b67f1cff4bf1031e757"
+  },
+  "validation": "FFprobe format check, full FFmpeg decode, and visual sample-frame review passed."
+}

@@ -1,0 +1,98 @@
+{
+  "at": "2026-09-27T14:40:45.294Z",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "environment": "Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and fixture tone replies. No real speech or acoustic audibility evidence.",
+  "source_sha256": {
+    "mobile/src/App.tsx": "040650c4ba7d61a35e2c5926c616a0f09a051f03da778766a3241dcd2ccdb275",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "mobile/src/api.ts": "c47f9fd49c83ec14df83d1939a941d6a2b48cddd8548807d123941b523b328cf",
+    "mobile/src/storage.ts": "d617df7a010d6cc68f0cd5dc6e3dfac021b1684bc6e10bc5fa50963871f3d99f",
+    "tools/android_native_fixture.py": "02f47605eb96b79595ccfb991cd8c2ecf72808bc3680386853d97b2113b75271",
+    "tools/android_native_smoke.cjs": "67c30f5d1b69817013c32111bbd4d67d9cf7e87f2cc618b72958d0c19ed65ee5",
+    "tools/android_native_care.cjs": "48be6db43584dba70abb17294f000c2e29741f389a531b2ba656b4373bf2897b",
+    "mobile/src/useReminders.ts": "ace3aff6d600a44a73aa5a7384cb15ee616624e42d17d42e13930aa2960ce269",
+    "mobile/src/alertSchedule.ts": "1c3f4f23ea35da5981b6fb4642e668444085f6120476238c101c6b1a477c051e",
+    "tools/android_native_alert_lifecycle.cjs": "2832af0415add7effea7a7fa2f5fac2c95305c3e035e0e6bd13148669507a714",
+    "tools/android_native_power.cjs": "2ebc3d1f23b6364ceaa447430b6872e01c3dd26df2c5756163cd671da294d346",
+    "tools/android_native_revocation.cjs": "635bcd81c0f108720e78f95117035c96dbb77bf28534b81b8cf25a9a74ef1435",
+    "tools/android_native_fault_proxy.py": "8619dd07b52ca3a888d8126e4885d506a44fde5988c71a5bd75b6bea6ef2e7dd",
+    "tools/android_native_control.py": "868f5d6fc4867f05fa625e9ddb089bea4845be0af3799d9ada76cf0e87187f35"
+  },
+  "checks": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    }
+  ],
+  "installed_apk_sha256": "15ad0b843daad17bd030dad58e8db29d9269f2317707db3236dec80484b33c3e",
+  "mode": "alert-doze",
+  "enrollmentCreatedInThisRun": false,
+  "alert_state": "doze",
+  "original_lock_disabled": true,
+  "clocks_before": {
+    "host_before_ms": 1790520051414,
+    "host_after_ms": 1790520051431,
+    "android_ms": 1790520051775,
+    "android_minus_host_midpoint_ms": 352.5,
+    "roundtrip_ms": 17
+  },
+  "power": {
+    "original": {
+      "at": "2026-09-27T14:40:51.470Z",
+      "deep_enabled": "0",
+      "light_enabled": "0",
+      "force": "false",
+      "deep_state": "ACTIVE",
+      "light_state": "ACTIVE",
+      "screen_on": true,
+      "charging": true,
+      "device_idle_mode": false
+    },
+    "note": "Forced Android deep Doze on a disposable emulator; charger state is left unchanged. No physical battery measurement.",
+    "before_release": {
+      "at": "2026-09-27T14:41:25.249Z",
+      "deep_enabled": "1",
+      "light_enabled": "0",
+      "force": "true",
+      "deep_state": "IDLE",
+      "light_state": "OVERRIDE",
+      "screen_on": true,
+      "charging": true,
+      "device_idle_mode": true
+    },
+    "release_reason": "test cleanup",
+    "released": {
+      "at": "2026-09-27T14:41:25.693Z",
+      "deep_enabled": "1",
+      "light_enabled": "0",
+      "force": "false",
+      "deep_state": "ACTIVE",
+      "light_state": "ACTIVE",
+      "screen_on": true,
+      "charging": true,
+      "device_idle_mode": false
+    },
+    "restored": {
+      "at": "2026-09-27T14:41:25.862Z",
+      "deep_enabled": "0",
+      "light_enabled": "0",
+      "force": "false",
+      "deep_state": "ACTIVE",
+      "light_state": "ACTIVE",
+      "screen_on": true,
+      "charging": true,
+      "device_idle_mode": false
+    }
+  },
+  "reminder_device_id": "dev_61c7c95d16034baaacd3220d4a41947d",
+  "plan_version": 15,
+  "dose_id": "dose_71326510f8d5477587a32d86ef8c4e93",
+  "due_at": "2026-09-27T14:43:00Z",
+  "identity": "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_5d6e748b50c94181ad6237510692009a.g15",
+  "native_scheduled_before": [
+    "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_5d6e748b50c94181ad6237510692009a.g15",
+    "parse.dev_61c7c95d16034baaacd3220d4a41947d.occ_771de8a961ab4d5bbaca4ba396121910.g15"
+  ],
+  "failure": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert(!current.screen_on && current.device_idle_mode)\n"
+}

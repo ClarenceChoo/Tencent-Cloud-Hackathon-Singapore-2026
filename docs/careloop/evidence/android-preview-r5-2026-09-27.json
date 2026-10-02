@@ -1,0 +1,27 @@
+{
+  "path": "runtime/releases/parse-companion-android-arm64-preview-2026-09-27-r5.apk",
+  "bytes": 31319647,
+  "sha256": "f144dba7c46e6ce18e9cddd4dbb14625af0edc74d4a6c0eedbc7152e966b0c82",
+  "local_fixture_resources": false,
+  "signing": "standard Android debug key",
+  "source_sha256": {
+    "mobile/src/App.tsx": "040650c4ba7d61a35e2c5926c616a0f09a051f03da778766a3241dcd2ccdb275",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "mobile/test/native/app.test.tsx": "32e2529a9787272ba52fb0fea4a198888649f55e48adb667ea1fa0381b3b6b8e"
+  },
+  "mobile_tests": {
+    "unit": 25,
+    "adapters": 84,
+    "total": 109,
+    "typecheck": true
+  },
+  "environment": "AOSP Android 16 ARM64 emulator; no physical phone or live speech evidence",
+  "signature_verified": true,
+  "install_result": "Performing Streamed Install\nSuccess",
+  "installed_on": "AOSP Android 16 ARM64 emulator-5580",
+  "launch": "Starting: Intent { cmp=sg.parse.companion/.MainActivity }\nStatus: ok\nLaunchState: COLD\nActivity: sg.parse.companion/.MainActivity\nTotalTime: 449\nWaitTime: 460\nComplete",
+  "cold_launch_verified": true,
+  "initial_screen": "Connect to Parse",
+  "installed_apk_sha256": "f144dba7c46e6ce18e9cddd4dbb14625af0edc74d4a6c0eedbc7152e966b0c82",
+  "scoped_errors_observed": false
+}

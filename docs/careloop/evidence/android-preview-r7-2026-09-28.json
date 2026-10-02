@@ -1,0 +1,23 @@
+{
+  "date": "2026-09-28",
+  "preview": "r7",
+  "apk": "runtime/releases/parse-companion-android-arm64-preview-2026-09-28-r7.apk",
+  "sha256": "677172f9759c34110ee0fd1533e1bff3b8a7e6fa4fa11e693ab5be62f767c119",
+  "bytes": 31324791,
+  "installed_digest_matches": true,
+  "package": "sg.parse.companion",
+  "cold_launch": "Starting: Intent { cmp=sg.parse.companion/.MainActivity }\nStatus: ok\nLaunchState: COLD\nActivity: sg.parse.companion/.MainActivity\nTotalTime: 272\nWaitTime: 283\nComplete\n",
+  "pairing_screen_verified": true,
+  "process_scoped_startup_errors": false,
+  "fixture_trust_resources": false,
+  "signature": "Verified Android debug key, v2 signature; not a distribution release",
+  "verification_apk_sha256": "0ae2027d3bafade4e78af5edf1950a3990c1fb7b2b82bd829d5435b1e4ba281c",
+  "source_sha256": {
+    "mobile/src/App.tsx": "e854420b5868f2633df7a1004b184deca3c6b69eaf84664f7aac00a1f932367d",
+    "mobile/src/api.ts": "8c7bc2a0d324246701885082d83b6db3ac8ce0cb52ab6d394ae2861c12c8fab0",
+    "mobile/src/contracts.ts": "ce346ef36a1c2c506a013c8874c6c3b06ef2aa80963f53ee5592c2e6ab228e0a",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0"
+  },
+  "build_log_sha256": "5d7d4ae948314a243b440efc553bcb8da652cf4c2e3df1c9b19ec7525a339e10",
+  "limits": "Android 16 ARM64 emulator, host audio disabled. No iOS, physical-device, live speech or production signing claim."
+}

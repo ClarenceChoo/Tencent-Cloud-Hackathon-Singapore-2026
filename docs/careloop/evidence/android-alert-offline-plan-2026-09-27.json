@@ -1,0 +1,130 @@
+{
+  "at": "2026-09-27T12:36:27.357Z",
+  "liveSpeech": false,
+  "physicalPhone": false,
+  "environment": "Actual native Android modules in an AOSP Android 16 emulator with host audio disabled; local HTTPS/API and real caregiver browsers; scripted interpretation and one-second tone replies. No real speech or acoustic audibility evidence.",
+  "source_sha256": {
+    "mobile/src/App.tsx": "263264c635fda8021de4062ba268a793e3b87f4aff4b8e439b58c74b149504e2",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "mobile/src/api.ts": "c47f9fd49c83ec14df83d1939a941d6a2b48cddd8548807d123941b523b328cf",
+    "mobile/src/storage.ts": "d617df7a010d6cc68f0cd5dc6e3dfac021b1684bc6e10bc5fa50963871f3d99f",
+    "tools/android_native_fixture.py": "02f47605eb96b79595ccfb991cd8c2ecf72808bc3680386853d97b2113b75271",
+    "tools/android_native_smoke.cjs": "1f55e16adb5939b11a842accac78afc364754b35d607a1b1a6964153990866f2",
+    "tools/android_native_care.cjs": "48be6db43584dba70abb17294f000c2e29741f389a531b2ba656b4373bf2897b",
+    "mobile/src/useReminders.ts": "338ba060d56fbd646a3a5f56d4f22a858ec8417ba091f0b94a9563f3deea5f89",
+    "mobile/src/alertSchedule.ts": "1c3f4f23ea35da5981b6fb4642e668444085f6120476238c101c6b1a477c051e",
+    "tools/android_native_alert_lifecycle.cjs": "a8ee57d39b432b978c690992ee9ed78abefbcc06c317076b7d2168eff3ff9976",
+    "tools/android_native_revocation.cjs": "0335c112ae7c40bc303f2c5ff27b562c50f07b27a848e8a62858ce3255777e31",
+    "tools/android_native_fault_proxy.py": "b234b01d228e18205e57fbdee631641afbec2b633400f6536b311a29e69eed1a",
+    "tools/android_native_control.py": "1eb84875cdf78321e5ba6cd2f796e6533f2a23bd828ef62208994e8b414f8980"
+  },
+  "checks": [
+    {
+      "name": "Resumed previously paired native verification installation",
+      "passed": true
+    },
+    {
+      "name": "Native alert is scheduled for the exact dose before entering offline-plan state",
+      "passed": true
+    },
+    {
+      "name": "A real queued reminder becomes stale while offline; remote route switching requires local phone cleanup",
+      "passed": true
+    },
+    {
+      "name": "Android posts the exact generic alert in offline-plan state without recording a dose",
+      "passed": true
+    },
+    {
+      "name": "The stale alert remains generic and an offline tap offers no recording or old reminder playback",
+      "passed": true
+    },
+    {
+      "name": "Reconnect shows the replacement plan without stale audio; local Pause clears alerts before a new routing generation is selected",
+      "passed": true
+    }
+  ],
+  "installed_apk_sha256": "066506741c42aa37a6a805cdcf7ef638afc84539da649ad29765de083eee5e0d",
+  "mode": "alert-offline-plan",
+  "enrollmentCreatedInThisRun": false,
+  "alert_state": "offline-plan",
+  "original_lock_disabled": true,
+  "clocks_before": {
+    "host_before_ms": 1790512594216,
+    "host_after_ms": 1790512594236,
+    "android_ms": 1790512594560,
+    "android_minus_host_midpoint_ms": 334,
+    "roundtrip_ms": 20
+  },
+  "reminder_device_id": "dev_5b702870fa704c5bb3ccebad18bb433b",
+  "plan_version": 8,
+  "dose_id": "dose_80b7c61f31974a168b103960105332fe",
+  "due_at": "2026-09-27T12:39:00Z",
+  "identity": "parse.dev_5b702870fa704c5bb3ccebad18bb433b.occ_d1467e9c5d9f4f1ca242fca7c7e54798.g3",
+  "native_scheduled_before": [
+    "parse.dev_5b702870fa704c5bb3ccebad18bb433b.occ_771de8a961ab4d5bbaca4ba396121910.g3",
+    "parse.dev_5b702870fa704c5bb3ccebad18bb433b.occ_d1467e9c5d9f4f1ca242fca7c7e54798.g3"
+  ],
+  "fault_event_offset": 29,
+  "pid_before_termination": "27253",
+  "termination": {
+    "command": "am kill of the background package",
+    "process_absent": true,
+    "package_stopped": false
+  },
+  "observation_window_seconds_after_due": 300,
+  "queued_before_change": {
+    "id": "cmd_7a05fd98bf934fc38997079409e696d7",
+    "dose_id": "dose_80b7c61f31974a168b103960105332fe",
+    "state": "queued",
+    "cancel_reason": null,
+    "audio_accessed": false,
+    "acks": []
+  },
+  "replacement_plan_version": 9,
+  "offline_route_switch_rejected": true,
+  "posted_at": "2026-09-27T12:40:28.689Z",
+  "delay_ms": 88689,
+  "clocks_after": {
+    "host_before_ms": 1790512831353,
+    "host_after_ms": 1790512831374,
+    "android_ms": 1790512831696,
+    "android_minus_host_midpoint_ms": 332.5,
+    "roundtrip_ms": 21
+  },
+  "clock_adjusted_delay_ms": 88356.5,
+  "raw_notification_sha256": "a92f9dc8e8ceb012c5e427fa67407b6a2384d0e141dc8ae16bcb22fc4738a62e",
+  "pid_after_notification": "27886",
+  "stale_command_while_offline": {
+    "id": "cmd_7a05fd98bf934fc38997079409e696d7",
+    "dose_id": "dose_80b7c61f31974a168b103960105332fe",
+    "state": "cancelled",
+    "cancel_reason": "plan_changed",
+    "audio_accessed": false,
+    "acks": []
+  },
+  "stale_command_after_reconnect": {
+    "id": "cmd_7a05fd98bf934fc38997079409e696d7",
+    "dose_id": "dose_80b7c61f31974a168b103960105332fe",
+    "state": "cancelled",
+    "cancel_reason": "plan_changed",
+    "audio_accessed": false,
+    "acks": []
+  },
+  "route_after_local_pause": {
+    "device_id": null,
+    "generation": 4,
+    "changed_at": "2026-09-27T12:41:08.305557Z"
+  },
+  "native_scheduled_after_pause": [],
+  "route_after_reselection": {
+    "device_id": "dev_5b702870fa704c5bb3ccebad18bb433b",
+    "generation": 5,
+    "changed_at": "2026-09-27T12:41:08.913516Z"
+  },
+  "native_scheduled_after_reselection": [
+    "parse.dev_5b702870fa704c5bb3ccebad18bb433b.occ_0d152365ac534139bbd9ab2cf2f5a2e1.g5",
+    "parse.dev_5b702870fa704c5bb3ccebad18bb433b.occ_771de8a961ab4d5bbaca4ba396121910.g5"
+  ],
+  "medication_report": "unconfirmed"
+}

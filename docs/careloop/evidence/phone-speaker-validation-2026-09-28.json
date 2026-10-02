@@ -1,0 +1,34 @@
+{
+  "date": "2026-09-28",
+  "feature": "Explicit speaker setup check",
+  "backend": {
+    "sqlite": {
+      "passed": 142,
+      "log_sha256": "d669e05b0915247a8755e96654e3dbc80d69e57d1588fcb206d49b916e4bc277"
+    },
+    "postgres": {
+      "passed": 142,
+      "log_sha256": "c62f62d0e3cc08ae006f17b351c3be35cc4b9d46f56fee793bc405d7ab787983"
+    }
+  },
+  "mobile": {
+    "typecheck": "passed",
+    "unit_tests": 25,
+    "adapter_tests": 94,
+    "full_app_tests": 23,
+    "log_sha256": "f2befe3974f2a4a2dc11c80eb5ad9531beb44e5ee9186a703d3b33ec71bc6b78"
+  },
+  "source_sha256": {
+    "backend/app/phone.py": "82d9f695c01efc446a0c9b19fcf79c63824ad63e9a6b41b646ad8452c887a4d9",
+    "backend/tests/test_phone_speaker.py": "0e30e8aca0a223b191277f7b9e4c79ee51660f142c492c3e3fca5dfe5cb1f305",
+    "mobile/src/App.tsx": "e854420b5868f2633df7a1004b184deca3c6b69eaf84664f7aac00a1f932367d",
+    "mobile/src/api.ts": "8c7bc2a0d324246701885082d83b6db3ac8ce0cb52ab6d394ae2861c12c8fab0",
+    "mobile/src/contracts.ts": "ce346ef36a1c2c506a013c8874c6c3b06ef2aa80963f53ee5592c2e6ab228e0a",
+    "mobile/test/native/app.test.tsx": "7803d0b64f6b8915d8068a7b26ed56b9a0684fe6f68cd8ce9dc92475b71c07b2"
+  },
+  "limits": "Controlled server/native adapters; not physical audibility or live speech evidence.",
+  "before_implementation": {
+    "result": "New speaker endpoint regression failed with 404",
+    "log_sha256": "2ff9ff59e1b0ad6c3a0c4f53c168aff4d29c693214c2a138e578cf5987f285d1"
+  }
+}

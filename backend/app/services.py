@@ -12,7 +12,8 @@ from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from . import models as m
-from .security import aware, iso, utcnow
+from .security import aware, grant_scopes, iso, utcnow
+from .summary_templates import SUMMARY_TEMPLATE_VERSION, present_summary
 
 
 PROPOSAL_TTL = timedelta(seconds=120)
@@ -22,6 +23,7 @@ ALLOWED_REPORT_STATES = {
     "reported_not_yet",
     "reported_uncertain",
 }
+UPDATABLE_REPORT_STATES = {"unconfirmed", "reported_not_yet", "reported_uncertain"}
 PREVENTIVE_STATES = {"planned", "due", "arranged", "completed", "declined", "needs_discussion"}
 EXPLICIT_CONFIRMATIONS = {
     "yes",
@@ -169,13 +171,37 @@ PAYLOAD_MODELS: Dict[str, Type[StrictModel]] = {
 def _browser_record_access(db: Session, patient_id: str, user_id: Optional[str], permitted_user_ids: list[str], proposal_id: Optional[str] = None) -> bool:
     if user_id is None:
         return True
-    grant = db.scalar(select(m.AccessGrant).where(m.AccessGrant.patient_id == patient_id, m.AccessGrant.user_id == user_id, m.AccessGrant.revoked_at.is_(None)))
+    grant = db.scalar(select(m.AccessGrant).where(m.AccessGrant.patient_id == patient_id, m.AccessGrant.user_id == user_id, m.AccessGrant.revoked_at.is_(None)).execution_options(populate_existing=True))
     if not grant or (grant.expires_at and aware(grant.expires_at) <= utcnow()):
         return False
     if "*" in (grant.scopes or []) or user_id in (permitted_user_ids or []):
         return True
     proposal = db.get(m.ConfirmationProposal, proposal_id) if proposal_id else None
     return bool(proposal and proposal.created_by_user_id == user_id)
+
+
+def _followup_source_recipients(db: Session, patient_id: str, related_type: str, related_id: str, user_id: Optional[str]) -> list[str]:
+    """Resolve current source access for both new follow-ups and their outcomes."""
+    if related_type == "health_note":
+        related = db.get(m.HealthNote, related_id, populate_existing=True)
+        if not related or related.patient_id != patient_id or related.deleted_at:
+            raise HTTPException(status_code=422, detail="Related health note is unavailable")
+        recipients = list(related.shared_with_user_ids or [])
+        # Authorship does not retain access after the owner makes a note private.
+        if not _browser_record_access(db, patient_id, user_id, recipients):
+            raise HTTPException(status_code=403, detail="Related health note access is not permitted")
+        return recipients
+    if related_type == "support_request":
+        related = db.get(m.SupportRequest, related_id, populate_existing=True)
+        if not related or related.patient_id != patient_id:
+            raise HTTPException(status_code=422, detail="Related support request is unavailable")
+        if not _browser_record_access(db, patient_id, user_id, [related.recipient_user_id], related.proposal_id):
+            raise HTTPException(status_code=403, detail="Related support request access is not permitted")
+        return [related.recipient_user_id]
+    related = db.get(m.DoseInstance, related_id, populate_existing=True)
+    if not related or related.patient_id != patient_id:
+        raise HTTPException(status_code=422, detail="Related medication report is unavailable")
+    return [user_id] if user_id else []
 
 
 def validate_payload(db: Session, patient_id: str, kind: str, payload: dict, acting_user_id: Optional[str] = None) -> Tuple[dict, Optional[int]]:
@@ -185,7 +211,7 @@ def validate_payload(db: Session, patient_id: str, kind: str, payload: dict, act
     payload = dict(payload)
     derived_fields = {
         "health_note": {"share_with_names"},
-        "medication_report": {"plan_version", "medicine_name", "scheduled_at"},
+        "medication_report": {"plan_version", "medicine_name", "scheduled_at", "previous_report_state", "previous_confirmation_proposal_id"},
         "preventive_task": {"previous_state"},
         "support_request": {"recipient_name", "calling_route", "calling_route_message"},
         "followup": {"previous_resolution_state"},
@@ -202,7 +228,7 @@ def validate_payload(db: Session, patient_id: str, kind: str, payload: dict, act
     clean = parsed.model_dump(mode="json", exclude_none=True)
     plan_version = None
     if kind == "medication_report":
-        dose = db.get(m.DoseInstance, parsed.dose_instance_id)
+        dose = db.get(m.DoseInstance, parsed.dose_instance_id, populate_existing=True)
         if not dose or dose.patient_id != patient_id:
             raise HTTPException(status_code=422, detail="Dose instance is not available for this patient")
         candidates = db.scalars(
@@ -214,6 +240,10 @@ def validate_payload(db: Session, patient_id: str, kind: str, payload: dict, act
         ).all()
         if len(candidates) > 1 and not parsed.dose_instance_id:
             raise HTTPException(status_code=422, detail="Medication reference is ambiguous")
+        if dose.report_state not in UPDATABLE_REPORT_STATES:
+            raise HTTPException(status_code=409, detail="Dose already has a final confirmed report")
+        clean["previous_report_state"] = dose.report_state
+        clean["previous_confirmation_proposal_id"] = dose.confirmation_proposal_id
         plan_version = dose.plan_version
         clean["plan_version"] = plan_version
         clean["medicine_name"] = dose.medicine_name
@@ -273,33 +303,28 @@ def validate_payload(db: Session, patient_id: str, kind: str, payload: dict, act
             clean["calling_route_message"] = patient.calling_route or "No calling route is configured. Use your usual local support or emergency contact method."
     elif kind == "followup":
         if parsed.followup_id:
-            existing = db.get(m.FollowUp, parsed.followup_id)
+            existing = db.get(m.FollowUp, parsed.followup_id, populate_existing=True)
             if not existing or existing.patient_id != patient_id or existing.resolution_state != "open":
                 raise HTTPException(status_code=422, detail="Open follow-up is unavailable")
             if not _browser_record_access(db, patient_id, acting_user_id, existing.permitted_user_ids, existing.proposal_id):
                 raise HTTPException(status_code=403, detail="Follow-up access is not permitted")
+            recipients = _followup_source_recipients(db, patient_id, existing.related_type, existing.related_id, acting_user_id)
+            # Medication follow-ups are private to their original creator;
+            # an owner/device resolving one must not replace that audience.
+            if (existing.permission_scope == "related_recipients"
+                    and existing.related_type != "medication_report"
+                    and set(existing.permitted_user_ids or []) != set(recipients)):
+                raise HTTPException(status_code=409, detail="Related follow-up access changed")
             clean.update({"related_type": existing.related_type, "related_id": existing.related_id, "check_at": iso(existing.check_at), "permission_scope": existing.permission_scope, "permitted_user_ids": existing.permitted_user_ids, "previous_resolution_state": existing.resolution_state})
-        elif parsed.related_type == "support_request":
-            related = db.get(m.SupportRequest, parsed.related_id)
-            if not related or related.patient_id != patient_id:
-                raise HTTPException(status_code=422, detail="Related support request is unavailable")
-            if not _browser_record_access(db, patient_id, acting_user_id, [related.recipient_user_id], related.proposal_id):
-                raise HTTPException(status_code=403, detail="Related support request access is not permitted")
-            clean["permitted_user_ids"] = [related.recipient_user_id] if parsed.permission_scope == "related_recipients" else ([acting_user_id] if acting_user_id else [])
-        elif parsed.related_type == "health_note":
-            related = db.get(m.HealthNote, parsed.related_id)
-            if not related or related.patient_id != patient_id or related.deleted_at:
-                raise HTTPException(status_code=422, detail="Related health note is unavailable")
-            if not _browser_record_access(db, patient_id, acting_user_id, related.shared_with_user_ids, related.proposal_id):
-                raise HTTPException(status_code=403, detail="Related health note access is not permitted")
-            clean["permitted_user_ids"] = list(related.shared_with_user_ids or []) if parsed.permission_scope == "related_recipients" else ([acting_user_id] if acting_user_id else [])
         else:
-            related = db.get(m.DoseInstance, parsed.related_id)
-            if not related or related.patient_id != patient_id:
-                raise HTTPException(status_code=422, detail="Related medication report is unavailable")
-            clean["permitted_user_ids"] = [acting_user_id] if acting_user_id else []
-        if not parsed.followup_id and parsed.permission_scope == "related_recipients" and not clean.get("permitted_user_ids"):
+            recipients = _followup_source_recipients(db, patient_id, parsed.related_type, parsed.related_id, acting_user_id)
+            clean["permitted_user_ids"] = recipients if parsed.permission_scope == "related_recipients" else ([acting_user_id] if acting_user_id else [])
+        if parsed.permission_scope == "related_recipients" and not clean.get("permitted_user_ids"):
             raise HTTPException(status_code=422, detail="Related item has no permitted follow-up recipients")
+        for user_id in clean.get("permitted_user_ids", []):
+            grant = db.scalar(select(m.AccessGrant).where(m.AccessGrant.patient_id == patient_id, m.AccessGrant.user_id == user_id, m.AccessGrant.revoked_at.is_(None)).execution_options(populate_existing=True))
+            if not grant or (grant.expires_at and aware(grant.expires_at) <= utcnow()):
+                raise HTTPException(status_code=422, detail="A follow-up recipient is no longer permitted")
     return clean, plan_version
 
 
@@ -312,8 +337,10 @@ def build_readback(kind: str, payload: dict) -> str:
     if kind == "medication_report":
         wording = payload["report_state"].replace("reported_", "").replace("_", " ")
         taken = (", with the time described as %s" % payload["taken_time_text"]) if payload.get("taken_time_text") else ""
-        return "I will record %s for %s scheduled at %s%s. Is that right?" % (
-            wording,
+        previous = payload.get("previous_report_state", "unconfirmed")
+        action = "record" if previous == "unconfirmed" else "update the previous %s report to" % previous.replace("reported_", "").replace("_", " ")
+        return "I will %s %s for %s scheduled at %s%s. Is that right?" % (
+            action, wording,
             payload["medicine_name"],
             payload["scheduled_at"],
             taken,
@@ -359,12 +386,58 @@ def create_proposal(
     source_turn_id: Optional[str] = None,
     replaces: Optional[m.ConfirmationProposal] = None,
 ) -> m.ConfirmationProposal:
+    from .routing import lock_patient
+    lock_patient(db, patient_id)
+    if replaces:
+        db.refresh(replaces)
+        if replaces.status != "pending" or aware(replaces.expires_at) <= utcnow():
+            raise HTTPException(409, "Only a current pending proposal can be revised")
+        if replaces.kind == "medication_report":
+            prior_dose = db.get(m.DoseInstance, replaces.payload.get("dose_instance_id"), populate_existing=True)
+            prior_plan = db.get(m.MedicationPlanVersion, prior_dose.plan_id, populate_existing=True) if prior_dose else None
+            if (not prior_dose or not prior_plan or not prior_plan.active
+                    or prior_dose.plan_version != replaces.plan_version
+                    or prior_dose.report_state != replaces.payload.get("previous_report_state", "unconfirmed")
+                    or prior_dose.confirmation_proposal_id != replaces.payload.get("previous_confirmation_proposal_id")):
+                raise HTTPException(409, "Medication plan or dose report changed; start a fresh review")
+        if replaces.kind in {"health_note", "support_request"}:
+            prior_recipients = (replaces.payload.get("share_with_user_ids", []) if replaces.kind == "health_note"
+                                else [replaces.payload.get("recipient_user_id")])
+            for user_id in prior_recipients:
+                grant = db.scalar(select(m.AccessGrant).where(
+                    m.AccessGrant.patient_id == patient_id, m.AccessGrant.user_id == user_id,
+                    m.AccessGrant.revoked_at.is_(None)).execution_options(populate_existing=True))
+                if not grant or (grant.expires_at and aware(grant.expires_at) <= utcnow()):
+                    raise HTTPException(409, "Recipient access changed; start a fresh review")
+    source = db.get(m.VoiceTurn, source_turn_id) if source_turn_id else None
+    device = db.get(m.Device, source.device_id, populate_existing=True) if source else None
+    if device and device.device_type == "phone":
+        if device.revoked_at or device.patient_id != patient_id:
+            raise HTTPException(403, "Phone access changed")
+        # Slow completion of an older utterance must not replace a newer read-back.
+        newer = db.scalar(select(m.VoiceTurn.id).where(m.VoiceTurn.device_id == device.id,
+                          m.VoiceTurn.received_at > source.received_at,
+                          m.VoiceTurn.status == "awaiting_confirmation"))
+        if newer:
+            raise HTTPException(409, "A newer phone response is current")
     clean, plan_version = validate_payload(db, patient_id, kind, payload, acting_user_id=user_id)
     if replaces:
-        if replaces.status != "pending":
-            raise HTTPException(status_code=409, detail="Only a pending proposal can be revised")
+        changed = db.execute(update(m.ConfirmationProposal).where(
+            m.ConfirmationProposal.id == replaces.id,
+            m.ConfirmationProposal.status == "pending",
+            m.ConfirmationProposal.expires_at > utcnow(),
+        ).values(status="invalidated", invalidated_reason="revised").execution_options(synchronize_session=False))
+        if changed.rowcount != 1:
+            raise HTTPException(status_code=409, detail="Only a current pending proposal can be revised")
         replaces.status = "invalidated"
         replaces.invalidated_reason = "revised"
+    if device and device.device_type == "phone":
+        previous_ids = select(m.VoiceTurn.id).where(m.VoiceTurn.device_id == device.id)
+        db.execute(update(m.ConfirmationProposal).where(
+            m.ConfirmationProposal.source_turn_id.in_(previous_ids),
+            m.ConfirmationProposal.status == "pending",
+        ).values(status="invalidated", invalidated_reason="new_phone_readback")
+                   .execution_options(synchronize_session=False))
     proposal = m.ConfirmationProposal(
         patient_id=patient_id,
         kind=kind,
@@ -407,36 +480,51 @@ def invalidate_summaries(db: Session, patient_id: str, source_id: Optional[str] 
             summary.status = "invalidated"
 
 
-def summary_sources_current(db: Session, summary: m.VisitSummary) -> bool:
+def summary_sources_current(db: Session, summary: m.VisitSummary, viewer_user_id: Optional[str] = None) -> bool:
+    viewer_user_id = viewer_user_id or summary.created_by_user_id
+    try:
+        grant, scopes = grant_scopes(db, viewer_user_id, summary.patient_id)
+    except HTTPException:
+        return False
+    if "*" not in scopes and "manage:sharing" not in scopes:
+        return False
+    all_access = "*" in scopes
+    def collection_allowed(name: str) -> bool:
+        return all_access or "read:dashboard" in scopes or ("read:%s" % name) in scopes
     allowed = {"health_note", "measurement", "medication_report", "preventive_task", "support_request", "followup"}
     for ref in summary.source_refs or []:
         if set(ref) != {"type", "id", "version"} or ref["type"] not in allowed or not isinstance(ref["version"], int):
             return False
         if ref["type"] == "health_note":
             row = db.get(m.HealthNote, ref["id"])
-            valid = row and row.patient_id == summary.patient_id and not row.deleted_at and row.version == ref["version"]
+            valid = row and row.patient_id == summary.patient_id and not row.deleted_at and row.version == ref["version"] and collection_allowed("notes") and (all_access or viewer_user_id in (row.shared_with_user_ids or []))
         elif ref["type"] == "measurement":
             row = db.get(m.Measurement, ref["id"])
-            valid = row and row.patient_id == summary.patient_id and not row.superseded_at and row.version == ref["version"]
+            valid = row and row.patient_id == summary.patient_id and not row.superseded_at and row.version == ref["version"] and collection_allowed("measurements")
         elif ref["type"] == "medication_report":
             row = db.get(m.DoseInstance, ref["id"])
-            valid = row and row.patient_id == summary.patient_id and row.plan_version == ref["version"]
+            valid = row and row.patient_id == summary.patient_id and row.plan_version == ref["version"] and collection_allowed("medications")
         elif ref["type"] == "preventive_task":
             row = db.get(m.PreventiveTask, ref["id"])
-            valid = row and row.patient_id == summary.patient_id and row.version == ref["version"]
+            valid = row and row.patient_id == summary.patient_id and row.version == ref["version"] and collection_allowed("preventive_tasks")
         elif ref["type"] == "support_request":
             row = db.get(m.SupportRequest, ref["id"])
-            valid = row and row.patient_id == summary.patient_id and ref["version"] == 1
+            valid = row and row.patient_id == summary.patient_id and ref["version"] == 1 and collection_allowed("support") and (all_access or row.recipient_user_id == viewer_user_id)
         else:
             row = db.get(m.FollowUp, ref["id"])
-            valid = row and row.patient_id == summary.patient_id and ref["version"] == 1
+            valid = row and row.patient_id == summary.patient_id and ref["version"] == 1 and collection_allowed("followups") and (all_access or viewer_user_id in (row.permitted_user_ids or []))
         if not valid:
             return False
     return True
 
 
 def commit_proposal(db: Session, proposal_id: str, patient_id: Optional[str] = None) -> m.ConfirmationProposal:
-    proposal = db.scalar(select(m.ConfirmationProposal).where(m.ConfirmationProposal.id == proposal_id).with_for_update())
+    from .routing import lock_patient
+    identity = db.get(m.ConfirmationProposal, proposal_id)
+    if not identity or (patient_id and identity.patient_id != patient_id):
+        raise HTTPException(404, "Proposal not found")
+    lock_patient(db, identity.patient_id)
+    proposal = db.scalar(select(m.ConfirmationProposal).where(m.ConfirmationProposal.id == proposal_id).with_for_update().execution_options(populate_existing=True))
     if not proposal or (patient_id and proposal.patient_id != patient_id):
         raise HTTPException(status_code=404, detail="Proposal not found")
     if proposal.status == "committed":
@@ -447,6 +535,18 @@ def commit_proposal(db: Session, proposal_id: str, patient_id: Optional[str] = N
         proposal.status = "expired"
         db.flush()
         raise HTTPException(status_code=409, detail="Proposal has expired; review it again")
+
+    # SQLite ignores FOR UPDATE. A compare-and-set takes its write lock and also
+    # serializes confirmation against cancellation/correction on both databases.
+    claimed = db.execute(update(m.ConfirmationProposal).where(
+        m.ConfirmationProposal.id == proposal.id, m.ConfirmationProposal.status == "pending"
+    ).values(status="committing").execution_options(synchronize_session=False))
+    if claimed.rowcount != 1:
+        db.refresh(proposal)
+        if proposal.status == "committed":
+            return proposal
+        raise HTTPException(status_code=409, detail="Proposal is no longer current")
+    proposal.status = "committing"
 
     payload = proposal.payload
     record = None
@@ -470,22 +570,30 @@ def commit_proposal(db: Session, proposal_id: str, patient_id: Optional[str] = N
         )
         record_type = "health_note"
     elif proposal.kind == "medication_report":
-        dose = db.scalar(select(m.DoseInstance).where(m.DoseInstance.id == payload["dose_instance_id"]).with_for_update())
-        plan = db.get(m.MedicationPlanVersion, dose.plan_id) if dose else None
+        dose = db.scalar(select(m.DoseInstance).where(m.DoseInstance.id == payload["dose_instance_id"]).with_for_update().execution_options(populate_existing=True))
+        plan = db.get(m.MedicationPlanVersion, dose.plan_id, populate_existing=True) if dose else None
         if not dose or dose.patient_id != proposal.patient_id or not plan or not plan.active or dose.plan_version != proposal.plan_version:
             proposal.status = "invalidated"
             proposal.invalidated_reason = "medication_plan_changed"
             db.flush()
             raise HTTPException(status_code=409, detail="Medication plan changed; identify the dose again")
-        if dose.report_state != "unconfirmed" and dose.confirmation_proposal_id != proposal.id:
+        if (dose.report_state not in UPDATABLE_REPORT_STATES
+                or dose.report_state != payload.get("previous_report_state", "unconfirmed")
+                or dose.confirmation_proposal_id != payload.get("previous_confirmation_proposal_id")):
             proposal.status = "invalidated"
-            proposal.invalidated_reason = "dose_already_reported"
+            proposal.invalidated_reason = "dose_report_changed"
             db.flush()
-            raise HTTPException(status_code=409, detail="Dose already has a confirmed report")
+            raise HTTPException(status_code=409, detail="Dose report changed; review its current status again")
         dose.report_state = payload["report_state"]
         dose.report_time = utcnow()
         dose.taken_time_text = payload.get("taken_time_text")
         dose.confirmation_proposal_id = proposal.id
+        for command in db.scalars(select(m.ReminderCommand).where(
+                m.ReminderCommand.dose_instance_id == dose.id,
+                m.ReminderCommand.delivery_state.in_(["queued", "received", "playback_started"]))):
+            command.delivery_state = "playback_unknown" if command.delivery_state == "playback_started" else "cancelled"
+            command.cancelled_at = utcnow()
+            command.cancel_reason = "dose_reported"
         record = dose
         record_type = "medication_report"
     elif proposal.kind == "measurement":
@@ -579,6 +687,17 @@ def commit_proposal(db: Session, proposal_id: str, patient_id: Optional[str] = N
         )
         record_type = "support_request"
     elif proposal.kind == "followup":
+        # The read-back is immutable. If access changed, require a new review
+        # instead of silently committing its old recipients or changing them.
+        try:
+            current, _ = validate_payload(db, proposal.patient_id, "followup", payload, proposal.created_by_user_id)
+            if current != payload:
+                raise HTTPException(status_code=409, detail="Follow-up changed")
+        except HTTPException as exc:
+            proposal.status = "invalidated"
+            proposal.invalidated_reason = "followup_access_changed"
+            db.flush()
+            raise HTTPException(status_code=409, detail="Follow-up access or source changed; review it again") from exc
         if payload.get("followup_id"):
             record = db.scalar(select(m.FollowUp).where(m.FollowUp.id == payload["followup_id"]).with_for_update())
             if not record or record.patient_id != proposal.patient_id or record.resolution_state != "open":
@@ -672,6 +791,8 @@ def materialize_plan_doses(db: Session, plan: m.MedicationPlanVersion, now: Opti
 
 
 def create_plan(db: Session, patient_id: str, user: m.User, data) -> m.MedicationPlanVersion:
+    from .routing import lock_patient
+    lock_patient(db, patient_id)
     try:
         tz = ZoneInfo(data.timezone)
     except ZoneInfoNotFoundError:
@@ -689,6 +810,7 @@ def create_plan(db: Session, patient_id: str, user: m.User, data) -> m.Medicatio
         for command in commands:
             command.cancelled_at = now
             command.delivery_state = "cancelled"
+            command.cancel_reason = "plan_changed"
     plan = m.MedicationPlanVersion(
         patient_id=patient_id,
         version=latest + 1,
@@ -710,8 +832,13 @@ def plan_dict(plan: m.MedicationPlanVersion) -> dict:
     return {"id": plan.id, "version": plan.version, "timezone": plan.timezone, "source": plan.source, "checked_by": plan.checked_by_name, "checked_at": iso(plan.checked_at), "active": plan.active, "medicines": plan.medicines, "schedule": plan.schedule}
 
 
-def make_summary(db: Session, patient_id: str, start_date: date, end_date: date, user_id: str) -> m.VisitSummary:
+def make_summary(db: Session, patient_id: str, start_date: date, end_date: date, user_id: str,
+                 purpose: str = "doctor_visit", questions: Optional[list[str]] = None) -> m.VisitSummary:
     patient = db.get(m.Patient, patient_id)
+    grant, scopes = grant_scopes(db, user_id, patient_id)
+    all_access = "*" in scopes
+    def collection_allowed(name: str) -> bool:
+        return all_access or "read:dashboard" in scopes or ("read:%s" % name) in scopes
     try:
         patient_tz = ZoneInfo(patient.timezone)
     except ZoneInfoNotFoundError:
@@ -722,7 +849,7 @@ def make_summary(db: Session, patient_id: str, start_date: date, end_date: date,
     refs = []
 
     all_notes = db.scalars(select(m.HealthNote).where(m.HealthNote.patient_id == patient_id, m.HealthNote.deleted_at.is_(None))).all()
-    notes = [item for item in all_notes if start_dt <= aware(item.occurred_at or item.created_at) <= end_dt]
+    notes = [item for item in all_notes if collection_allowed("notes") and (all_access or user_id in (item.shared_with_user_ids or [])) and start_dt <= aware(item.occurred_at or item.created_at) <= end_dt]
     if notes:
         items = []
         for item in notes:
@@ -732,7 +859,7 @@ def make_summary(db: Session, patient_id: str, start_date: date, end_date: date,
         sections.append({"title": "Reported health notes", "items": items})
 
     all_measurements = db.scalars(select(m.Measurement).where(m.Measurement.patient_id == patient_id, m.Measurement.superseded_at.is_(None))).all()
-    measurements = [item for item in all_measurements if start_dt <= aware(item.occurred_at or item.created_at) <= end_dt]
+    measurements = [item for item in all_measurements if collection_allowed("measurements") and start_dt <= aware(item.occurred_at or item.created_at) <= end_dt]
     if measurements:
         items = []
         for item in measurements:
@@ -741,7 +868,7 @@ def make_summary(db: Session, patient_id: str, start_date: date, end_date: date,
             refs.append({"type": "measurement", "id": item.id, "version": item.version})
         sections.append({"title": "Reported measurements", "items": items})
 
-    doses = db.scalars(select(m.DoseInstance).where(m.DoseInstance.patient_id == patient_id, m.DoseInstance.scheduled_at.between(start_dt, end_dt))).all()
+    doses = db.scalars(select(m.DoseInstance).where(m.DoseInstance.patient_id == patient_id, m.DoseInstance.scheduled_at.between(start_dt, end_dt))).all() if collection_allowed("medications") else []
     if doses:
         items = []
         for item in doses:
@@ -749,7 +876,7 @@ def make_summary(db: Session, patient_id: str, start_date: date, end_date: date,
             refs.append({"type": "medication_report", "id": item.id, "version": item.plan_version})
         sections.append({"title": "Medication reports", "items": items})
 
-    tasks = db.scalars(select(m.PreventiveTask).where(m.PreventiveTask.patient_id == patient_id)).all()
+    tasks = db.scalars(select(m.PreventiveTask).where(m.PreventiveTask.patient_id == patient_id)).all() if collection_allowed("preventive_tasks") else []
     if tasks:
         items = []
         for item in tasks:
@@ -757,8 +884,11 @@ def make_summary(db: Session, patient_id: str, start_date: date, end_date: date,
             refs.append({"type": "preventive_task", "id": item.id, "version": item.version})
         sections.append({"title": "Current preventive care context at summary generation", "items": items})
 
-    supports = db.scalars(select(m.SupportRequest).where(m.SupportRequest.patient_id == patient_id, m.SupportRequest.status != "resolved", m.SupportRequest.created_at.between(start_dt, end_dt))).all()
-    followups = db.scalars(select(m.FollowUp).where(m.FollowUp.patient_id == patient_id, m.FollowUp.resolution_state == "open")).all()
+    supports = db.scalars(select(m.SupportRequest).where(m.SupportRequest.patient_id == patient_id, m.SupportRequest.status != "resolved", m.SupportRequest.created_at.between(start_dt, end_dt))).all() if collection_allowed("support") else []
+    followups = db.scalars(select(m.FollowUp).where(m.FollowUp.patient_id == patient_id, m.FollowUp.resolution_state == "open")).all() if collection_allowed("followups") else []
+    if not all_access:
+        supports = [item for item in supports if item.recipient_user_id == user_id]
+        followups = [item for item in followups if user_id in (item.permitted_user_ids or [])]
     if supports or followups:
         items = []
         for item in supports:
@@ -772,7 +902,17 @@ def make_summary(db: Session, patient_id: str, start_date: date, end_date: date,
             refs.append({"type": "followup", "id": item.id, "version": 1})
         sections.append({"title": "Unresolved support and follow-up", "items": items})
 
-    summary = m.VisitSummary(patient_id=patient_id, start_date=start_date, end_date=end_date, sections=sections, source_refs=refs, created_by_user_id=user_id)
+    user = db.get(m.User, user_id)
+    authored_at = utcnow()
+    authored = [{"text": text, "author_id": user_id, "author_display_name": user.name,
+                 "authored_at": authored_at} for text in (questions or [])]
+    summary = m.VisitSummary(
+        patient_id=patient_id, start_date=start_date, end_date=end_date,
+        purpose=purpose, template_version=SUMMARY_TEMPLATE_VERSION,
+        sections=present_summary(purpose, sections, authored), source_refs=refs,
+        questions=[{**question, "authored_at": iso(authored_at)} for question in authored],
+        created_by_user_id=user_id,
+    )
     db.add(summary)
     db.flush()
     return summary
@@ -780,7 +920,37 @@ def make_summary(db: Session, patient_id: str, start_date: date, end_date: date,
 
 def summary_dict(summary: m.VisitSummary, public: bool = False) -> dict:
     omitted = set(summary.omitted_source_ids or [])
-    result = {"id": summary.id, "start_date": iso(summary.start_date), "end_date": iso(summary.end_date), "sections": summary.sections, "sources": [ref for ref in (summary.source_refs or []) if ref["id"] not in omitted], "status": summary.status, "created_at": iso(summary.created_at), "reviewed_at": iso(summary.reviewed_at), "invalidated_at": iso(summary.invalidated_at)}
+    questions = summary.questions or []
+    def public_name(value: str) -> str:
+        if not value or "@" in value or re.search(r"(?:usr_[0-9a-f]{32}|\b[0-9a-f]{32}\b|\b[0-9a-f]{8}-[0-9a-f-]{27,}\b)", value, re.I):
+            return "Author"
+        return value
+    if public:
+        visible_questions = [{"text": question.get("text", ""),
+                              "author_display_name": public_name(question.get("author_display_name", "")),
+                              "authored_at": question.get("authored_at")} for question in questions]
+        visible_sections = []
+        for section in summary.sections or []:
+            if section.get("kind") == "authored_questions":
+                visible_sections.append({"kind": "authored_questions", "title": section.get("title", "Authored questions"),
+                                         "items": [{"text": item.get("text", ""),
+                                                    "author_display_name": public_name(item.get("author_display_name", "")),
+                                                    "authored_at": item.get("authored_at")} for item in section.get("items", [])]})
+            else:
+                visible_sections.append({"title": section.get("title", "Care reports"),
+                                         "items": [{"text": item.get("text", ""),
+                                                    **({"source_id": item["source_id"]} if item.get("source_id") else {})}
+                                                   for item in section.get("items", [])]})
+    else:
+        visible_questions = questions
+        visible_sections = summary.sections
+    result = {"id": summary.id, "start_date": iso(summary.start_date), "end_date": iso(summary.end_date),
+              "purpose": summary.purpose or "doctor_visit", "template_version": summary.template_version or 1,
+              "questions": visible_questions,
+              "sections": visible_sections,
+              "sources": [ref for ref in (summary.source_refs or []) if ref["id"] not in omitted],
+              "status": summary.status, "created_at": iso(summary.created_at),
+              "reviewed_at": iso(summary.reviewed_at), "invalidated_at": iso(summary.invalidated_at)}
     if not public:
         result["patient_id"] = summary.patient_id
         result["omitted_source_ids"] = summary.omitted_source_ids

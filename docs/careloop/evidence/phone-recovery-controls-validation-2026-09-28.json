@@ -1,0 +1,23 @@
+{
+  "date": "2026-09-28",
+  "feature": "Recording recovery controls derived from protected pending-turn state",
+  "mobile": {
+    "typecheck": "passed",
+    "unit_tests": 25,
+    "adapter_tests": 101,
+    "full_app_tests": 30,
+    "new_cases": 7,
+    "log_sha256": "a3367a0ed95a3d66cfa3864e2a6df408edf2a1ab727e9dbd51b882ac6500e2f0"
+  },
+  "before_fix": {
+    "result": "Playback-only failure incorrectly displayed Recover response despite no pending journal",
+    "log_sha256": "318b13d2967ec79210627763cd127ab1d3763f4cc9206d1a55b17cda61698aea"
+  },
+  "source_sha256": {
+    "mobile/src/App.tsx": "07ecfcafb6316ab8a5ec8bc2d09fe473d67573ec1fc0388cb0f526359dc98c6f",
+    "mobile/src/storage.ts": "d617df7a010d6cc68f0cd5dc6e3dfac021b1684bc6e10bc5fa50963871f3d99f",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "mobile/test/native/app.test.tsx": "6c5d65456aa486c790746c2e3b98cdec289d1961e5cd83806f1d08653b476fdc"
+  },
+  "limits": "App tests control native/API ports. Native negative and positive evidence is separate; physical phones and iOS remain unverified."
+}

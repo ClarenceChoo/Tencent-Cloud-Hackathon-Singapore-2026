@@ -1,0 +1,119 @@
+{
+  "at": "2026-09-27T16:21:08.375027+00:00",
+  "physical_phone": false,
+  "live_speech": false,
+  "scope": "Real TalkBack focus and double-tap gestures, native recording and cancellation on the Android 16 emulator. Host audio disabled; no audibility, live speech or full accessibility acceptance.",
+  "source_sha256": {
+    "tools/android_native_talkback_probe.py": "b86e3cd840dceb171e41d781bc20df4e0c5d09b3d440ddd08fdfd5ba1570ffa5",
+    "mobile/src/App.tsx": "040650c4ba7d61a35e2c5926c616a0f09a051f03da778766a3241dcd2ccdb275",
+    "mobile/src/useTalkMode.ts": "c159dcedbad3b79d5a76b7238391bf7a4cc9d310b2b02bfae4aabef7ab1cc941",
+    "mobile/src/useVoice.ts": "2282b2036c80f8312515a763b459db8683ba33d83a0e48a69222fbbfd96d9bf0",
+    "tools/android_emulator_touch.c": "5a95d64c7d792fa0b7a4fd2d50790eb35bc86b5ff33e63ca1b3aaa83935b9f83"
+  },
+  "parse_apk_sha256": "15ad0b843daad17bd030dad58e8db29d9269f2317707db3236dec80484b33c3e",
+  "tooling_provenance_sha256": "370e109f2d4d662fa9b6a62a20e380d723d748cefc2b79a59daf146340adf443",
+  "checks": [
+    {
+      "name": "Actual TalkBack and its offline English voice are active; the saved hold preference is overridden by accessible tap mode",
+      "passed": true
+    },
+    {
+      "name": "TalkBack forward gestures reach the labelled recording button without starting capture",
+      "passed": true
+    },
+    {
+      "name": "A real TalkBack double-tap starts native recording and exposes the send label and transient capture file",
+      "passed": true
+    },
+    {
+      "name": "TalkBack gestures reach and activate Cancel; capture stops, cached audio is removed, and no upload is sent",
+      "passed": true
+    }
+  ],
+  "focus_sequence": [
+    {
+      "at": "2026-09-27T16:21:58.843203+00:00",
+      "nodes": [
+        "(44102)1849.TextView:(574, 233 - 1017, 276):TEXT{YOUR CARE COMPANION{AbsoluteSizeSpan 'YOUR CARE COMPANION'AbsoluteSizeSpan{size=32, isDip=false}}{ForegroundColorSpan 'YOUR CARE COMPANION'ForegroundColorSpan{color=#FF78695E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:21:59.961204+00:00",
+      "nodes": [
+        "(47946)1849.TextView:(63, 412 - 1017, 455):TEXT{HELLO, Mei{AbsoluteSizeSpan 'HELLO, Mei'AbsoluteSizeSpan{size=32, isDip=false}}{ForegroundColorSpan 'HELLO, Mei'ForegroundColorSpan{color=#FF78695E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:22:01.093714+00:00",
+      "nodes": [
+        "feeling today?'ForegroundColorSpan{color=#FF322C27}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:22:02.202111+00:00",
+      "nodes": [
+        "(56595)1849.TextView:(63, 792 - 1017, 1014):TEXT{Your microphone turns on only when you choose to speak. Parse checks the details with you before saving.{AbsoluteSizeSpan 'Your microphone turns on only when you choose to speak. Parse checks the details with you before saving.'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'Your microphone turns on only when you choose to speak. Parse checks the details with you before saving.'ForegroundColorSpan{color=#FF50473E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:22:03.337472+00:00",
+      "nodes": [
+        "(58517)1849.TextView:(110, 1108 - 970, 1256):TEXT{Test speech is enabled on this server. These responses are simulated.{AbsoluteSizeSpan 'Test speech is enabled on this server. These responses are simulated.'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'Test speech is enabled on this server. These responses are simulated.'ForegroundColorSpan{color=#FF50473E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:22:04.478197+00:00",
+      "nodes": [
+        "(59478)1849.Button:(63, 1372 - 1017, 1913):CONTENT{Tap to start recording}:GRANULARITY{11}(action:FOCUS/CLEAR_A11Y_FOCUS/CLICK):focusable:clickable:accessibilityFocused"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:22:06.806404+00:00",
+      "nodes": [
+        "(62361)1849.TextView:(63, 1960 - 1017, 2102):TEXT{Listening. Tap to send, or choose Cancel recording.{AbsoluteSizeSpan 'Listening. Tap to send, or choose Cancel recording.'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'Listening. Tap to send, or choose Cancel recording.'ForegroundColorSpan{color=#FF50473E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation:politeLiveRegion"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:22:07.977427+00:00",
+      "nodes": [
+        "(63322)1849.TextView:(63, 2175 - 508, 2249):TEXT{Tap to start and stop{AbsoluteSizeSpan 'Tap to start and stop'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'Tap to start and stop'ForegroundColorSpan{color=#FF50473E}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:22:09.366038+00:00",
+      "nodes": [
+        "(64283)1849.Switch:(891, 2148 - 1017, 2274):CONTENT{Use tap instead of hold to record}:STATE{ON}:GRANULARITY{0}:checked(action:FOCUS/CLEAR_A11Y_FOCUS):focusable:clickable:accessibilityFocused:disabled"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:22:10.673503+00:00",
+      "nodes": [
+        "(112333)1849.TextView:(63, 175 - 1017, 313):TEXT{Tap mode is enabled while your screen reader is on.{AbsoluteSizeSpan 'Tap mode is enabled while your screen reader is on.'AbsoluteSizeSpan{size=48, isDip=false}}{ForegroundColorSpan 'Tap mode is enabled while your screen reader is on.'ForegroundColorSpan{color=#FF756C60}}}:GRANULARITY{31}(action:CLEAR_A11Y_FOCUS):accessibilityFocused:supportsTextLocation"
+      ]
+    },
+    {
+      "at": "2026-09-27T16:22:11.799799+00:00",
+      "nodes": [
+        "(113294)1849.Button:(63, 361 - 1017, 505):CONTENT{Cancel recording}:GRANULARITY{11}(action:FOCUS/CLEAR_A11Y_FOCUS/CLICK):focusable:clickable:accessibilityFocused"
+      ]
+    }
+  ],
+  "virtual_touch_binary_sha256": "6121eb6a10a95a77688402397b4e7340f7218ce796ecef1ac95ded2f2c9bddc0",
+  "uploads_before": 31,
+  "recording_gesture_at": "2026-09-27T16:22:04.676535+00:00",
+  "capture_files_during_recording": [
+    "/data/user/0/sg.parse.companion.verification/cache/Audio/recording-63d28b62-d8ff-4ae0-8ef7-b0595480983a.m4a"
+  ],
+  "uploads_after": 31,
+  "capture_files_after": [],
+  "restored_settings": {
+    "enabled_accessibility_services": "null",
+    "accessibility_enabled": "0",
+    "touch_exploration_enabled": "0",
+    "tts_default_synth": "null",
+    "tts_default_rate": "null",
+    "tts_default_pitch": "null"
+  },
+  "tap_preference_restored": true,
+  "capture_files_at_cleanup": []
+}

@@ -2,6 +2,8 @@
 
 Working interface agreement for the implementation on branch `codex/careloop-mvp`. The PRD v0.3 remains authoritative. Product voice input comes from the ESP32 cardholder; development fixtures are not a phone voice product.
 
+**27 September amendment:** [Phone-Companion-PRD.md](Phone-Companion-PRD.md) authorizes a real native phone companion as an alternative voice endpoint and supersedes the hardware-only voice restriction above. Reuse this contract's existing backend, permission and confirmation behavior; implement the new phone enrollment/audio/routing contracts additively. The ownership list below describes the earlier build, not a requirement to delegate the new implementation to those agents.
+
 ## Ownership
 
 - Backend agent: `backend/`, except `backend/app/providers.py` and `backend/tests/test_providers.py` (root-owned).

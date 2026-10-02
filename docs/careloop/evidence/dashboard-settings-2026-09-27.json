@@ -1,0 +1,21 @@
+{
+  "at": "2026-09-27T09:11:35.385Z",
+  "evidence": [
+    {
+      "name": "Profile preferences persist; original preferences restored",
+      "passed": true
+    },
+    {
+      "name": "A separately created proposal appears and requires dashboard confirmation",
+      "passed": true
+    },
+    {
+      "name": "Edited medication instructions need a fresh check and create a new plan version",
+      "passed": true
+    },
+    {
+      "name": "Claim and revoke change device API access; replacement claim stays available",
+      "passed": true
+    }
+  ]
+}

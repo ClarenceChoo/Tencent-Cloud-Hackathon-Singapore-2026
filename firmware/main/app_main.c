@@ -14,6 +14,24 @@ static careloop_app_t app;
 static void pulse(unsigned on_ms, unsigned off_ms, unsigned count) { for(unsigned i=0;i<count;i++){careloop_haptic(&app.board,true);vTaskDelay(pdMS_TO_TICKS(on_ms));careloop_haptic(&app.board,false);if(i+1<count)vTaskDelay(pdMS_TO_TICKS(off_ms));} }
 static bool debounced_press(void) { if(!careloop_ptt_pressed(&app.board))return false;vTaskDelay(pdMS_TO_TICKS(40));return careloop_ptt_pressed(&app.board); }
 static void wait_for_release(void) { while(careloop_ptt_pressed(&app.board)) vTaskDelay(pdMS_TO_TICKS(10)); }
+static void wifi_setup_if_requested(void) {
+  if (!app.settings.configured || !careloop_ptt_pressed(&app.board)) return;
+  const int64_t started = esp_timer_get_time();
+  while (careloop_ptt_pressed(&app.board)) {
+    if (esp_timer_get_time() - started >= 5000000) {
+      memset(app.settings.wifi_ssid, 0, sizeof(app.settings.wifi_ssid));
+      memset(app.settings.wifi_password, 0, sizeof(app.settings.wifi_password));
+      app.settings.configured = false;
+      /* Keep the device token, setup password, backend and replay ledger. */
+      ESP_ERROR_CHECK(careloop_settings_save(&app.settings));
+      ESP_LOGI(TAG, "Wi-Fi setup requested; release the talk button");
+      pulse(180, 100, 2);
+      wait_for_release();
+      return;
+    }
+    vTaskDelay(pdMS_TO_TICKS(20));
+  }
+}
 static void interaction_task(void *unused) {
   (void)unused;
   for (;;) {
@@ -43,5 +61,6 @@ void app_main(void) {
   memset(&app,0,sizeof(app)); ESP_ERROR_CHECK(careloop_settings_load(&app.settings,&app.ledger)); ESP_ERROR_CHECK(careloop_board_init(&app.board));
   app.audio_lock=xSemaphoreCreateMutex(); app.state_lock=xSemaphoreCreateMutex(); app.ledger_lock=xSemaphoreCreateMutex(); if(!app.audio_lock||!app.state_lock||!app.ledger_lock){ESP_LOGE(TAG,"No memory for device locks");return;}
   if(!careloop_board_audio_ready(&app.board)) ESP_LOGW(TAG,"Audio remains disabled: supplier GPIO map has not been configured");
+  wifi_setup_if_requested();
   ESP_ERROR_CHECK(careloop_wifi_start(&app)); careloop_network_start(&app); xTaskCreate(interaction_task,"careloop_interaction",6144,NULL,5,NULL);
 }

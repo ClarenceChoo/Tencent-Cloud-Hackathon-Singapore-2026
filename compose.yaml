@@ -19,7 +19,9 @@ services:
       dockerfile: deploy/backend.Dockerfile
     environment:
       CARELOOP_DATABASE_URL: postgresql+psycopg://careloop:${POSTGRES_PASSWORD}@db:5432/careloop
-      CARELOOP_ALLOWED_ORIGINS: '["https://${CARELOOP_DOMAIN:?Set CARELOOP_DOMAIN}"]'
+      # Defaults to the backend origin; set a comma-separated list in deploy/.env
+      # when a separate browser frontend (such as the protected Vercel preview) is used.
+      CARELOOP_ALLOWED_ORIGINS: '${CARELOOP_ALLOWED_ORIGINS:-https://${CARELOOP_DOMAIN:?Set CARELOOP_DOMAIN}}'
       CARELOOP_COOKIE_SECURE: "true"
       # Only Caddy publishes a host port. Trust its HTTPS/client-address headers.
       FORWARDED_ALLOW_IPS: "*"

@@ -9,7 +9,30 @@
 #include "sdkconfig.h"
 #include "careloop_wav.h"
 
-static bool pin_ok(int p) { return p >= 0 && p < GPIO_NUM_MAX; }
+#define AUDIO_DMA_COUNT 6
+#define AUDIO_DMA_FRAMES 256
+#define SPEAKER_FRAME_BYTES 2
+
+/* WROOM-1 N16R8 exposes GPIO0..21 and GPIO35..48, but IO35..37 are
+   physically connected to Octal PSRAM. GPIO26..34 are internal module pins. */
+static bool pin_ok(int p) {
+  if (!GPIO_IS_VALID_GPIO(p) || (p >= 26 && p <= 37)) return false;
+#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG || CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+  if (p == 19 || p == 20) return false;
+#endif
+  return true;
+}
+static bool board_pins_valid(const careloop_board_t *b) {
+  const int pins[] = {b->mic_bclk, b->mic_ws, b->mic_data, b->spk_bclk,
+                     b->spk_ws, b->spk_data, b->amp_enable, b->ptt, b->haptic};
+  for (size_t i = 0; i < sizeof(pins) / sizeof(pins[0]); i++) {
+    if (pins[i] == -1) continue;
+    if (!pin_ok(pins[i])) return false;
+    if (i != 2 && i != 7 && !GPIO_IS_VALID_OUTPUT_GPIO(pins[i])) return false;
+    for (size_t j = 0; j < i; j++) if (pins[j] == pins[i]) return false;
+  }
+  return true;
+}
 static void output(int p, bool active_high, bool on) { if (pin_ok(p)) gpio_set_level(p, (on == active_high) ? 1 : 0); }
 static void playback_idle(const careloop_board_t *b) {
   careloop_amp(b, false);
@@ -20,14 +43,16 @@ esp_err_t careloop_board_init(careloop_board_t *b) {
   *b = (careloop_board_t){CONFIG_CARELOOP_MIC_BCLK_GPIO, CONFIG_CARELOOP_MIC_WS_GPIO, CONFIG_CARELOOP_MIC_DATA_GPIO,
      CONFIG_CARELOOP_SPK_BCLK_GPIO, CONFIG_CARELOOP_SPK_WS_GPIO, CONFIG_CARELOOP_SPK_DATA_GPIO,
      CONFIG_CARELOOP_AMP_ENABLE_GPIO, CONFIG_CARELOOP_PTT_GPIO, CONFIG_CARELOOP_HAPTIC_GPIO};
+  /* Reject conflicts before configuring any GPIO or installing I2S. */
+  if (!board_pins_valid(b)) return ESP_ERR_INVALID_ARG;
   if (pin_ok(b->amp_enable)) { gpio_set_direction(b->amp_enable, GPIO_MODE_OUTPUT); output(b->amp_enable, CONFIG_CARELOOP_AMP_ENABLE_ACTIVE_HIGH, false); }
   if (pin_ok(b->haptic)) { gpio_set_direction(b->haptic, GPIO_MODE_OUTPUT); output(b->haptic, CONFIG_CARELOOP_HAPTIC_ACTIVE_HIGH, false); }
   if (pin_ok(b->ptt)) { gpio_set_direction(b->ptt, GPIO_MODE_INPUT); gpio_set_pull_mode(b->ptt, CONFIG_CARELOOP_PTT_ACTIVE_LOW ? GPIO_PULLUP_ONLY : GPIO_PULLDOWN_ONLY); }
   if (!careloop_board_audio_ready(b)) return ESP_OK; /* Safe, intentionally inert pending pin map. */
-  i2s_config_t rx = {.mode=I2S_MODE_MASTER|I2S_MODE_RX, .sample_rate=16000, .bits_per_sample=I2S_BITS_PER_SAMPLE_32BIT, .channel_format=CONFIG_CARELOOP_MIC_LEFT_CHANNEL ? I2S_CHANNEL_FMT_ONLY_LEFT : I2S_CHANNEL_FMT_ONLY_RIGHT, .communication_format=I2S_COMM_FORMAT_STAND_I2S, .dma_buf_count=6, .dma_buf_len=256, .use_apll=false};
-  i2s_pin_config_t rpin = {.bck_io_num=b->mic_bclk,.ws_io_num=b->mic_ws,.data_out_num=I2S_PIN_NO_CHANGE,.data_in_num=b->mic_data};
-  i2s_config_t tx = {.mode=I2S_MODE_MASTER|I2S_MODE_TX, .sample_rate=16000, .bits_per_sample=I2S_BITS_PER_SAMPLE_16BIT, .channel_format=I2S_CHANNEL_FMT_ONLY_LEFT, .communication_format=I2S_COMM_FORMAT_STAND_I2S, .dma_buf_count=6, .dma_buf_len=256, .use_apll=false, .tx_desc_auto_clear=true};
-  i2s_pin_config_t tpin = {.bck_io_num=b->spk_bclk,.ws_io_num=b->spk_ws,.data_out_num=b->spk_data,.data_in_num=I2S_PIN_NO_CHANGE};
+  i2s_config_t rx = {.mode=I2S_MODE_MASTER|I2S_MODE_RX, .sample_rate=16000, .bits_per_sample=I2S_BITS_PER_SAMPLE_32BIT, .channel_format=CONFIG_CARELOOP_MIC_LEFT_CHANNEL ? I2S_CHANNEL_FMT_ONLY_LEFT : I2S_CHANNEL_FMT_ONLY_RIGHT, .communication_format=I2S_COMM_FORMAT_STAND_I2S, .dma_buf_count=AUDIO_DMA_COUNT, .dma_buf_len=AUDIO_DMA_FRAMES, .use_apll=false};
+  i2s_pin_config_t rpin = {.mck_io_num=I2S_PIN_NO_CHANGE,.bck_io_num=b->mic_bclk,.ws_io_num=b->mic_ws,.data_out_num=I2S_PIN_NO_CHANGE,.data_in_num=b->mic_data};
+  i2s_config_t tx = {.mode=I2S_MODE_MASTER|I2S_MODE_TX, .sample_rate=16000, .bits_per_sample=I2S_BITS_PER_SAMPLE_16BIT, .channel_format=I2S_CHANNEL_FMT_ONLY_LEFT, .communication_format=I2S_COMM_FORMAT_STAND_I2S, .dma_buf_count=AUDIO_DMA_COUNT, .dma_buf_len=AUDIO_DMA_FRAMES, .use_apll=false, .tx_desc_auto_clear=true};
+  i2s_pin_config_t tpin = {.mck_io_num=I2S_PIN_NO_CHANGE,.bck_io_num=b->spk_bclk,.ws_io_num=b->spk_ws,.data_out_num=b->spk_data,.data_in_num=I2S_PIN_NO_CHANGE};
   esp_err_t e = i2s_driver_install(I2S_NUM_0, &rx, 0, NULL);
   if (e == ESP_OK) { e = i2s_set_pin(I2S_NUM_0, &rpin); i2s_stop(I2S_NUM_0); }
   if (e == ESP_OK) e = i2s_driver_install(I2S_NUM_1, &tx, 0, NULL);
@@ -61,5 +86,18 @@ esp_err_t careloop_play_wav_stream(const careloop_board_t *b, const uint8_t *hea
   while (played < bytes) { if (n == 0) { int r=next(ctx,buf,sizeof(buf)); if (r <= 0) { playback_idle(b); return ESP_FAIL; } source=buf; n=(size_t)r; }
     size_t take=n; if (take > bytes-played) take=bytes-played; size_t wrote=0; if (i2s_write(I2S_NUM_1, source, take, &wrote, pdMS_TO_TICKS(250)) != ESP_OK || wrote != take) { playback_idle(b); return ESP_FAIL; }
     played += take; source += take; n -= take; if (careloop_ptt_pressed(b)) { playback_idle(b); return ESP_ERR_INVALID_STATE; }
-  } playback_idle(b); return ESP_OK;
+  }
+  /* Legacy i2s_write queues DMA bytes; it does not wait for their transmission.
+     More than one complete ring of silence forces the final PCM past the DMA
+     consumer, including a partially filled final descriptor. */
+  const uint8_t silence[AUDIO_DMA_FRAMES * SPEAKER_FRAME_BYTES] = {0};
+  for (unsigned i = 0; i <= AUDIO_DMA_COUNT; i++) {
+    if (careloop_ptt_pressed(b)) { playback_idle(b); return ESP_ERR_INVALID_STATE; }
+    size_t wrote = 0;
+    if (i2s_write(I2S_NUM_1, silence, sizeof(silence), &wrote, pdMS_TO_TICKS(250)) != ESP_OK ||
+        wrote != sizeof(silence)) { playback_idle(b); return ESP_FAIL; }
+    if (careloop_ptt_pressed(b)) { playback_idle(b); return ESP_ERR_INVALID_STATE; }
+  }
+  playback_idle(b);
+  return ESP_OK;
 }

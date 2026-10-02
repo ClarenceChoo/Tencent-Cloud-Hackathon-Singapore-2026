@@ -1,0 +1,192 @@
+{
+  "checks": [
+    {
+      "surface": "landing",
+      "width": 1440,
+      "noOverflow": true,
+      "sharedFont": true
+    },
+    {
+      "surface": "dashboard",
+      "width": 1440,
+      "noOverflow": true,
+      "sharedFont": true
+    },
+    {
+      "navigation": "landing → dashboard → landing",
+      "width": 1440,
+      "sameOrigin": true
+    },
+    {
+      "surface": "landing",
+      "width": 1024,
+      "noOverflow": true,
+      "sharedFont": true
+    },
+    {
+      "surface": "dashboard",
+      "width": 1024,
+      "noOverflow": true,
+      "sharedFont": true
+    },
+    {
+      "navigation": "landing → dashboard → landing",
+      "width": 1024,
+      "sameOrigin": true
+    },
+    {
+      "surface": "landing",
+      "width": 768,
+      "noOverflow": true,
+      "sharedFont": true
+    },
+    {
+      "surface": "dashboard",
+      "width": 768,
+      "noOverflow": true,
+      "sharedFont": true
+    },
+    {
+      "navigation": "landing → dashboard → landing",
+      "width": 768,
+      "sameOrigin": true
+    },
+    {
+      "surface": "landing",
+      "width": 390,
+      "noOverflow": true,
+      "sharedFont": true
+    },
+    {
+      "surface": "dashboard",
+      "width": 390,
+      "noOverflow": true,
+      "sharedFont": true
+    },
+    {
+      "navigation": "landing → dashboard → landing",
+      "width": 390,
+      "sameOrigin": true
+    },
+    {
+      "surface": "landing",
+      "width": 320,
+      "noOverflow": true,
+      "sharedFont": true
+    },
+    {
+      "surface": "dashboard",
+      "width": 320,
+      "noOverflow": true,
+      "sharedFont": true
+    },
+    {
+      "navigation": "landing → dashboard → landing",
+      "width": 320,
+      "sameOrigin": true
+    },
+    {
+      "surface": "sign-in",
+      "width": 1440,
+      "noOverflow": true,
+      "sharedFont": true
+    },
+    {
+      "navigation": "sign-in → landing → sign-in",
+      "width": 1440,
+      "sameOrigin": true
+    },
+    {
+      "surface": "browser companion",
+      "width": 1440,
+      "noOverflow": true,
+      "sharedFont": true
+    },
+    {
+      "navigation": "browser companion → landing",
+      "width": 1440,
+      "sameOrigin": true
+    },
+    {
+      "surface": "public companion preview",
+      "width": 1440,
+      "noOverflow": true,
+      "sharedFont": true
+    },
+    {
+      "navigation": "public companion preview → landing",
+      "width": 1440,
+      "sameOrigin": true
+    },
+    {
+      "surface": "sign-in",
+      "width": 390,
+      "noOverflow": true,
+      "sharedFont": true
+    },
+    {
+      "navigation": "sign-in → landing → sign-in",
+      "width": 390,
+      "sameOrigin": true
+    },
+    {
+      "surface": "browser companion",
+      "width": 390,
+      "noOverflow": true,
+      "sharedFont": true
+    },
+    {
+      "navigation": "browser companion → landing",
+      "width": 390,
+      "sameOrigin": true
+    },
+    {
+      "surface": "public companion preview",
+      "width": 390,
+      "noOverflow": true,
+      "sharedFont": true
+    },
+    {
+      "navigation": "public companion preview → landing",
+      "width": 390,
+      "sameOrigin": true
+    },
+    {
+      "surface": "sign-in",
+      "width": 320,
+      "noOverflow": true,
+      "sharedFont": true
+    },
+    {
+      "navigation": "sign-in → landing → sign-in",
+      "width": 320,
+      "sameOrigin": true
+    },
+    {
+      "surface": "browser companion",
+      "width": 320,
+      "noOverflow": true,
+      "sharedFont": true
+    },
+    {
+      "navigation": "browser companion → landing",
+      "width": 320,
+      "sameOrigin": true
+    },
+    {
+      "surface": "public companion preview",
+      "width": 320,
+      "noOverflow": true,
+      "sharedFont": true
+    },
+    {
+      "navigation": "public companion preview → landing",
+      "width": 320,
+      "sameOrigin": true
+    }
+  ],
+  "pageErrors": [],
+  "previewApiRequests": [],
+  "backendWrites": [],
+  "note": "Temporary signed-out browser; API reads intercepted; no microphone or real accounts used."
+}

@@ -56,6 +56,8 @@ export const config = {
     { source: '/v1', destination: origin ? `${origin}/v1` : '/api/unavailable' },
     { source: '/v1/:path*', destination: origin ? `${origin}/v1/:path*` : '/api/unavailable' },
     { source: '/healthz', destination: origin ? `${origin}/healthz` : '/api/unavailable' },
+    { source: '/landing', destination: '/landing/index.html' },
+    { source: '/landing/', destination: '/landing/index.html' },
     { source: '/(.*)', destination: '/index.html' },
   ],
 };

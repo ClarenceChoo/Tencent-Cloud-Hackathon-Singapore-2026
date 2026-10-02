@@ -1,0 +1,44 @@
+{
+  "fixtures": "Fictional reads intercepted in a temporary browser; no backend writes or microphone use.",
+  "responsive": [
+    {
+      "surface": "paired companion and editable review",
+      "width": 768,
+      "noOverflow": true
+    },
+    {
+      "surface": "paired companion and editable review",
+      "width": 390,
+      "noOverflow": true
+    },
+    {
+      "surface": "paired companion and editable review",
+      "width": 320,
+      "noOverflow": true
+    },
+    {
+      "surface": "shared read-only summary",
+      "width": 768,
+      "noOverflow": true
+    },
+    {
+      "surface": "shared read-only summary",
+      "width": 390,
+      "noOverflow": true
+    },
+    {
+      "surface": "shared read-only summary",
+      "width": 320,
+      "noOverflow": true
+    }
+  ],
+  "review": {
+    "editable": true,
+    "confirmationDisabledWhileEditing": true
+  },
+  "sharedSummary": {
+    "readOnly": true
+  },
+  "pageErrors": [],
+  "writes": []
+}

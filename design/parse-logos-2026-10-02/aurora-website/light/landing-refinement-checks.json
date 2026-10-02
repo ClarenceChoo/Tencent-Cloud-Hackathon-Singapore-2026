@@ -1,0 +1,149 @@
+{
+  "responsive": [
+    {
+      "width": 1440,
+      "noOverflow": true,
+      "photos": [
+        {
+          "selector": ".landing-story-photo",
+          "left": 691.1875,
+          "width": 748.8125
+        },
+        {
+          "selector": ".landing-features-photo",
+          "left": 878.390625,
+          "width": 561.609375
+        }
+      ],
+      "heroOpacity": "1",
+      "imagesLoaded": true
+    },
+    {
+      "width": 1024,
+      "noOverflow": true,
+      "photos": [
+        {
+          "selector": ".landing-story-photo",
+          "left": 491.515625,
+          "width": 532.484375
+        },
+        {
+          "selector": ".landing-features-photo",
+          "left": 716.796875,
+          "width": 307.203125
+        }
+      ],
+      "heroOpacity": "1",
+      "imagesLoaded": true
+    },
+    {
+      "width": 900,
+      "noOverflow": true,
+      "photos": [
+        {
+          "selector": ".landing-story-photo",
+          "left": 432,
+          "width": 468
+        },
+        {
+          "selector": ".landing-features-photo",
+          "left": 630,
+          "width": 270
+        }
+      ],
+      "heroOpacity": "1",
+      "imagesLoaded": true
+    },
+    {
+      "width": 820,
+      "noOverflow": true,
+      "photos": [
+        {
+          "selector": ".landing-story-photo",
+          "left": 0,
+          "width": 820
+        },
+        {
+          "selector": ".landing-features-photo",
+          "left": 0,
+          "width": 820
+        }
+      ],
+      "heroOpacity": "1",
+      "imagesLoaded": true
+    },
+    {
+      "width": 768,
+      "noOverflow": true,
+      "photos": [
+        {
+          "selector": ".landing-story-photo",
+          "left": 0,
+          "width": 768
+        },
+        {
+          "selector": ".landing-features-photo",
+          "left": 0,
+          "width": 768
+        }
+      ],
+      "heroOpacity": "1",
+      "imagesLoaded": true
+    },
+    {
+      "width": 600,
+      "noOverflow": true,
+      "photos": [
+        {
+          "selector": ".landing-story-photo",
+          "left": 0,
+          "width": 600
+        },
+        {
+          "selector": ".landing-features-photo",
+          "left": 0,
+          "width": 600
+        }
+      ],
+      "heroOpacity": "1",
+      "imagesLoaded": true
+    },
+    {
+      "width": 390,
+      "noOverflow": true,
+      "photos": [
+        {
+          "selector": ".landing-story-photo",
+          "left": 0,
+          "width": 390
+        },
+        {
+          "selector": ".landing-features-photo",
+          "left": 0,
+          "width": 390
+        }
+      ],
+      "heroOpacity": "1",
+      "imagesLoaded": true
+    },
+    {
+      "width": 320,
+      "noOverflow": true,
+      "photos": [
+        {
+          "selector": ".landing-story-photo",
+          "left": 0,
+          "width": 320
+        },
+        {
+          "selector": ".landing-features-photo",
+          "left": 0,
+          "width": 320
+        }
+      ],
+      "heroOpacity": "1",
+      "imagesLoaded": true
+    }
+  ],
+  "pageErrors": []
+}

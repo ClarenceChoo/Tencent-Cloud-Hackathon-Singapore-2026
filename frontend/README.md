@@ -1,4 +1,10 @@
-# CareLoop dashboard
+# Parse frontend
+
+## Parse landing page
+
+The public product introduction lives at `/landing/` and builds from its own HTML entry and stylesheet. Its header and main calls to action open the existing caregiver dashboard at `/`; the browser-companion link opens `/companion`. The dashboard footer links back through **About Parse**, and the sign-in and companion logos also return to the landing page. These links stay on the current website, so the default build retains sign-in while a public UI build opens the fictional care space. Both `/landing` and `/landing/` work in the hosted routing config. Its fictional interactive example stays entirely in the page: it never uses the microphone, backend, or browser storage. Copy lives in `src/landingCopy.ts`.
+
+The light Aurora Pearl theme uses warm ivory and pearl surfaces, soft aqua and lilac lighting, and navy text. The landing hero places the transparent Care Conversation emblem on a luminous light background. `src/BrandLogo.tsx` uses the navy-wordmark logo from `public/brand/` across the landing page, dashboard, sign-in, companion, and shared summary. Both HTML entries use the profile emblem as their favicon and warm ivory as their browser theme colour. DM Serif Display, DM Sans, and the family photographs are served locally from `public/landing/`. See the [theme assets and verification record](../design/parse-logos-2026-10-02/aurora-website/README.md).
 
 Responsive React dashboard for the CareLoop demo. The browser uses the same-origin `/v1` API and the Vite development server proxies `/v1` to `http://localhost:8000`.
 

@@ -28,7 +28,7 @@ def journey(env, monkeypatch, m4a):
         interpretation = {"intent": "chat", "spoken_text": "Hello Pat."}
         context = None
 
-        async def transcribe_audio(self, audio):
+        async def transcribe_audio(self, audio, *, vocabulary=None):
             validate_wav(audio)
             return self.transcript
 

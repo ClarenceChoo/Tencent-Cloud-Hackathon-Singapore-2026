@@ -54,6 +54,24 @@ def test_populated_legacy_upgrade_backfills_only_unambiguous_route(legacy):
         assert c.execute(text("SELECT COUNT(*) FROM devices WHERE device_type='pendant'")).scalar_one() == 3
 
 
+def test_vocabulary_migration_adds_snapshot_and_preserves_review_audit(legacy):
+    migrate.upgrade(legacy, '0005_capture_intent')
+    assert 'care_vocabularies' not in inspect(legacy).get_table_names()
+    migrate.upgrade(legacy)
+    tables = set(inspect(legacy).get_table_names())
+    assert {'care_vocabularies', 'care_vocabulary_audits'} <= tables
+    assert 'vocabulary_version' in {column['name'] for column in inspect(legacy).get_columns('voice_turns')}
+    with legacy.begin() as c:
+        c.execute(text("INSERT INTO users (id,name,email,role,password_hash,active) VALUES ('reviewer','Reviewer','reviewer@example.invalid','owner','fixture',true)"))
+        c.execute(text("INSERT INTO care_vocabularies (patient_id,version,terms,reviewed_by_user_id,reviewed_at) VALUES ('single',1,'[]','reviewer',CURRENT_TIMESTAMP)"))
+        c.execute(text("INSERT INTO care_vocabulary_audits (patient_id,version,terms,reviewed_by_user_id,reviewed_at) VALUES ('single',1,'[]','reviewer',CURRENT_TIMESTAMP)"))
+    with pytest.raises(RuntimeError, match='destroy review history'):
+        with legacy.begin() as c:
+            command.downgrade(migrate.configuration(c), '0005_capture_intent')
+    with legacy.connect() as c:
+        assert c.execute(text('SELECT COUNT(*) FROM care_vocabulary_audits')).scalar_one() == 1
+
+
 def test_capture_intent_migration_preserves_older_turns(legacy):
     migrate.upgrade(legacy, '0004_phone_notifications')
     with legacy.begin() as c:

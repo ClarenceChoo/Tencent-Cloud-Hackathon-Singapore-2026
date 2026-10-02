@@ -36,6 +36,17 @@ class SpeechTooLong(ProviderResponseError):
     """Valid PCM exceeds one device clip; the caller may split its source text."""
 
 
+@dataclass(frozen=True)
+class SpeechVocabulary:
+    version: int
+    terms: list[str]
+
+
+def unsupported_vocabulary_capability() -> dict[str, object]:
+    return {"asr_vocabulary_supported": False, "asr_vocabulary_applied": False,
+            "reason": "ASR vocabulary is unavailable until the configured engine and account are verified."}
+
+
 def pcm_wav(pcm: bytes) -> bytes:
     if not pcm or len(pcm) % 2:
         raise ProviderResponseError("Speech provider returned invalid PCM.")
@@ -107,6 +118,9 @@ at a time. A caregiver has seen a request only when its supplied status records 
 Pure conversation is chat, not a care event. A yes is confirm only with one identified current proposal;
 capture_intent is an optional recording-purpose hint, never evidence of what was said. Do not create a
 proposal from the hint alone. Spoken content must supply the intent and every required material fact.
+reviewed_vocabulary contains patient-scoped names reviewed by a profile manager. Its terms and aliases
+are advisory context only. Never rewrite the transcript or infer a medicine, person, quantity, or negation
+from a similar-sounding name. Clarify when a material fact is ambiguous.
 If current_proposal is supplied, interpret confirmation or correction against that proposal first,
 even when capture_intent suggests a different kind. Ask for clarification on a conflict.
 corrections are correct with a complete revised payload, preserving stated facts only. A yes with corrections
@@ -205,7 +219,10 @@ class TencentProvider:
             raise ProviderUnavailable("Tencent speech processing failed. Check server configuration.")
         return result
 
-    async def transcribe_audio(self, wav: bytes) -> str:
+    def capabilities(self) -> dict[str, object]:
+        return unsupported_vocabulary_capability()
+
+    async def transcribe_audio(self, wav: bytes, *, vocabulary: SpeechVocabulary | None = None) -> str:
         validate_speech_wav(wav)
         result = await self._tencent("asr", self.config.asr_host, "SentenceRecognition", "2019-06-14", {
             "EngSerViceType": self.config.asr_engine, "SourceType": 1, "VoiceFormat": "wav",
@@ -220,7 +237,7 @@ class TencentProvider:
         if not isinstance(transcript, str) or len(transcript) > 10000:
             raise ProviderResponseError("The transcript is invalid.")
         # Deliberately limit which context reaches the model; no entire patient history.
-        permitted = {k: context[k] for k in ("device", "server_time", "capture_intent", "current_proposal", "reminder_context", "active_medication_plan", "doses", "permitted_recipients", "preventive_tasks", "support_requests", "followups") if k in context}
+        permitted = {k: context[k] for k in ("device", "server_time", "capture_intent", "reviewed_vocabulary", "current_proposal", "reminder_context", "active_medication_plan", "doses", "permitted_recipients", "preventive_tasks", "support_requests", "followups") if k in context}
         payload = {"model": self.config.llm_model, "temperature": 0, "max_tokens": 700,
                    "messages": [{"role": "system", "content": SYSTEM_PROMPT},
                                 {"role": "user", "content": json.dumps({"transcript": transcript, "context": permitted}, ensure_ascii=False)}]}
@@ -250,7 +267,9 @@ class TencentProvider:
 
 
 class UnconfiguredProvider:
-    async def transcribe_audio(self, wav: bytes) -> str:
+    def capabilities(self) -> dict[str, object]:
+        return unsupported_vocabulary_capability()
+    async def transcribe_audio(self, wav: bytes, *, vocabulary: SpeechVocabulary | None = None) -> str:
         raise ProviderUnavailable("Live speech is not configured on this server.")
     async def interpret_turn(self, transcript: str, context: dict) -> dict:
         raise ProviderUnavailable("Live interpretation is not configured on this server.")
@@ -264,7 +283,10 @@ class FixtureProvider:
         self.transcripts = transcripts if transcripts is not None else {}
         self.reply_wav = reply_wav
 
-    async def transcribe_audio(self, wav: bytes) -> str:
+    def capabilities(self) -> dict[str, object]:
+        return unsupported_vocabulary_capability()
+
+    async def transcribe_audio(self, wav: bytes, *, vocabulary: SpeechVocabulary | None = None) -> str:
         digest = hashlib.sha256(wav).hexdigest()
         if digest not in self.transcripts:
             raise ProviderUnavailable("No transcript registered for this developer audio fixture.")

@@ -62,7 +62,7 @@ def test_wav_validation_device_scope_and_idempotency(env, monkeypatch):
     client, app, ids = env
 
     class FakeProvider:
-        async def transcribe_audio(self, wav):
+        async def transcribe_audio(self, wav, *, vocabulary=None):
             return "I have a sore knee"
 
         async def interpret_turn(self, transcript, context):
@@ -153,7 +153,7 @@ def test_retry_after_confirmation_commit_returns_original_turn(env, monkeypatch)
     proposal = client.post("/v1/app/patients/%s/proposals" % ids["patient"], json={"kind": "health_note", "payload": {"wording": "Awaiting device confirmation"}}, headers=owner_headers).json()
 
     class FakeProvider:
-        async def transcribe_audio(self, wav):
+        async def transcribe_audio(self, wav, *, vocabulary=None):
             return "yes save that"
         async def interpret_turn(self, transcript, context):
             return {"intent": "confirm", "kind": None, "payload": {}, "spoken_text": ""}
@@ -267,7 +267,7 @@ def test_turn_processing_claim_is_atomic_and_raw_audio_clears_after_asr(env, mon
     calls = {"transcribe": 0}
 
     class FakeProvider:
-        async def transcribe_audio(self, wav):
+        async def transcribe_audio(self, wav, *, vocabulary=None):
             calls["transcribe"] += 1
             await asyncio.sleep(0.02)
             return "hello"
@@ -302,7 +302,7 @@ def test_long_grounded_explanation_is_split_without_omission(env, monkeypatch):
     spoken_chunks = []
 
     class FakeProvider:
-        async def transcribe_audio(self, wav):
+        async def transcribe_audio(self, wav, *, vocabulary=None):
             return "Explain DemoMed"
 
         async def interpret_turn(self, transcript, context):

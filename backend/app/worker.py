@@ -7,7 +7,8 @@ from fastapi import HTTPException
 from sqlalchemy import select, update
 
 from . import models as m
-from .providers import SpeechTooLong
+from .providers import SpeechTooLong, SpeechVocabulary
+from .vocabulary_service import read_vocabulary, read_vocabulary_version
 from .security import aware, iso, utcnow
 from .care_status import status_reply
 from .services import (
@@ -172,7 +173,10 @@ async def process_turn(app, turn_id: str) -> None:
         require_active_device()
         provider = _provider(app)
         if turn.status == "accepted":
-            claimed = db.execute(update(m.VoiceTurn).where(m.VoiceTurn.id == turn_id, m.VoiceTurn.status == "accepted").values(status="transcribing", processing_started_at=utcnow()))
+            vocabulary = (read_vocabulary_version(db, turn.patient_id, turn.vocabulary_version)
+                          if turn.vocabulary_version is not None else read_vocabulary(db, turn.patient_id))
+            claimed = db.execute(update(m.VoiceTurn).where(m.VoiceTurn.id == turn_id, m.VoiceTurn.status == "accepted").values(
+                status="transcribing", processing_started_at=utcnow(), vocabulary_version=vocabulary.version))
             if claimed.rowcount != 1:
                 db.rollback()
                 return
@@ -180,7 +184,8 @@ async def process_turn(app, turn_id: str) -> None:
             turn = db.get(m.VoiceTurn, turn_id)
             if not turn.raw_audio:
                 raise ValueError("Accepted turn has no audio")
-            transcript = await provider.transcribe_audio(bytes(turn.raw_audio))
+            transcript = await provider.transcribe_audio(bytes(turn.raw_audio), vocabulary=SpeechVocabulary(
+                version=vocabulary.version, terms=[term.canonical for term in vocabulary.terms]))
             if not isinstance(transcript, str) or not transcript.strip():
                 raise ValueError("Transcription was empty")
             turn.transcript = transcript[:10000]
@@ -194,10 +199,18 @@ async def process_turn(app, turn_id: str) -> None:
             return
         db.commit()
         turn = db.get(m.VoiceTurn, turn_id)
+        vocabulary = (read_vocabulary_version(db, turn.patient_id, turn.vocabulary_version)
+                      if turn.vocabulary_version is not None else read_vocabulary(db, turn.patient_id))
+        if turn.vocabulary_version is None:
+            turn.vocabulary_version = vocabulary.version
+            db.commit()
         context = _context(db, device, turn.context_id)
         # A purpose is advisory context for interpreting the spoken audio. The
         # explicit conversation context remains authoritative for corrections.
         context["capture_intent"] = turn.capture_intent
+        context["reviewed_vocabulary"] = {"version": vocabulary.version, "terms": [
+            {"canonical": term.canonical, "aliases": term.aliases, "category": term.category}
+            for term in vocabulary.terms]}
         db.commit()
         raw = await provider.interpret_turn(turn.transcript, context)
         require_active_device()
@@ -303,6 +316,7 @@ async def process_turn(app, turn_id: str) -> None:
             "audio_paths": audio_paths,
             "record_type": record_type,
             "record_id": record_id,
+            "vocabulary": {"version": vocabulary.version, "asr_applied": False},
         }
         turn.status = status
         turn.result = payload

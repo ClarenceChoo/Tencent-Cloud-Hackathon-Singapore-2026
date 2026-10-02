@@ -48,6 +48,17 @@ class QueryRequest(BaseModel):
         return self
 
 
+class VocabularyTermInput(BaseModel):
+    canonical: str
+    aliases: List[str] = Field(default_factory=list)
+    category: Literal["medicine", "person", "other"]
+
+
+class VocabularyUpdate(BaseModel):
+    expected_version: int = Field(ge=0)
+    terms: List[VocabularyTermInput] = Field(max_length=100)
+
+
 class Medicine(BaseModel):
     id: str = Field(min_length=1, max_length=100)
     name: str = Field(min_length=1, max_length=200)

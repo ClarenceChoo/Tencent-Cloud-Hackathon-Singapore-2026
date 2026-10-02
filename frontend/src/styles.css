@@ -175,6 +175,19 @@ td .status { font-size:12px}
 .permission-row>div { display:flex;flex-direction:column;gap:4px}
 .permission-row b { font-size:13px}
 .permission-row span { font-size:12px;color:var(--muted)}
+.vocabulary-card { margin-top:16px; }
+.vocabulary-suggestions { margin:18px 0; }
+.vocabulary-suggestion-list,.vocabulary-actions { display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px; }
+.vocabulary-terms { display:grid;gap:14px;margin:18px 0; }
+.vocabulary-term { min-width:0;border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:12px; }
+.vocabulary-term legend { font-weight:700;padding:0 5px; }
+.vocabulary-term label,.vocabulary-alias label { display:grid;gap:5px;min-width:0; }
+.vocabulary-term input,.vocabulary-term select { width:100%;min-height:44px;border:1px solid #b9cdd0;border-radius:8px;padding:8px;background:#fff;color:#1b2944;font:inherit; }
+.vocabulary-alias { display:flex;align-items:end;gap:8px;flex-wrap:wrap; }
+.vocabulary-alias label { flex:1; }
+.vocabulary-conflict { margin-top:14px;padding:14px;border:2px solid #ad714d;border-radius:10px;overflow-wrap:anywhere; }
+.vocabulary-conflict ul { padding-left:20px; }
+@media(max-width:700px) { .vocabulary-alias label { flex-basis:100%; } }
 .page-footer { display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;border-top:1px solid var(--line);padding-top:14px;margin-top:25px;color:var(--muted);font-size:12px}
 .feedback { position:relative;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:9px;margin:-9px 0 16px;font-size:13px}
 .feedback button { border:0;background:transparent;color:inherit;display:grid;place-items:center}

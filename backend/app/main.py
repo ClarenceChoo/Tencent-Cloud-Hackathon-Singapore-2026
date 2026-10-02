@@ -41,7 +41,9 @@ from .schemas import (
     SummaryCreate,
     SummaryShareCreate,
     SummaryUpdate,
+    VocabularyUpdate,
 )
+from .vocabulary_service import VocabularyTerm, read_vocabulary, update_vocabulary, vocabulary_suggestions
 from .security import (
     authenticate_device_header,
     authenticate_device_websocket,
@@ -296,7 +298,8 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
     async def web_no_store(request: Request, call_next):
         response = await call_next(request)
         if (request.url.path.startswith("/v1/web/") or
-                "/queries" in request.url.path or "/query-sources/" in request.url.path):
+                "/queries" in request.url.path or "/query-sources/" in request.url.path or
+                "/vocabulary" in request.url.path):
             response.headers["Cache-Control"] = "private, no-store"
         return response
 
@@ -341,6 +344,23 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         if any(scope in scopes for scope in ('*', 'manage:devices', 'read:devices', 'read:dashboard')):
             result['device_setup'] = service_readiness(request.app)
         return result
+
+    @app.get("/v1/app/patients/{patient_id}/vocabulary")
+    def vocabulary_get(patient_id: str, request: Request, db: Session = Depends(get_db)):
+        _patient_access(request, db, patient_id, "manage:profile")
+        return read_vocabulary(db, patient_id)
+
+    @app.get("/v1/app/patients/{patient_id}/vocabulary/suggestions")
+    def vocabulary_suggestions_get(patient_id: str, request: Request, db: Session = Depends(get_db)):
+        _patient_access(request, db, patient_id, "manage:profile")
+        return {"suggestions": vocabulary_suggestions(db, patient_id)}
+
+    @app.put("/v1/app/patients/{patient_id}/vocabulary")
+    def vocabulary_put(patient_id: str, data: VocabularyUpdate, request: Request, db: Session = Depends(get_db)):
+        user, browser_session, _, _ = _patient_access(request, db, patient_id, "manage:profile", serialize=True)
+        require_csrf(request, browser_session)
+        terms = [VocabularyTerm(**item.model_dump()) for item in data.terms]
+        return update_vocabulary(db, patient_id, user.id, data.expected_version, terms)
 
     @app.post("/v1/app/patients/{patient_id}/queries")
     def care_query(patient_id: str, data: QueryRequest, request: Request,

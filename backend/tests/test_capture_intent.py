@@ -29,7 +29,7 @@ def speech(monkeypatch):
     contexts = []
 
     class Speech:
-        async def transcribe_audio(self, audio):
+        async def transcribe_audio(self, audio, *, vocabulary=None):
             return "I want to talk about the weather"
 
         async def interpret_turn(self, transcript, context):

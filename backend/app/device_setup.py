@@ -1,6 +1,6 @@
 """Pairing diagnostics contain configuration/transport facts, never credentials."""
 from datetime import timedelta
-from .providers import get_provider, TencentProvider, FixtureProvider
+from .providers import get_provider, TencentProvider, FixtureProvider, unsupported_vocabulary_capability
 from .security import aware, iso, utcnow
 
 PROTOCOL = {
@@ -14,8 +14,10 @@ PROTOCOL = {
 
 def service_readiness(app) -> dict:
     voice = 'unconfigured'
+    vocabulary_capability = unsupported_vocabulary_capability()
     try:
         provider = get_provider(fixture_transcripts=app.state.fixture_transcripts)
+        vocabulary_capability = provider.capabilities()
         if isinstance(provider, TencentProvider):
             voice = 'configured'
         elif isinstance(provider, FixtureProvider):
@@ -27,6 +29,7 @@ def service_readiness(app) -> dict:
         'voice_service': voice,
         'live_voice_verified': False,
         'scheduler_enabled': app.state.settings.scheduler_enabled,
+        'speech_vocabulary': vocabulary_capability,
         'protocol': PROTOCOL,
     }
 

@@ -55,7 +55,7 @@ def phone(env, monkeypatch):
     assert approve(client, ids, created.json()['code']).status_code == 200
 
     class FixtureSpeech:
-        async def transcribe_audio(self, wav):
+        async def transcribe_audio(self, wav, *, vocabulary=None):
             validate_wav(wav)
             return 'My knee hurt after walking'
         async def interpret_turn(self, transcript, context):
@@ -145,7 +145,7 @@ def test_correction_invalidates_readback_and_phone_scope_is_enforced(phone, m4a)
 def test_revocation_during_provider_work_prevents_new_care_record(phone, m4a, monkeypatch):
     client, app, ids, headers = phone
     class RevokingProvider:
-        async def transcribe_audio(self, body):
+        async def transcribe_audio(self, body, *, vocabulary=None):
             return 'A note that must not be committed after revocation'
         async def interpret_turn(self, transcript, context):
             with app.state.db.SessionLocal() as db:

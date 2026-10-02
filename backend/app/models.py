@@ -39,6 +39,24 @@ class Patient(Base):
     calling_route: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
 
 
+class CareVocabulary(Base):
+    __tablename__ = "care_vocabularies"
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), primary_key=True)
+    version: Mapped[int] = mapped_column(Integer)
+    terms: Mapped[list] = mapped_column(JSON)
+    reviewed_by_user_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    reviewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class CareVocabularyAudit(Base):
+    __tablename__ = "care_vocabulary_audits"
+    patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), primary_key=True)
+    version: Mapped[int] = mapped_column(Integer, primary_key=True)
+    terms: Mapped[list] = mapped_column(JSON)
+    reviewed_by_user_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    reviewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
 class AccessGrant(Base):
     __tablename__ = "access_grants"
     __table_args__ = (UniqueConstraint("user_id", "patient_id", name="uq_user_patient_grant"),)
@@ -153,6 +171,7 @@ class VoiceTurn(Base):
     content_sha256: Mapped[str] = mapped_column(String(64))
     context_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
     capture_intent: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    vocabulary_version: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     status: Mapped[str] = mapped_column(String(40), default="accepted")
     transcript: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

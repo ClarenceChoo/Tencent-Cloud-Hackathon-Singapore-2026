@@ -18,6 +18,9 @@ export type CareQueryResponse = {
   items: CareQueryItem[]; truncated: boolean;
 };
 export type Row = Record<string, unknown> & { id?: string };
+export type VocabularyTerm = { canonical: string; aliases: string[]; category: 'medicine' | 'person' | 'other' };
+export type VocabularyView = { version: number; terms: VocabularyTerm[]; reviewed_by_user_id: string | null; reviewed_at: string | null };
+export type VocabularySuggestion = VocabularyTerm;
 export type DeviceSetupStatus = {
   service_address: string | null;
   voice_service: 'unconfigured' | 'configured' | 'simulated' | 'invalid_configuration';
@@ -74,6 +77,10 @@ export const api = {
   session: () => request<Session>('/auth/session'),
   logout: () => request<void>('/auth/logout', json('POST')),
   dashboard: (patientId: string) => request<Dashboard>(`/app/patients/${encodeURIComponent(patientId)}/dashboard`),
+  vocabulary: (patientId: string) => request<VocabularyView>(`/app/patients/${encodeURIComponent(patientId)}/vocabulary`, { cache: 'no-store' }),
+  vocabularySuggestions: (patientId: string) => request<{ suggestions: VocabularySuggestion[] }>(`/app/patients/${encodeURIComponent(patientId)}/vocabulary/suggestions`, { cache: 'no-store' }),
+  updateVocabulary: (patientId: string, expectedVersion: number, terms: VocabularyTerm[]) =>
+    request<VocabularyView>(`/app/patients/${encodeURIComponent(patientId)}/vocabulary`, json('PUT', { expected_version: expectedVersion, terms })),
   careQuery: (patientId: string, kind: CareQueryKind, localDate?: string, signal?: AbortSignal) =>
     request<CareQueryResponse>(`/app/patients/${encodeURIComponent(patientId)}/queries`,
       { ...json('POST', { kind, ...(kind === 'medication_reports' ? { local_date: localDate } : {}) }), signal, cache: 'no-store' }),

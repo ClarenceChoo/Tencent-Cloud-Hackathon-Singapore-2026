@@ -28,7 +28,7 @@ def journey(env, monkeypatch, m4a):
         interpretation = {"intent": "chat", "spoken_text": "Hello Pat."}
         context = None
 
-        async def transcribe_audio(self, audio):
+        async def transcribe_audio(self, audio, *, vocabulary=None):
             validate_wav(audio)
             return self.transcript
 
@@ -100,6 +100,62 @@ def assert_phone_source(row, turn):
     assert source["type"] == "phone" and source["turn_id"] == turn
     assert source["device_id"] and source["proposal_id"] and source["confirmed_at"]
     assert "credential" not in str(source) and "transcript" not in str(source)
+
+
+def test_typed_replacement_requires_fresh_confirmation_and_rejects_old_id(journey):
+    client, app, ids, headers, voice = journey
+    original, _ = voice.propose("measurement", {
+        "measurement_type": "blood_pressure", "systolic": 120, "diastolic": 80,
+        "unit": "mmHg", "source_description": "Fictional home cuff",
+        "reporting_actor": "patient", "timezone": "Asia/Singapore", "occurrence_text": "this morning",
+    })
+    corrected = {**original["payload"], "systolic": 126, "occurrence_text": "after breakfast"}
+    response = client.post(f"/v1/phone/proposals/{original['id']}/revise", headers=headers,
+                           json={"context_id": original["context_id"], "payload": corrected})
+    assert response.status_code == 201, response.text
+    replacement = response.json()
+    assert replacement["id"] != original["id"] and replacement["context_id"] != original["context_id"]
+    assert "126" in replacement["readback"] and "after breakfast" in replacement["readback"]
+    assert voice.home()["measurements"] == []
+    assert client.post(f"/v1/phone/proposals/{original['id']}/confirm", headers=headers,
+                       json={"context_id": original["context_id"], "confirmed": True}).status_code == 409
+    assert client.post(f"/v1/phone/proposals/{original['id']}/revise", headers=headers,
+                       json={"context_id": original["context_id"], "payload": corrected}).status_code == 409
+    confirmed = client.post(f"/v1/phone/proposals/{replacement['id']}/confirm", headers=headers,
+                            json={"context_id": replacement["context_id"], "confirmed": True})
+    assert confirmed.status_code == 200, confirmed.text
+    assert voice.home()["measurements"][0]["systolic"] == 126
+    assert client.post(f"/v1/phone/proposals/{replacement['id']}/confirm", headers=headers,
+                       json={"context_id": replacement["context_id"], "confirmed": True}).status_code == 200
+    assert len(voice.home()["measurements"]) == 1
+
+
+def test_typed_correction_rejects_expired_plan_or_recipient(journey):
+    client, app, ids, headers, voice = journey
+    create_plan(client, ids["patient"], login(client))
+    dose = voice.home()["doses"][0]
+    medicine, _ = voice.propose("medication_report", {"dose_instance_id": dose["id"], "report_state": "reported_uncertain"})
+    create_plan(client, ids["patient"], login(client))
+    stale = client.post(f"/v1/phone/proposals/{medicine['id']}/revise", headers=headers,
+                        json={"context_id": medicine["context_id"], "payload": {**medicine["payload"], "report_state": "reported_not_yet"}})
+    assert stale.status_code == 409
+
+    note, _ = voice.propose("health_note", {"wording": "Fictional concern", "share_with_user_ids": [ids["caregiver"]]})
+    with app.state.db.SessionLocal() as db:
+        grant = db.scalar(select(m.AccessGrant).where(m.AccessGrant.patient_id == ids["patient"], m.AccessGrant.user_id == ids["caregiver"]))
+        grant.revoked_at = utcnow()
+        db.commit()
+    stale = client.post(f"/v1/phone/proposals/{note['id']}/revise", headers=headers,
+                        json={"context_id": note["context_id"], "payload": {**note["payload"], "share_with_user_ids": []}})
+    assert stale.status_code == 409
+
+    support, _ = voice.propose("support_request", {"request_text": "Please help", "recipient_user_id": ids["caregiver_two"]})
+    with app.state.db.SessionLocal() as db:
+        db.get(m.ConfirmationProposal, support["id"]).expires_at = utcnow() - timedelta(seconds=1)
+        db.commit()
+    expired = client.post(f"/v1/phone/proposals/{support['id']}/revise", headers=headers,
+                          json={"context_id": support["context_id"], "payload": support["payload"]})
+    assert expired.status_code == 409
 
 
 def test_spoken_correction_confirmation_chat_and_source_privacy(journey):

@@ -66,3 +66,19 @@ it('bounds a stalled access check and ignores its late success', async () => {
   expect(screen.getByText(/Could not check this shared summary/)).toBeTruthy();
   await act(async () => { complete(response(shared)); }); expect(screen.queryByText(statement)).toBeNull();
 });
+
+it('labels authored questions separately and never renders private actor identifiers', async () => {
+  const app = await setup();
+  const withQuestion = { ...shared, summary: { ...shared.summary, purpose: 'family_handoff',
+    sections: [...shared.summary.sections, { kind: 'authored_questions', title: 'Questions written by a caregiver',
+      items: [{ text: 'Was there an unrecorded fall?', author_display_name: 'Fictional caregiver',
+        authored_at: '2026-10-02T08:30:00Z' }] }],
+    questions: [{ text: 'Was there an unrecorded fall?', author_display_name: 'Fictional caregiver',
+      authored_at: '2026-10-02T08:30:00Z' }] } };
+  app.setNext(async () => response(withQuestion)); await app.poll();
+  expect(screen.getByText('Was there an unrecorded fall?')).toBeTruthy();
+  expect(screen.getByText(/Authored question · Fictional caregiver/)).toBeTruthy();
+  expect(screen.getByText(/Family handoff · reviewed care summary/)).toBeTruthy();
+  expect(document.body.textContent).not.toContain('user_private_id');
+  expect(document.body.textContent).not.toContain('caregiver@example.invalid');
+});

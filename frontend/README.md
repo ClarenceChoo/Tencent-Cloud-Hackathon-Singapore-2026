@@ -23,6 +23,8 @@ VITE_UI_PREVIEW=true npm run build
 
 The app uses the cookie session and CSRF token returned by `/v1/auth/session` or `/v1/auth/login`. Every proposed health change remains uncommitted until the user reviews and confirms it. Summary sharing is a separate action after saving the review.
 
+The companion's [first-use guide](../docs/careloop/First-Use-Guide.md), [recording receipts](../docs/careloop/Recording-Receipts.md), and [capture/correction controls](../docs/careloop/Capture-and-Correction.md) use the same confirmation pipeline. The dashboard's [Attention panel](../docs/careloop/Caregiver-Action-Inbox.md) and [Ask Parse](../docs/careloop/Ask-Parse.md) show permitted source records. [Reviewed names](../docs/careloop/Care-Vocabulary.md) require an explicit versioned save. [Summary purposes and printing](../docs/careloop/Summary-Purposes.md) preserve provenance and require a current review. These controls retain the light Aurora Pearl theme.
+
 ## Vercel preview
 
 Deploy from the **repository root**, because `src/companionApi.ts` imports a type from `mobile/src/contracts.ts`. The root [Vercel configuration](../vercel.mjs) installs only the frontend lockfile, builds `frontend/dist`, and applies the [deployment guide](../deploy/VERCEL.md). With no `BACKEND_URL`, the real frontend remains browsable, while `/v1/*` and `/healthz` return 503 JSON. Login, patient data, pairing and voice require a separately deployed backend.

@@ -54,6 +54,7 @@ export type TurnEvent = {
     context_id?: string;
     audio_paths?: string[];
     record_id?: string;
+    record_type?: string;
   };
 };
 export type TurnStatus = Receipt & {
@@ -63,6 +64,7 @@ export type TurnStatus = Receipt & {
 export type PendingTurn = {
   key: string;
   context: string | null;
+  captureIntent?: 'health_note' | 'medication_report' | 'measurement' | 'support_request' | null;
   turnId?: string;
   createdAt: number;
 };

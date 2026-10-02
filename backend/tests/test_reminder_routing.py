@@ -189,7 +189,7 @@ def test_voice_tts_holds_no_write_lock_and_revocation_prevents_proposal(env, mon
     _, app, ids = env
     phone, _ = setup(env, monkeypatch)
     class RevokingSpeech:
-        async def transcribe_audio(self, wav): return 'My knee hurts'
+        async def transcribe_audio(self, wav, *, vocabulary=None): return 'My knee hurts'
         async def interpret_turn(self, transcript, context):
             return {'intent':'proposal','kind':'health_note','payload':{'wording':'My knee hurts'}}
         async def synthesise_speech(self, text):

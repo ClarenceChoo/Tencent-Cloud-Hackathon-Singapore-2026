@@ -62,6 +62,32 @@ To include device claim/revocation, provision a fresh fictional device with the 
 
 `node tools/browser_latency.cjs` measures 30 confirmed fictional-note updates in the already-open dashboard. It records each confirmation-request-start to visible-entry duration, p50, p95 and maximum under `runtime/dashboard-latency.json`, and fails if the local p95 exceeds two seconds. This conservative local baseline includes request/commit time; it does not verify a real phone, cloud deployment or demo network. The same optional browser environment settings apply.
 
+## Browser care-workflow verification
+
+The combined browser runner covers recording receipts and lost responses, guided first use, caregiver Attention, all four capture purposes and typed corrections, reviewed vocabulary conflicts, source-linked questions, summary purposes and printing, permission changes, and responsive layouts. It uses real Chromium, MediaRecorder, upload decoding and same-origin backend transactions with fictional records. Speech recognition/interpretation are scripted, microphone input is synthetic, and replies are tones.
+
+Build the ordinary frontend first. In separate terminals, use a **new** disposable directory for each run:
+
+```sh
+npm --prefix frontend run build
+backend/.venv/bin/python tools/web_companion_fixture.py --data-dir runtime/web-workflow-check --port 5192
+PARSE_WEB_FIXTURE_DIR=runtime/web-workflow-check node tools/browser_web_companion.cjs
+```
+
+The fixture snapshots the compiled frontend at startup so later builds cannot change a running check. It also creates a second empty care space for patient-switch checks. The runner saves the parent Git revision, tested source and served-build hashes, credential-free checks, fictional screenshots and a multi-page sample PDF. It deliberately revokes caregiver access and browser pairing at the end. Private fixture metadata, databases, cookies and audio stay in ignored `runtime/`; share only inspected, credential-free evidence. Stop the fixture after checking. These observations do not establish live speech accuracy, physical-phone behavior or background alerts.
+
+## Inert public UI preview
+
+Keep the preview build separate from the ordinary production build:
+
+```sh
+VITE_UI_PREVIEW=true npm --prefix frontend run build -- --outDir ../runtime/parse-workflow-preview
+npm --prefix frontend run preview -- --outDir ../runtime/parse-workflow-preview --port 5194 --strictPort
+PARSE_PREVIEW_BUILD_DIR=runtime/parse-workflow-preview PARSE_PREVIEW_ORIGIN=http://127.0.0.1:5194 PARSE_PREVIEW_DIR=runtime/preview-check node tools/browser_workflow_preview.cjs
+```
+
+The preview runner checks landing navigation, fictional care views and source controls, blocked writes, summary controls, the inert companion, narrow layouts and enlarged text. It checks that no `/v1` request, microphone call, print dialog or care-data persistence occurs. The preview is for interface exploration; it supplies no device, account, saved update or token-backed shared record.
+
 ## Native Android sequence checks
 
 `android_native_sequence.py` exercises the installed verification package on the dedicated rooted Android emulator. It requires the existing fictional native TLS fixture and its loopback fault proxy; it refuses other packages, origins and an unexpected APK digest. See [the native build guide](../docs/careloop/Phone-Companion-Native-Build.md#native-android-reply-order-and-expiry) for the recorded setup and evidence.

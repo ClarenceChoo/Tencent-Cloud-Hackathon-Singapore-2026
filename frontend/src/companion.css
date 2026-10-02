@@ -143,6 +143,19 @@
 .companion-facts p { border-color:#cbdcdd; }
 .companion-facts span,.companion-list span,.companion-list>p { color:#4d6370; }
 .companion-change textarea { border-color:#abcbd0; color:#1b2944; }
+.companion-purpose { margin-top:20px; }
+.companion-purpose-options { display:flex;flex-wrap:wrap;gap:9px; }
+.companion-purpose-options button { border:1px solid #abcbd0;border-radius:999px;background:#fff;color:#1b2944;padding:10px 15px;min-height:44px;font:inherit;cursor:pointer; }
+.companion-purpose-options button[aria-pressed="true"] { background:#d9f0eb;border-color:#2c7180;font-weight:700; }
+.companion-purpose-options button:disabled { opacity:.55;cursor:not-allowed; }
+.companion-correction-fields { display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px;margin-top:14px; }
+.companion-correction-fields label,.companion-correction-fields fieldset { display:flex;flex-direction:column;gap:7px;margin:0; }
+.companion-correction-fields input,.companion-correction-fields select,.companion-correction-fields textarea { width:100%;min-height:44px;border:1px solid #abcbd0;border-radius:10px;background:#fff;color:#1b2944;padding:9px 11px;font:inherit; }
+.companion-correction-fields textarea { min-height:100px; }
+.companion-correction-fields fieldset { border:1px solid #abcbd0;border-radius:10px;padding:12px; }
+.companion-correction-fields fieldset label { flex-direction:row;align-items:center; }
+.companion-correction-fields fieldset input { width:auto;min-height:0; }
+.companion-correction-fields .companion-button { justify-self:start; }
 .companion-reply { background:linear-gradient(140deg,#e6f2ef,#e4e9ee); border:1px solid #bfd6d8; }
 .companion-reminder { background:linear-gradient(140deg,#fcf1d5,#f6e7c2); border:1px solid #e5d5ac; }
 .companion-list li { border-color:#dce5e5; }
@@ -150,3 +163,27 @@
 @media(max-width:740px) { .companion-landing,.companion-pair { min-height:0; padding:54px 25px 60px; } .companion-wordmark .brand-logo { width:130px; } }
 @media(max-width:420px) { .companion-wordmark { padding:0; } .companion-wordmark .brand-logo { width:116px; } .companion-landing,.companion-pair { margin-top:14px; padding:45px 23px 54px; } }
 @media(prefers-reduced-motion:reduce) { .companion-button,.companion-record { transition:none; } .companion-record-dot { animation:none; } }
+
+.companion-receipt { position:relative; z-index:1; margin-top:22px; padding:clamp(17px,3vw,25px); border:1px solid #b9d4d5; border-radius:20px; background:#fbfdfb; overflow-wrap:anywhere; }
+.companion-receipt h2 { margin:6px 0 11px; font-size:clamp(25px,3vw,32px); }
+.companion-receipt p { color:#40576a; max-width:70ch; }
+.companion-receipt p + p { margin-top:10px; }
+.companion-receipt .companion-button { margin-top:18px; }
+.companion-receipt-committed { border-color:#a6d4c4; background:#f1faf4; }
+.companion-receipt-failed,.companion-receipt-expired { border-color:#e2c7ab; background:#fffaf2; }
+@media(max-width:420px) { .companion-receipt .companion-button { width:100%; } }
+
+.companion-onboarding{margin:0 0 24px;padding:clamp(20px,4vw,32px);border:1px solid #b9d4d5;border-radius:22px;background:#fbfdfb;box-shadow:0 10px 25px rgba(20,55,76,.06)}
+.companion-onboarding-head{display:flex;align-items:start;justify-content:space-between;gap:18px}
+.companion-onboarding h2{font-size:clamp(28px,4vw,36px);margin:6px 0 12px}
+.companion-onboarding p{max-width:75ch;margin:9px 0;color:#40576a}
+.companion-onboarding-steps{list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:9px;margin:20px 0;padding:0}
+.companion-onboarding-steps li{display:flex;flex-direction:column;gap:5px;padding:12px;border:1px solid #d8e4e3;border-radius:12px;background:#f4f7f5;font-size:15px}
+.companion-onboarding-steps li span{color:#526673}
+.companion-onboarding-steps li.is-done{background:#e7f3ea;border-color:#a9d2b8}
+.companion-onboarding-steps li.is-current{background:#e6f2f2;border-color:#85bbc3}
+.companion-onboarding .companion-button{margin-top:12px}
+.companion-tutorial{margin-top:18px;padding-top:15px;border-top:1px solid #cbdcdd}
+.companion-tutorial summary{cursor:pointer;color:#145d6d;font-weight:700;min-height:44px}
+.companion-reopen-guide{margin-bottom:20px}
+@media(max-width:600px){.companion-onboarding-head{display:block}.companion-onboarding-head .companion-plain{margin-top:4px}}

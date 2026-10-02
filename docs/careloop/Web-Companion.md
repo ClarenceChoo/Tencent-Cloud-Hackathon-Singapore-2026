@@ -6,9 +6,13 @@ Parse's browser companion links an older adult's voice interactions to the exist
 
 Open `/companion` on the same HTTPS service as the dashboard. Choose **Connect this browser**, then ask the owner to approve its one-use code in dashboard Settings. The companion is a separate, patient-scoped installation; its pairing does not sign the user into the administrative dashboard.
 
+The [first-use guide](First-Use-Guide.md) separates approval, current connection, reminder selection, speaker playback, microphone permission and the first confirmed update. Its static example creates no care data. Speaker, microphone and first-update proof stay in the current session and clear on reload or identity changes. A simulated response never verifies live speech, and caregiver visibility must be checked under that recipient's own account.
+
 Tap to record, speak, and tap to send. Parse uses the existing transcription, interpretation and confirmation pipeline. A proposed update is shown with its read-back and recipient before it can be saved. The user can correct or cancel it. A confirmed, shared update appears in the permitted caregiver's existing timeline. Medicines, reported readings, preventive tasks and support/follow-up details come from the same care database.
 
 The microphone is used only after a deliberate tap and stops when the page is left. Short accidental clips are discarded; the recording control has a 19-second ceiling. Voice replies use authenticated, expiring audio. A browser may require the user to tap Play before allowing sound.
+
+The [recording receipt](Recording-Receipts.md) distinguishes sending, uncertain receipt, processing, review and a confirmed save. After a lost response, **Check recording** looks up the original turn without reuploading, saving or playing it. Optional [recording prompts and typed corrections](Capture-and-Correction.md) help review health notes, medicine reports, blood pressure and support requests. Every correction produces a replacement proposal requiring a fresh confirmation.
 
 ## Browser boundaries
 
@@ -43,7 +47,7 @@ PARSE_WEB_FIXTURE_DIR=runtime/web-companion \
   node tools/browser_web_companion.cjs
 ```
 
-The runner uses Playwright and Google Chrome. Install the locked tools dependency with `npm ci --prefix tools`, or set `PLAYWRIGHT_MODULE` to an available Playwright module. Reports and recordings remain under ignored `runtime/`; only reviewed, credential-free evidence belongs in source control. Each run needs a fresh fixture because it ends by revoking the browser.
+The runner uses Playwright and Google Chrome. Install the locked tools dependency with `npm ci --prefix tools`, or set `PLAYWRIGHT_MODULE` to an available Playwright module. The server snapshots the frontend build at startup, keeping the served assets consistent for that run. Reports and recordings remain under ignored `runtime/`; only reviewed, credential-free evidence belongs in source control. Each run needs a fresh fixture because it ends by revoking the browser and caregiver access.
 
 Live use still requires the existing server's speech-provider configuration and a reachable HTTPS address. The supplied local demo never represents its scripted provider as live speech.
 

@@ -116,7 +116,7 @@ def test_browser_turn_uses_shared_proposal_and_scopes_audio(env, webm, monkeypat
     assert approve(client, ids, created.json()["code"]).status_code == 200
 
     class Speech:
-        async def transcribe_audio(self, wav):
+        async def transcribe_audio(self, wav, *, vocabulary=None):
             validate_wav(wav)
             return "My knee hurt after walking"
 
@@ -172,7 +172,7 @@ def test_web_receipt_does_not_wait_for_speech_processing(env, webm, monkeypatch)
     release = threading.Event()
 
     class SlowSpeech:
-        async def transcribe_audio(self, wav):
+        async def transcribe_audio(self, wav, *, vocabulary=None):
             entered.set()
             await asyncio.to_thread(release.wait)
             return "I feel okay"

@@ -54,6 +54,54 @@ def test_populated_legacy_upgrade_backfills_only_unambiguous_route(legacy):
         assert c.execute(text("SELECT COUNT(*) FROM devices WHERE device_type='pendant'")).scalar_one() == 3
 
 
+def test_vocabulary_migration_adds_snapshot_and_preserves_review_audit(legacy):
+    migrate.upgrade(legacy, '0005_capture_intent')
+    assert 'care_vocabularies' not in inspect(legacy).get_table_names()
+    migrate.upgrade(legacy)
+    tables = set(inspect(legacy).get_table_names())
+    assert {'care_vocabularies', 'care_vocabulary_audits'} <= tables
+    assert 'vocabulary_version' in {column['name'] for column in inspect(legacy).get_columns('voice_turns')}
+    with legacy.begin() as c:
+        c.execute(text("INSERT INTO users (id,name,email,role,password_hash,active) VALUES ('reviewer','Reviewer','reviewer@example.invalid','owner','fixture',true)"))
+        c.execute(text("INSERT INTO care_vocabularies (patient_id,version,terms,reviewed_by_user_id,reviewed_at) VALUES ('single',1,'[]','reviewer',CURRENT_TIMESTAMP)"))
+        c.execute(text("INSERT INTO care_vocabulary_audits (patient_id,version,terms,reviewed_by_user_id,reviewed_at) VALUES ('single',1,'[]','reviewer',CURRENT_TIMESTAMP)"))
+    with pytest.raises(RuntimeError, match='destroy review history'):
+        with legacy.begin() as c:
+            command.downgrade(migrate.configuration(c), '0005_capture_intent')
+    with legacy.connect() as c:
+        assert c.execute(text('SELECT COUNT(*) FROM care_vocabulary_audits')).scalar_one() == 1
+
+
+def test_summary_purpose_migration_preserves_legacy_review(legacy):
+    migrate.upgrade(legacy, '0006_care_vocabulary')
+    with legacy.begin() as c:
+        c.execute(text("INSERT INTO users (id,name,email,role,password_hash,active) VALUES ('reviewer','Reviewer','reviewer@example.invalid','owner','fixture',true)"))
+        c.execute(text("INSERT INTO visit_summaries (id,patient_id,start_date,end_date,sections,source_refs,omitted_source_ids,status,created_by_user_id,created_at) VALUES ('summary_legacy','single','2026-09-01','2026-09-30','[]','[]','[]','reviewed','reviewer',CURRENT_TIMESTAMP)"))
+    migrate.upgrade(legacy)
+    with legacy.connect() as c:
+        row = c.execute(text("SELECT purpose,template_version,questions,sections,status FROM visit_summaries WHERE id='summary_legacy'")).one()
+        assert row.purpose == 'doctor_visit'
+        assert row.template_version == 1
+        assert row.questions == '[]' or row.questions == []
+        assert row.sections == '[]' or row.sections == []
+        assert row.status == 'reviewed'
+    with legacy.begin() as c:
+        c.execute(text("UPDATE visit_summaries SET purpose='family_handoff' WHERE id='summary_legacy'"))
+    with pytest.raises(RuntimeError, match='discard reviewed content'):
+        with legacy.begin() as c:
+            command.downgrade(migrate.configuration(c), '0006_care_vocabulary')
+
+
+def test_capture_intent_migration_preserves_older_turns(legacy):
+    migrate.upgrade(legacy, '0004_phone_notifications')
+    with legacy.begin() as c:
+        c.execute(text("INSERT INTO voice_turns (id,device_id,patient_id,idempotency_key,content_sha256,received_at,status) VALUES ('turn_legacy','d1','single','legacy-key','digest',CURRENT_TIMESTAMP,'completed')"))
+    migrate.upgrade(legacy)
+    with legacy.connect() as c:
+        assert 'capture_intent' in {column['name'] for column in inspect(c).get_columns('voice_turns')}
+        assert c.execute(text("SELECT capture_intent FROM voice_turns WHERE id='turn_legacy'")).scalar_one() is None
+
+
 def test_failed_upgrade_rolls_back_schema_data_and_stamp(legacy, monkeypatch):
     original = command.upgrade
     def failed(config, revision):

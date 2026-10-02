@@ -1,0 +1,117 @@
+{
+  "at": "2026-10-02T13:54:21.189Z",
+  "origin": "http://127.0.0.1:5194",
+  "browser": "155.0.8059.26",
+  "scope": "Loopback-only Chromium preview workflow with fictional in-memory samples. No care API, microphone, persistence, or live sharing.",
+  "source_sha256": {
+    "frontend/src/uiPreview.ts": "4a9d428212b252cd12cecd0670064517499583d531dcb8b1f191ed317b962d25",
+    "frontend/src/api.ts": "8293bcd639448db71c73f5233549b1842f4e3e99b0dedbe211ffebd7ada3b33f",
+    "frontend/src/App.tsx": "820ebe753a3914be2276181f5598f0f41d4b0a5d77b2fb84364ffb874bf72872",
+    "frontend/src/AskParse.tsx": "1a3f3bab042fec5533f6da973194b9a79e6106be56cab6465f79cbb9a2606b10",
+    "frontend/src/CareVocabulary.tsx": "050b403fab7c40c66ae1585d815e2a473f1a5b449c679776dae576d91eec06ce",
+    "frontend/src/Companion.tsx": "8ce1d6f3461c59344c24b4c5b33e11ca8502b5af7381fabf5c3c2e3da9db3348",
+    "frontend/src/main.tsx": "788293696e9163e1bb96f652cc626042bf474d30add9ba0af4e8e00979697d8d",
+    "frontend/src/Landing.tsx": "44e9d526b17a0a894be811f2b3e5644ca355ebebed059bb7667dd49e267dce01",
+    "frontend/src/SummaryPrint.tsx": "fe78fdfa2b1ce62a6d4af0a63dd476216e6d7b8fe31fa8b8d5bb70c6bc83f4a0",
+    "frontend/src/styles.css": "0d6adf7af96bbafbeb022499578d42db49aa449d16ad1e0f5438fd1e6c600221",
+    "frontend/src/landing.css": "38ea724c6898f3dec886e7628438f9ee68143ef16e29c0f391e3796e3b9a80d7"
+  },
+  "served_preview_build_sha256": {
+    "runtime/parse-workflow-preview-20261002-final/assets/BrandLogo-DJ035wI3.js": "96c7ce22172ddd48136bce65e380187c1fc54ea5c8471719a58f3ada3c9e1975",
+    "runtime/parse-workflow-preview-20261002-final/assets/Companion-Ct6cdNQg.css": "a0d045e0e2a67cf3272915b04232baf90017ca0c1e3036f9d0c6590ee6971ede",
+    "runtime/parse-workflow-preview-20261002-final/assets/Companion-G2b22QT7.js": "0d88cfbef5e639304a09d54109faed27d607a6d02a282f8450ff1597c829d401",
+    "runtime/parse-workflow-preview-20261002-final/assets/app-CY47mE8Q.js": "9776453b66a971b8e5fa7d9a9a4f79392fe3eed4e4d87ab9941e707c22412ece",
+    "runtime/parse-workflow-preview-20261002-final/assets/app-DJnXTeWp.css": "7970ae7e00330203091c743bce34fa168e81245c785e34e569fe772408fbe67c",
+    "runtime/parse-workflow-preview-20261002-final/assets/landing-5ft9FwLZ.css": "8b8d59041153bf0483828cd57e6957a0e63b8a983d6e5309afa805a98b045d48",
+    "runtime/parse-workflow-preview-20261002-final/assets/landing-CDu3Edv8.js": "821fee5445f6d770724a6f34c4a52e8dc0762efd3f49b397e0edf84fce654857",
+    "runtime/parse-workflow-preview-20261002-final/brand/parse-aurora-logo-light.png": "6514b37ac780f2940f72e301a7e584ef78ba94db54c231aba06d06ff53a85411",
+    "runtime/parse-workflow-preview-20261002-final/brand/parse-aurora-logo.png": "4ceaca1b7c173143e7a0f2fbbd47cf4b24840b67a41960c8d2ddc0e29eb068e6",
+    "runtime/parse-workflow-preview-20261002-final/brand/parse-aurora-mark.png": "6f6906599629637c5eaac546c9674f35370fb64015cf88e4c3932ca1be3e1482",
+    "runtime/parse-workflow-preview-20261002-final/index.html": "0d4df4ea7bd14aa8822352a102b3d19bf8e2fd73fd2bef58eb0fcabcec160089",
+    "runtime/parse-workflow-preview-20261002-final/landing/at-home-detail.webp": "96650c75ac86847fa9fd90c5d4bf3c9461ed4b06c3b6a935a1cbd9528efb0076",
+    "runtime/parse-workflow-preview-20261002-final/landing/at-home-family.webp": "c838f505401e763fc007469d1b78a2ee2ce4c47789e520f940a3428b5a28fee6",
+    "runtime/parse-workflow-preview-20261002-final/landing/at-home-window.webp": "0cab64e8cf895c8df8d376f573783faf3679da690def01b36385f1567473e28a",
+    "runtime/parse-workflow-preview-20261002-final/landing/aurora-pearl-artwork.png": "a4d4469bcfec3f8e40dec469c83c0941149584de9f59e3f10d23bfeb9bee22c6",
+    "runtime/parse-workflow-preview-20261002-final/landing/fonts/OFL-Bricolage-Grotesque.txt": "46ba5f18ee20ea529f21d96c0ef8637a8314c1a5cfb2aa84018bc8157cbeff41",
+    "runtime/parse-workflow-preview-20261002-final/landing/fonts/OFL-DM-Sans.txt": "7ec15e79c59bc14b86436a17e5eb7926b46cbcaeb08e1a7e6c110b415e6eb2a2",
+    "runtime/parse-workflow-preview-20261002-final/landing/fonts/OFL-DM-Serif-Display.txt": "aa49c876a28d8c0b0a3027d6c25b9c607eee8c0fb96165011d42a6ace1408fe1",
+    "runtime/parse-workflow-preview-20261002-final/landing/fonts/OFL-IBM-Plex-Mono.txt": "d741e57d5f865e294df801f96b7b5161a88b211df65887e4358d271c9fc5fb4f",
+    "runtime/parse-workflow-preview-20261002-final/landing/fonts/bricolage-grotesque-latin.woff2": "a79fdb52d4a5c76552452f69202add96e287401fff03d3e8c0e38b4dcb5a99cd",
+    "runtime/parse-workflow-preview-20261002-final/landing/fonts/dm-sans-latin-variable.woff2": "9fea608a947e67020c33cad9a6fe3d60c54119dfb8cff87768a8117a15ed7543",
+    "runtime/parse-workflow-preview-20261002-final/landing/fonts/dm-serif-display-latin-regular.woff2": "fdf61e20fd2c0108e0ea28da4daca0035205b4b7fc031a3974b865b704de160a",
+    "runtime/parse-workflow-preview-20261002-final/landing/fonts/ibm-plex-mono-latin-regular.woff2": "08949f728dc52d528e69b1667d15c89a5686a4ee9a296ff90983985f99c380f7",
+    "runtime/parse-workflow-preview-20261002-final/landing/index.html": "6d34f3df09f38a54e1f7d2a39d3a32d5d286c114106d3b1ef074b6743327fb22",
+    "runtime/parse-workflow-preview-20261002-final/landing/parse-family.webp": "06ab968958e6fb0cb202b5f903965fa496cd7980da20412cd2068411780b09df",
+    "runtime/parse-workflow-preview-20261002-final/landing/parse-mark.svg": "93307ec888d46f44cf5a73bc1430c44b4de392a894713f4542eb101600fb6cb1"
+  },
+  "checks": [
+    {
+      "name": "Landing Open Parse navigation opens the fictional dashboard",
+      "passed": true
+    },
+    {
+      "name": "Ask Parse answers from a fictional sample and its source control exposes only fictional source details",
+      "passed": true
+    },
+    {
+      "name": "Settings blocks vocabulary and profile writes",
+      "passed": true
+    },
+    {
+      "name": "Summary purpose and authored questions are editable; deliberate preparation shows the preview-only message and exposes no print/share action",
+      "passed": true
+    },
+    {
+      "name": "A shared-summary-shaped URL stays inside the sample dashboard and reveals no token-backed content",
+      "passed": true
+    },
+    {
+      "name": "Companion route presents the inert preview notice",
+      "passed": true
+    },
+    {
+      "name": "Companion preview keeps its controls visible at 200% rendered text",
+      "passed": true
+    },
+    {
+      "name": "No /v1 requests, microphone use, printing, or care data in browser storage",
+      "passed": true
+    }
+  ],
+  "screenshots": [
+    "dashboard-320.png",
+    "dashboard-390.png",
+    "dashboard-1440.png",
+    "ask-parse-320.png",
+    "ask-parse-390.png",
+    "ask-parse-1440.png",
+    "ask-source-320.png",
+    "ask-source-390.png",
+    "ask-source-1440.png",
+    "settings-vocabulary-320.png",
+    "settings-vocabulary-390.png",
+    "settings-vocabulary-1440.png",
+    "visit-summary-320.png",
+    "visit-summary-390.png",
+    "visit-summary-1440.png",
+    "shared-summary-sample-320.png",
+    "shared-summary-sample-390.png",
+    "shared-summary-sample-1440.png",
+    "companion-preview-320.png",
+    "companion-preview-390.png",
+    "companion-preview-1440.png",
+    "companion-preview-text-200-320.png",
+    "companion-preview-text-200-390.png",
+    "companion-preview-text-200-1440.png"
+  ],
+  "pageErrors": [],
+  "v1Requests": [],
+  "getUserMediaCalls": 0,
+  "printCalls": 0,
+  "largeTextOverflows": [],
+  "storageKeys": {
+    "localStorage": [],
+    "sessionStorage": []
+  },
+  "passed": true
+}

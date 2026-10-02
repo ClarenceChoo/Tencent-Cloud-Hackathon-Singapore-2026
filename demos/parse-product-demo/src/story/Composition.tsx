@@ -1,0 +1,15 @@
+import {TransitionSeries,linearTiming} from '@remotion/transitions';
+import {fade} from '@remotion/transitions/fade';
+import {StoryHero} from './Hero';
+import {PendantScene} from './Pendant';
+import {SpeechScene} from './Speech';
+import {JourneyScene} from './Journey';
+import {ConfirmationScene} from './Confirmation';
+import {PhoneScene} from './Phone';
+import {CaregiverScene} from './Caregiver';
+import {ArrivalScene,SupportScene,PlanScene,SummaryScene} from './Dashboard';
+import {RoutinesScene} from './Routines';
+import {StoryEnding} from './Ending';
+export const storyScenes=[{id:'StoryIntro',component:StoryHero,frames:150},{id:'DailyPendant',component:PendantScene,frames:210},{id:'Speak',component:SpeechScene,frames:240},{id:'Connection',component:JourneyScene,frames:270},{id:'ReadBack',component:ConfirmationScene,frames:270},{id:'OnThePhone',component:PhoneScene,frames:300},{id:'CareCircle',component:CaregiverScene,frames:150},{id:'NoteArrives',component:ArrivalScene,frames:330},{id:'HumanFollowUp',component:SupportScene,frames:420},{id:'SpokenReminder',component:RoutinesScene,frames:210},{id:'MedicationPlan',component:PlanScene,frames:150},{id:'NextVisit',component:SummaryScene,frames:360},{id:'StoryEnd',component:StoryEnding,frames:180}];
+export const storyDuration=storyScenes.reduce((n,s)=>n+s.frames,0)-(storyScenes.length-1)*15;
+export const CompanionStory=()=> <TransitionSeries>{storyScenes.flatMap((s,i)=>[...(i?[<TransitionSeries.Transition key={'fade'+i} presentation={fade()} timing={linearTiming({durationInFrames:15})}/ >]:[]),<TransitionSeries.Sequence durationInFrames={s.frames} key={s.id}><s.component/></TransitionSeries.Sequence>])}</TransitionSeries>;

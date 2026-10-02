@@ -1,0 +1,3 @@
+import {useCurrentFrame} from 'remotion';
+import {Base,Photo,Foot,Heading,rise} from './Shared';
+export const StoryEnding=()=>{const f=useCurrentFrame();return <Base><Photo src="mei-pendant.png" dark/><div style={{position:'absolute',left:100,top:200,width:820,color:'#fff9ef',...rise(f)}}><div style={{fontFamily:'Georgia',fontSize:146,letterSpacing:-8,marginBottom:40}}>Parse</div><Heading size={74}>{'Speak naturally.\nKeep care connected.'}</Heading><div style={{fontSize:27,marginTop:48,color:'#e7d3bf'}}>Her voice. Her daily routine. Her care circle.</div><div style={{fontSize:22,marginTop:50,lineHeight:1.6,color:'#ded2c7'}}>Working software + a simulated wearable concept.<br/>Physical hardware integration is the next step.</div></div><Foot light/></Base>};

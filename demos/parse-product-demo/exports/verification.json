@@ -1,0 +1,61 @@
+{
+  "verifiedOn": "2026-09-27",
+  "videos": [
+    {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "codec_type": "video",
+          "width": 1920,
+          "height": 1080,
+          "r_frame_rate": "30/1",
+          "nb_frames": "3060",
+          "side_data_list": [
+            {}
+          ]
+        }
+      ],
+      "format": {
+        "duration": "102.000000",
+        "size": "20948872"
+      },
+      "file": "exports/parse-companion-story.mp4",
+      "sha256": "46593e3f1cb1fa54af499343ef76435d8db089e71346e7e98b04021d010c3045",
+      "fullDecode": "passed"
+    },
+    {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "codec_type": "video",
+          "width": 1920,
+          "height": 1080,
+          "r_frame_rate": "30/1",
+          "nb_frames": "2814",
+          "side_data_list": [
+            {}
+          ]
+        }
+      ],
+      "format": {
+        "duration": "93.800000",
+        "size": "6733369"
+      },
+      "file": "exports/parse-product-demo.mp4",
+      "sha256": "a7b70dde33bd194296a3ac3fc5e9ed847457ac1b72718f512a639c1eb1e1badb",
+      "fullDecode": "passed"
+    }
+  ],
+  "sourceChecks": {
+    "cleanOfflineInstall": "passed (npm ci --offline --ignore-scripts)",
+    "lintAndTypeScript": "passed (npm run lint)",
+    "bundle": "passed (npm run build)",
+    "recordingScriptSyntax": "passed (Python AST and node --check)",
+    "visualReview": "published contact sheets reviewed",
+    "recordingWorkflowsRerun": false
+  }
+}

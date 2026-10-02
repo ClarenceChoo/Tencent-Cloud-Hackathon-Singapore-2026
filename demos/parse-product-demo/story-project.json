@@ -1,0 +1,106 @@
+{
+  "name": "Parse \u2014 From her voice to her care circle",
+  "composition": "ParseCompanionStory",
+  "phase": "complete",
+  "durationSeconds": 102.0,
+  "fps": 30,
+  "width": 1920,
+  "height": 1080,
+  "audio": "Silent, captions and on-screen dialogue only",
+  "scenes": [
+    {
+      "title": "Introduction",
+      "startSeconds": 0,
+      "durationSeconds": 5
+    },
+    {
+      "title": "The daily cardholder",
+      "startSeconds": 4.5,
+      "durationSeconds": 7
+    },
+    {
+      "title": "Press and speak",
+      "startSeconds": 11.0,
+      "durationSeconds": 8
+    },
+    {
+      "title": "The connection",
+      "startSeconds": 18.5,
+      "durationSeconds": 9
+    },
+    {
+      "title": "Confirm and share",
+      "startSeconds": 27.0,
+      "durationSeconds": 9
+    },
+    {
+      "title": "Mei\u2019s phone",
+      "startSeconds": 35.5,
+      "durationSeconds": 10
+    },
+    {
+      "title": "The caregiver",
+      "startSeconds": 45.0,
+      "durationSeconds": 5
+    },
+    {
+      "title": "The shared note arrives",
+      "startSeconds": 49.5,
+      "durationSeconds": 11
+    },
+    {
+      "title": "Jamie follows up",
+      "startSeconds": 60.0,
+      "durationSeconds": 14
+    },
+    {
+      "title": "Spoken reminder concept",
+      "startSeconds": 73.5,
+      "durationSeconds": 7
+    },
+    {
+      "title": "Medication plan",
+      "startSeconds": 80.0,
+      "durationSeconds": 5
+    },
+    {
+      "title": "Visit summary",
+      "startSeconds": 84.5,
+      "durationSeconds": 12
+    },
+    {
+      "title": "Close",
+      "startSeconds": 96.0,
+      "durationSeconds": 6
+    }
+  ],
+  "scope": {
+    "people": "Fictional; AI-generated photographic stills animated in Remotion",
+    "hardware": "Concept render; no physical device used",
+    "connection": "Simulated waveform uploads and registered transcripts through the real device API",
+    "software": "Actual React/FastAPI pages with automatic refresh and separate owner/caregiver accounts",
+    "confirmation": "Real proposal and explicit confirmation processing",
+    "sharing": "Real recipient permissions; caregiver sees the shared note",
+    "voice": "No live speech recognition or voice synthesis used",
+    "phoneRelay": "Shown as the proposed architecture; not a tested Bluetooth relay"
+  },
+  "verification": {
+    "typescript": "passed",
+    "sceneFrames": "Reviewed pendant, dialogue, connection, confirmation, mobile, caregiver, support, reminders, summary and ending",
+    "deviceFlow": "Authenticated fixture upload \u2192 proposal \u2192 explicit confirmation \u2192 committed note",
+    "dashboardFlow": "Owner and caregiver pages updated without reload",
+    "productionRepo": "Unchanged",
+    "finalExport": {
+      "codec": "h264",
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "frames": 3060,
+      "durationSeconds": 102,
+      "audioStreams": 0,
+      "decode": "passed",
+      "finalContactSheet": "reviewed"
+    }
+  },
+  "output": "out/parse-companion-story.mp4"
+}

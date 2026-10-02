@@ -1,0 +1,107 @@
+1
+00:00:00,000 --> 00:00:04,500
+Parse. A small companion. A shared care record.
+
+2
+00:00:04,500 --> 00:00:07,500
+Her daily card. Her care companion.
+
+3
+00:00:07,500 --> 00:00:11,000
+A 3D-printed cardholder. One button to speak; the phone connects to Parse.
+
+4
+00:00:11,300 --> 00:00:14,000
+Mei: “My knee hurts after my morning walk.”
+
+5
+00:00:14,000 --> 00:00:18,500
+“Please share this with Jamie.”
+
+6
+00:00:18,500 --> 00:00:23,300
+Pendant → Phone → Parse → Care circle
+
+7
+00:00:23,300 --> 00:00:27,000
+First, Parse checks the note and sharing choice with Mei.
+
+8
+00:00:27,500 --> 00:00:31,300
+Parse reads back the note and the sharing choice.
+
+9
+00:00:31,300 --> 00:00:33,600
+Mei: “Yes, save that.”
+
+10
+00:00:33,600 --> 00:00:35,500
+Confirmed. Ready to sync.
+
+11
+00:00:35,500 --> 00:00:39,800
+After she confirms, the care note appears in Mei’s timeline.
+
+12
+00:00:39,800 --> 00:00:45,000
+No typing. No manual page refresh.
+
+13
+00:00:45,000 --> 00:00:49,500
+Jamie sees the updates Mei chooses to share.
+
+14
+00:00:49,500 --> 00:00:53,950
+Jamie’s caregiver account is already open.
+
+15
+00:00:53,950 --> 00:00:57,162
+The shared note arrives without refreshing the page.
+
+16
+00:00:57,162 --> 00:01:00,000
+Her own words and when it happened stay together.
+
+17
+00:01:00,000 --> 00:01:04,954
+Mei can ask Jamie for practical help.
+
+18
+00:01:04,954 --> 00:01:11,378
+Jamie acknowledges the request. Mei knows it has been seen.
+
+19
+00:01:11,378 --> 00:01:13,500
+After the call, Jamie records what they agreed.
+
+20
+00:01:13,500 --> 00:01:17,500
+Parse: “Mei, it’s time for your evening medication.”
+
+21
+00:01:17,500 --> 00:01:20,000
+A reminder remains separate from a confirmed dose.
+
+22
+00:01:20,000 --> 00:01:24,500
+Checked medication instructions and schedules stay together.
+
+23
+00:01:24,500 --> 00:01:27,870
+Bring the relevant care history to the next appointment.
+
+24
+00:01:27,870 --> 00:01:32,694
+Review the draft. Every item keeps its source.
+
+25
+00:01:32,694 --> 00:01:36,000
+Share a read-only copy after your review.
+
+26
+00:01:36,000 --> 00:01:39,000
+Parse. Speak naturally. Keep care connected.
+
+27
+00:01:39,000 --> 00:01:41,500
+Working software + a simulated wearable concept. Physical hardware integration is the next step.

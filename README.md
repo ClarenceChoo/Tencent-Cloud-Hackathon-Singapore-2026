@@ -8,6 +8,10 @@ The [first-use guide](docs/careloop/First-Use-Guide.md) covers the owner, patien
 
 For the recorded walkthrough, see the [60-second browser companion demo](docs/careloop/demo/parse-web-companion-demo.mp4). It uses fictional data and simulated speech.
 
+## Product films
+
+The [Parse product films](demos/parse-product-demo/README.md) include [From her voice to her care circle](demos/parse-product-demo/exports/parse-companion-story.mp4), a 102-second concept story, and the [software walkthrough](demos/parse-product-demo/exports/parse-product-demo.mp4), a 93.8-second dashboard tour. Both are captioned, with editable source in the demo folder. Recorded on 23 September 2026, they use the earlier terracotta design and fictional data; the pendant and speech connection are simulated.
+
 ## Upload the ESP32-S3 firmware
 
 Start with the **[ESP32-S3 setup and upload guide](firmware/README.md)**. It walks through installing ESP-IDF v5.4.2, configuring the actual board, finding its USB port, building and uploading the firmware, provisioning the device, connecting Wi-Fi, and checking the first recording. It includes macOS, Linux and Windows instructions, troubleshooting, and a map of the firmware source files.

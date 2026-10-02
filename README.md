@@ -6,7 +6,25 @@ The browser companion runs at `/companion` beside the Parse dashboard. It needs 
 
 For the recorded walkthrough, see the [60-second browser companion demo](docs/careloop/demo/parse-web-companion-demo.mp4). It uses fictional data and simulated speech.
 
-## Requirements
+## Upload the ESP32-S3 firmware
+
+Start with the **[ESP32-S3 setup and upload guide](firmware/README.md)**. It walks through installing ESP-IDF v5.4.2, configuring the actual board, finding its USB port, building and uploading the firmware, provisioning the device, connecting Wi-Fi, and checking the first recording. It includes macOS, Linux and Windows instructions, troubleshooting, and a map of the firmware source files.
+
+The board specified for this setup is a **44-pin Type-C development board with an ESP32-S3-WROOM-1 N16R8 module: 16 MB flash and 8 MB Octal PSRAM**. The firmware guide includes its memory settings and a first-upload check using the development board alone. Confirm the seller's USB-port arrangement and pin labels before adding peripherals; Espressif documents the module's memory in its [WROOM-1 datasheet](https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-1_wroom-1u_datasheet_en.pdf).
+
+The ESP32-S3 is the cardholder's voice interface. Hold its talk button to record a short message, then release it to send the complete recording over Wi-Fi to the backend. The backend handles speech recognition and the care conversation; the cardholder plays the returned speech. It also plays backend-issued medication reminders and nonclinical check-ins. Saving a confirmed care update and sharing it with a permitted caregiver happen through the backend's confirmation and access rules.
+
+To get a working physical unit, follow this sequence:
+
+1. Confirm the N16R8 module marking and the actual board's pin labels. For voice use, add the microphone, amplifier/speaker and a separate talk button, and record their wiring. The repository defaults leave these hardware pins unassigned; the onboard BOOT button is used for uploading firmware.
+2. Install ESP-IDF v5.4.2 and use a project directory whose path has no spaces, such as `~/esp/parse`. In `firmware/`, select `esp32s3`, configure 16 MB flash and Octal PSRAM with `idf.py menuconfig`, and build. The guide explains how to check the bare board first and then enable the wired audio peripherals.
+3. Connect a USB data cable, identify the serial port, and flash the firmware using the upload guide's commands. A successful upload establishes that the image was written; recording and playback need their own checks.
+4. Use the [hardware pairing runbook](docs/careloop/Hardware-Pairing-Runbook.md) to prepare and flash this unit's private device credential, pair it to the owner's care space, and connect it to 2.4 GHz Wi-Fi and the deployed HTTPS backend.
+5. Follow the upload guide's first-use checks: verify the physical unit is online, record a fictional note, hear the response, confirm the note, and check the permitted caregiver's dashboard.
+
+The repository records a successful source build, but physical cardholder testing is still outstanding. The [firmware guide](firmware/README.md) explains the implemented behavior and remaining board checks in detail.
+
+## Browser and dashboard requirements
 
 - Python 3.11 or newer, with `uv`
 - Node.js 22 or newer, with `npm`
@@ -107,6 +125,7 @@ See the [browser evidence JSON](docs/careloop/evidence/web-companion-ui-2026-09-
 - [Web companion guide](docs/careloop/Web-Companion.md): product behavior, browser limits, demo and test evidence.
 - [Deployment instructions](deploy/README.md): HTTPS, provider configuration and explicit production provisioning.
 - [Backend setup](backend/README.md): local backend and administrator commands.
+- [ESP32-S3 setup and upload guide](firmware/README.md): detailed hardware onboarding, firmware behavior, USB flashing and troubleshooting.
 - [Implemented API contract](backend/API.md): dashboard, device and browser API behavior.
 - [Verification status](docs/careloop/VERIFICATION.md): tested behavior and remaining validation.
 

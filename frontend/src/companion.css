@@ -150,3 +150,12 @@
 @media(max-width:740px) { .companion-landing,.companion-pair { min-height:0; padding:54px 25px 60px; } .companion-wordmark .brand-logo { width:130px; } }
 @media(max-width:420px) { .companion-wordmark { padding:0; } .companion-wordmark .brand-logo { width:116px; } .companion-landing,.companion-pair { margin-top:14px; padding:45px 23px 54px; } }
 @media(prefers-reduced-motion:reduce) { .companion-button,.companion-record { transition:none; } .companion-record-dot { animation:none; } }
+
+.companion-receipt { position:relative; z-index:1; margin-top:22px; padding:clamp(17px,3vw,25px); border:1px solid #b9d4d5; border-radius:20px; background:#fbfdfb; overflow-wrap:anywhere; }
+.companion-receipt h2 { margin:6px 0 11px; font-size:clamp(25px,3vw,32px); }
+.companion-receipt p { color:#40576a; max-width:70ch; }
+.companion-receipt p + p { margin-top:10px; }
+.companion-receipt .companion-button { margin-top:18px; }
+.companion-receipt-committed { border-color:#a6d4c4; background:#f1faf4; }
+.companion-receipt-failed,.companion-receipt-expired { border-color:#e2c7ab; background:#fffaf2; }
+@media(max-width:420px) { .companion-receipt .companion-button { width:100%; } }

@@ -54,6 +54,7 @@ export type TurnEvent = {
     context_id?: string;
     audio_paths?: string[];
     record_id?: string;
+    record_type?: string;
   };
 };
 export type TurnStatus = Receipt & {

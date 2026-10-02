@@ -49,6 +49,8 @@ This produces Hermes JavaScript bundles, not an installable application. Use `np
 
 ## Pair and exercise the foreground flow
 
+Use the [first-use handoff guide](First-Use-Guide.md) to coordinate the owner, patient and intended caregiver. On the native app, use its **Test speaker** action, hold or tap recording control and native permission prompts. Verify the resulting explicitly shared record under the caregiver's account. A browser guide's session proof does not establish native audio or background alert delivery.
+
 1. Open the native app and enter the Parse HTTPS origin. It generates a random 32-byte installation credential and keeps it in SecureStore. The screen shows a different ten-minute possession code.
 2. Sign into the existing owner dashboard, open Settings, select **Parse phone app**, and approve that code for the intended patient. A device token cannot sign into the owner dashboard.
 3. Return to the native app. It polls the enrollment using its own credential and loads the same care record. Choose the microphone permission only when starting a recording.

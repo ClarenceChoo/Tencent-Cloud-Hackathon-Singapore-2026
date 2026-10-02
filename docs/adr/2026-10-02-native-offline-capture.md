@@ -50,4 +50,6 @@ The disposable [fictional fixture](../../mobile/test/manual/offline-vault/README
 
 ## Delivery gate and remaining work
 
+The separate Android probe compiled successfully on 2 October 2026 with Gradle 9.3.1, the existing JDK 17 toolchain and pinned public Maven dependencies. The debug APK manifest identifies `sg.parse.vaultprobe`, version `0.1.0`; its SHA-256 is `80a770714274e376eb215744f1caf39032662fbcfbe65dc57f417f5dfb6a355a`. The output is under ignored `runtime/offline-vault-probe-20261002/android/app/build/outputs/apk/debug/app-debug.apk`. It was not installed or executed. Compilation does not establish encryption, key access, crash recovery, backup exclusion or any G1 result. The iOS native build remains unexecuted.
+
 Android and iOS offline capture remain disabled. Existing foreground online recording is unchanged. After G1 passes for a platform, select and pin its concrete adapter, implement the bounded queue and metadata migration after `0007_summary_purposes`, then run the complete offline capture/retry/review flow on that platform. A completed feasibility document alone cannot close issue #15.

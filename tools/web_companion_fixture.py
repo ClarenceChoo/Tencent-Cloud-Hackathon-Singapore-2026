@@ -13,6 +13,7 @@ import json
 import math
 import os
 from pathlib import Path
+import shutil
 import struct
 import sys
 import wave
@@ -32,6 +33,9 @@ def main():
     if not (ROOT / "frontend/dist/index.html").is_file():
         raise SystemExit("Build the dashboard and companion before starting the fixture.")
     directory.mkdir(mode=0o700, parents=True, exist_ok=False)
+    # Keep one served build for this run even if another task rebuilds the app.
+    web_directory = directory / "web"
+    shutil.copytree(ROOT / "frontend/dist", web_directory)
     os.environ.update(CARELOOP_PROVIDER="fixture", CARELOOP_TESTING="true",
                       CARELOOP_FIXTURE_REPLY_WAV=str(directory / "reply.wav"))
     from app.config import Settings
@@ -58,7 +62,7 @@ def main():
             super().__init__({}, str(directory / "reply.wav"))
             self.interpretations = {}
 
-        async def transcribe_audio(self, wav):
+        async def transcribe_audio(self, wav, vocabulary=None):
             validate_speech_wav(wav)
             armed = directory / "next-utterance.json"
             if not armed.is_file():
@@ -73,7 +77,8 @@ def main():
             with wave.open(io.BytesIO(wav), "rb") as recording:
                 metadata = {"scenario": scenario["name"], "sha256": hashlib.sha256(wav).hexdigest(),
                             "frames": recording.getnframes(), "sample_rate": recording.getframerate(),
-                            "channels": recording.getnchannels(), "sample_width": recording.getsampwidth()}
+                            "channels": recording.getnchannels(), "sample_width": recording.getsampwidth(),
+                            "vocabulary_version": getattr(vocabulary, "version", None)}
             with (directory / "captures.jsonl").open("a") as out:
                 out.write(json.dumps(metadata) + "\n")
             return transcript
@@ -110,14 +115,18 @@ def main():
 
     with app.state.db.SessionLocal() as db:
         patient = Patient(name="Fictional Mei Tan", preferred_name="Mei", timezone="Asia/Singapore", language="en")
+        second_patient = Patient(name="Fictional Empty Care Space", preferred_name="Second", timezone="America/New_York", language="en")
         users = [User(name=name, email=f"{role}@web.invalid", role="owner" if role == "owner" else "caregiver",
                       password_hash=hash_password("fictional-web-only")) for role, name in [
                           ("owner", "Fictional Alex Tan"), ("caregiver", "Fictional Jamie Lim"),
                           ("restricted", "Fictional Second Caregiver")]]
-        db.add_all([patient, *users]); db.flush()
+        db.add_all([patient, second_patient, *users]); db.flush()
         db.add_all([AccessGrant(user_id=user.id, patient_id=patient.id, relationship=user.role,
                                scopes=["*"] if user.role == "owner" else ["read:dashboard", "ack:support", "resolve:support"])
                     for user in users])
+        db.add_all([AccessGrant(user_id=user.id, patient_id=second_patient.id, relationship=user.role,
+                               scopes=["*"] if user.role == "owner" else ["read:dashboard", "ack:support", "resolve:support"])
+                    for user in users[:2]])
         plan = MedicationPlanVersion(patient_id=patient.id, version=1, timezone=patient.timezone,
             source="Fictional demonstration plan", checked_by_user_id=users[0].id,
             checked_by_name=users[0].name, checked_at=utcnow(), active=True,
@@ -128,14 +137,19 @@ def main():
         dose = DoseInstance(patient_id=patient.id, plan_id=plan.id, plan_version=1,
                             medicine_id="demo_medicine", medicine_name="Example medicine", scheduled_at=utcnow()-timedelta(minutes=5))
         db.add(dose); db.commit()
-        metadata = {"patient_id": patient.id, "caregiver_id": users[1].id,
-                    "dose_id": dose.id, "origin": origin, "speech": "scripted", "data": "fictional"}
+        metadata = {"patient_id": patient.id, "caregiver_id": users[1].id, "restricted_id": users[2].id,
+                    "second_patient_id": second_patient.id, "dose_id": dose.id,
+                    "origin": origin, "speech": "scripted", "data": "fictional"}
     metadata["startup_source_sha256"] = {
         str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
-        for path in [*(ROOT / "backend/app").glob("*.py"),
-                     ROOT / "frontend/dist/index.html", *(ROOT / "frontend/dist/assets").glob("*")]
+        for path in (ROOT / "backend/app").glob("*.py")
         if path.is_file()
     }
+    metadata["startup_source_sha256"].update({
+        "frontend/dist/" + str(path.relative_to(web_directory)): hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in web_directory.rglob("*") if path.is_file()
+    })
+    metadata["frontend_snapshot"] = True
     private_file(directory / "fixture.json", json.dumps(metadata))
 
     @app.middleware("http")
@@ -150,11 +164,17 @@ def main():
     @app.get("/companion/", include_in_schema=False)
     @app.get("/shared/summaries/{token}", include_in_schema=False)
     def page(token: str = ""):
-        return FileResponse(ROOT / "frontend/dist/index.html")
-    app.mount("/assets", StaticFiles(directory=ROOT / "frontend/dist/assets"), name="web-assets")
+        return FileResponse(web_directory / "index.html")
+    @app.get("/landing", include_in_schema=False)
+    @app.get("/landing/", include_in_schema=False)
+    def landing():
+        return FileResponse(web_directory / "landing/index.html")
+    app.mount("/assets", StaticFiles(directory=web_directory / "assets"), name="web-assets")
+    app.mount("/brand", StaticFiles(directory=web_directory / "brand"), name="web-brand")
+    app.mount("/landing", StaticFiles(directory=web_directory / "landing"), name="web-landing-assets")
     # Static manifest/icons may be added later; never expose runtime/ or API data.
     for filename in ["companion.webmanifest", "parse-companion.svg", "parse-icon.svg", "manifest.webmanifest"]:
-        static = ROOT / "frontend/dist" / filename
+        static = web_directory / filename
         if static.is_file():
             def serve(path=static):
                 return FileResponse(path)

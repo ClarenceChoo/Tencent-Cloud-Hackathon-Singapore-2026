@@ -39,9 +39,14 @@ function setup() {
   return { creates, reviews, setDashboard: (value: Record<string, unknown>) => { currentDashboard = value; } };
 }
 
+async function openSummary() {
+  fireEvent.click(await screen.findByRole('button', { name: 'Visit summary' }));
+  await screen.findByLabelText('Summary purpose');
+}
+
 it('creates a new purpose draft with questions that remain separate from reports', async () => {
   const calls = setup();
-  fireEvent.click(await screen.findByRole('button', { name: 'Visit summary' }));
+  await openSummary();
   fireEvent.change(screen.getByLabelText('Summary purpose'), { target: { value: 'family_handoff' } });
   fireEvent.change(screen.getByLabelText('Questions to discuss'), { target: { value: 'Was there an unrecorded fall?' } });
   fireEvent.click(screen.getByRole('button', { name: /Prepare draft/i }));
@@ -55,12 +60,12 @@ it('creates a new purpose draft with questions that remain separate from reports
 
 it('requires another explicit review after editing a question or changing purpose', async () => {
   const calls = setup();
-  fireEvent.click(await screen.findByRole('button', { name: 'Visit summary' }));
+  await openSummary();
   fireEvent.click(screen.getByRole('button', { name: /Prepare draft/i }));
   await screen.findByText('Fictional confirmed report');
   fireEvent.click(screen.getByRole('button', { name: /Save review/i }));
   await waitFor(() => expect(calls.reviews).toHaveLength(1));
-  expect((screen.getByRole('button', { name: /Share read-only/i }) as HTMLButtonElement).disabled).toBe(false);
+  await waitFor(() => expect((screen.getByRole('button', { name: /Share read-only/i }) as HTMLButtonElement).disabled).toBe(false));
   fireEvent.change(screen.getByLabelText('Questions to discuss'), { target: { value: 'What should we ask?' } });
   expect((screen.getByRole('button', { name: /Share read-only/i }) as HTMLButtonElement).disabled).toBe(true);
   fireEvent.click(screen.getByRole('button', { name: /Save review/i }));
@@ -75,7 +80,7 @@ it('requires another explicit review after editing a question or changing purpos
 
 it.each([false, true])('clears local care and print state when a previously visible summary is unavailable (missing=%s)', async missing => {
   const calls = setup();
-  fireEvent.click(await screen.findByRole('button', { name: 'Visit summary' }));
+  await openSummary();
   fireEvent.change(screen.getByLabelText('Questions to discuss'), { target: { value: 'Private question' } });
   fireEvent.click(screen.getByRole('button', { name: /Prepare draft/i }));
   await screen.findByText('Fictional confirmed report');

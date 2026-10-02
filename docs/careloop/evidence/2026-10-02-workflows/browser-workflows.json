@@ -1,0 +1,298 @@
+{
+  "at": "2026-10-02T13:51:41.410Z",
+  "browser": "155.0.8059.26",
+  "node": "v24.19.0",
+  "commit": "26e241537eb1039163f52d7b85d0a1a0f48453ef",
+  "scope": "Actual Chromium UI + MediaRecorder with synthetic microphone input; same-origin FastAPI and fictional SQLite; scripted ASR/interpretation and tone replies. Not live speech or a physical-phone test.",
+  "server_startup_source_sha256": {
+    "backend/app/worker.py": "26e7ed37adedfec34183482baed41dd375ccb129c96817213fb081829ace7b49",
+    "backend/app/phone_audio.py": "6946a462be2be4df885285bddd1a23b524ee39f1d5c0b12a1f7ea3f105ec9c5f",
+    "backend/app/phone.py": "b61680bb7de524595a5c40f69994ce6f479c76923a491f1192704dae0a91c22a",
+    "backend/app/services.py": "306388041eeb0c123bc9df0963b445553acdbbaf7030e521e7f4671d75472fd8",
+    "backend/app/config.py": "6e1856ae28af6c068ee11bd92fb78f2176b496ae11f5d95e9491dc3952de35f5",
+    "backend/app/models.py": "8267cac3f6f86c8f8ce2e478c19c1cdb9613e3f9c7c3cfe04b651f211108713f",
+    "backend/app/summary_templates.py": "efd1f27c87091b5549c50a1945c59d5e69d84b8d47b12f01d8543f46e2043e42",
+    "backend/app/database.py": "73fed4cd44eaeed7952cc488cf39ebf67a950a45ae4bc1b35cac69c54554b130",
+    "backend/app/security.py": "c8a26db3dc8c9b8d51ce2e33ffac1454622de2d70e8a4504ae67dd203c4de87d",
+    "backend/app/__init__.py": "a25ff3395d4375b2a25feda5f496e75adacd3fc0a5d0ce1e10dc227dc8310f65",
+    "backend/app/reminders.py": "686556f4fb6865b4db91dcb1986dcd8ecef2433c2b12f545737b5c9d50987a63",
+    "backend/app/care_status.py": "3c7f60ac315ddf39d60d6da5a7b0613eb009bf60fb75d12198df6de055da3b63",
+    "backend/app/care_queries.py": "77cd3ec50b7826c342d860083e924dcd307f9440165aafabf3fc4ebe06dcef9a",
+    "backend/app/providers.py": "8d3e7b1af5c408bce5a193ac45fd5cb74a1ca949de4ce32ed227e2fb2f730163",
+    "backend/app/notification_api.py": "4ba13411826785186110cfeb16cf8218c1cc534288fd6a81f73cb674f7c6cd92",
+    "backend/app/seed.py": "ed645cf432b61a11cf213e7a9fb76f7ef8fb1754cf5c9d52bbeabc10b5eaa190",
+    "backend/app/schemas.py": "15dbb1975d613771b002a7a79ca66e27d8dddc1fc381a60d4cdcf91cab84d63e",
+    "backend/app/admin.py": "4e2a96890853250631ab6a90f3b5483dff76afa9222aef6debff3e6ca69403c6",
+    "backend/app/turns.py": "fd5356d7cd8619d0a263cfef65c90ba3e4da9c0debabeeed8336859923a4f754",
+    "backend/app/routing.py": "fb5c959ac5d56ac54778381bb1bd3b2b805280a7c726c9ada99b091f4d83bc07",
+    "backend/app/vocabulary_service.py": "693b07385e2e44583850493ef99cbed9a46de88cb5cbd57bd2baa569f39192ec",
+    "backend/app/notifications.py": "2e456b7bd692dac229ded4fc1d3edf08c49cb3f44ad87e51bf64e75265494db2",
+    "backend/app/web_companion.py": "be84a9ae019f59e7422fc43068702a63db731a6ea8a5711dcf36e053bfe3085c",
+    "backend/app/provenance.py": "ec28cde06cc9a24660e770b23fb5f7970e0f534c97092b6ecb7ad7ee6f85ea95",
+    "backend/app/device_setup.py": "93e1be532b735abeb696ad00f64f2fcbc3608eeeab6f2811e932d8745ae36556",
+    "backend/app/main.py": "6536a03a6be52b5a50c3bceab98557c96a920854c260af2967378e30e24d550e",
+    "backend/app/migrate.py": "4cacd5cdd7e044812a1bd3b1cbe3754ad811eb5621efbab2fd38030546e67a6b",
+    "backend/app/provisioning.py": "a71d94221f3787888060141e1fa7c170a61127e6fb8d94320e23e4d87ff81de4",
+    "backend/app/audio_subprocess.py": "62af1da5b0234afddd09ca99c4c85a71b31d058d484b22df388fc13ed207eca5",
+    "frontend/dist/index.html": "97081a6b3eee974396bce4d4291303649b3e2b0d1e21ea87bc06af5955d089ca",
+    "frontend/dist/landing/at-home-family.webp": "c838f505401e763fc007469d1b78a2ee2ce4c47789e520f940a3428b5a28fee6",
+    "frontend/dist/landing/index.html": "0b1841d671df2b697912f4f915d9d31fb0a0e9bb255c7f538b1aa8f4a40a7fbd",
+    "frontend/dist/landing/at-home-window.webp": "0cab64e8cf895c8df8d376f573783faf3679da690def01b36385f1567473e28a",
+    "frontend/dist/landing/aurora-pearl-artwork.png": "a4d4469bcfec3f8e40dec469c83c0941149584de9f59e3f10d23bfeb9bee22c6",
+    "frontend/dist/landing/at-home-detail.webp": "96650c75ac86847fa9fd90c5d4bf3c9461ed4b06c3b6a935a1cbd9528efb0076",
+    "frontend/dist/landing/parse-family.webp": "06ab968958e6fb0cb202b5f903965fa496cd7980da20412cd2068411780b09df",
+    "frontend/dist/landing/parse-mark.svg": "93307ec888d46f44cf5a73bc1430c44b4de392a894713f4542eb101600fb6cb1",
+    "frontend/dist/brand/parse-aurora-logo.png": "4ceaca1b7c173143e7a0f2fbbd47cf4b24840b67a41960c8d2ddc0e29eb068e6",
+    "frontend/dist/brand/parse-aurora-mark.png": "6f6906599629637c5eaac546c9674f35370fb64015cf88e4c3932ca1be3e1482",
+    "frontend/dist/brand/parse-aurora-logo-light.png": "6514b37ac780f2940f72e301a7e584ef78ba94db54c231aba06d06ff53a85411",
+    "frontend/dist/assets/landing-C04_Cv4d.js": "a9a49c938e06bed4705509464ad2f00036daa107a3976f0cf181862c29060c37",
+    "frontend/dist/assets/app-B-U4QA4E.js": "8ec364e4534a137780445a4b144b6b24f3cc50cc33a891b4134e0d4a9276b803",
+    "frontend/dist/assets/Companion-Ct6cdNQg.css": "a0d045e0e2a67cf3272915b04232baf90017ca0c1e3036f9d0c6590ee6971ede",
+    "frontend/dist/assets/landing-5ft9FwLZ.css": "8b8d59041153bf0483828cd57e6957a0e63b8a983d6e5309afa805a98b045d48",
+    "frontend/dist/assets/Companion-Cd5OELx2.js": "6a958443ff17d40564ceed7bf5c6c0db12547081912dae322a26cd992a63d0a6",
+    "frontend/dist/assets/app-1P7fBDwo.css": "3ac96348907824f5390387090bc3cbd0892474c60f6997cbe2624f0b14b1d698",
+    "frontend/dist/assets/BrandLogo-CzAmOCGk.js": "02788abc57238813668422a8c3e9c58e72d85590f3a1ba49ffffda0a8d2d8db7",
+    "frontend/dist/landing/fonts/dm-sans-latin-variable.woff2": "9fea608a947e67020c33cad9a6fe3d60c54119dfb8cff87768a8117a15ed7543",
+    "frontend/dist/landing/fonts/OFL-IBM-Plex-Mono.txt": "d741e57d5f865e294df801f96b7b5161a88b211df65887e4358d271c9fc5fb4f",
+    "frontend/dist/landing/fonts/bricolage-grotesque-latin.woff2": "a79fdb52d4a5c76552452f69202add96e287401fff03d3e8c0e38b4dcb5a99cd",
+    "frontend/dist/landing/fonts/OFL-DM-Sans.txt": "7ec15e79c59bc14b86436a17e5eb7926b46cbcaeb08e1a7e6c110b415e6eb2a2",
+    "frontend/dist/landing/fonts/OFL-DM-Serif-Display.txt": "aa49c876a28d8c0b0a3027d6c25b9c607eee8c0fb96165011d42a6ace1408fe1",
+    "frontend/dist/landing/fonts/OFL-Bricolage-Grotesque.txt": "46ba5f18ee20ea529f21d96c0ef8637a8314c1a5cfb2aa84018bc8157cbeff41",
+    "frontend/dist/landing/fonts/dm-serif-display-latin-regular.woff2": "fdf61e20fd2c0108e0ea28da4daca0035205b4b7fc031a3974b865b704de160a",
+    "frontend/dist/landing/fonts/ibm-plex-mono-latin-regular.woff2": "08949f728dc52d528e69b1667d15c89a5686a4ee9a296ff90983985f99c380f7"
+  },
+  "checks": [
+    {
+      "name": "Owner-approved browser pairing works through the dashboard; credentials are HttpOnly and unsafe calls require CSRF",
+      "passed": true
+    },
+    {
+      "name": "Reviewed care names need an explicit save, preserve unsaved entries on a version conflict, stay out of browser storage, and clear across care spaces and permissions",
+      "passed": true
+    },
+    {
+      "name": "Cancelling real browser recording releases microphone tracks and sends no upload",
+      "passed": true
+    },
+    {
+      "name": "A lost upload response recovers after reload through read-only checks with one upload and no automatic save or playback",
+      "passed": true
+    },
+    {
+      "name": "MediaRecorder WebM reaches the shared worker and shows an unsaved read-back with its named recipient",
+      "passed": true
+    },
+    {
+      "name": "The user can play an authenticated browser audio reply through an actual HTML audio element",
+      "passed": true
+    },
+    {
+      "name": "An expired reply is blocked before audio download or playback",
+      "passed": true
+    },
+    {
+      "name": "Correction plus explicit confirmation saves one note and automatically updates only its permitted caregiver",
+      "passed": true
+    },
+    {
+      "name": "The static tutorial and speaker/microphone checks create no update; microphone tracks end and the first update starts deliberately",
+      "passed": true
+    },
+    {
+      "name": "Medication reporting stays unconfirmed until a deliberate save and preserves the exact dose state",
+      "passed": true
+    },
+    {
+      "name": "The first-use guide requires a confirmed record and keeps simulated speech distinct from live voice verification",
+      "passed": true
+    },
+    {
+      "name": "A typed blood-pressure correction preserves the unknown occurrence time and saves the corrected numbers only after review and confirmation",
+      "passed": true
+    },
+    {
+      "name": "Attention routes an assigned request to its source; repeated pending clicks send one acknowledgement and refresh the panel",
+      "passed": true
+    },
+    {
+      "name": "Attention focuses care-plan and follow-up sources, requires outcome review/confirmation, and clears rows across care-space switches",
+      "passed": true
+    },
+    {
+      "name": "A confirmed support request is shared and the caregiver acknowledgement returns to the companion",
+      "passed": true
+    },
+    {
+      "name": "Ask Parse distinguishes unknown, empty and forbidden evidence, revalidates and focuses sources, and drops a delayed answer on care-space change",
+      "passed": true
+    },
+    {
+      "name": "A private confirmed note stays out of both caregiver responses",
+      "passed": true
+    },
+    {
+      "name": "All three summary purposes preserve the same source identities, label authored questions, and require a new review; preparing another purpose preserves the earlier reviewed share",
+      "passed": true
+    },
+    {
+      "name": "Summary statements, source references, purpose controls and questions fit at 320 pixels with normal and 200% text",
+      "passed": true
+    },
+    {
+      "name": "Printing fetches the current authorized reviewed summary before the dialog; a 3-page fictional PDF retains dates, source references, question authorship and copy-permanence labels",
+      "passed": true
+    },
+    {
+      "name": "Changed questions need a fresh review; deleting a source disables sharing/printing and invalidates the previous shared view",
+      "passed": true
+    },
+    {
+      "name": "Reload restores the same browser pairing without persisting care text or bearer credentials in web storage",
+      "passed": true
+    },
+    {
+      "name": "320/390/768/1440-pixel layouts avoid horizontal overflow and retain the large recording target",
+      "passed": true
+    },
+    {
+      "name": "The companion retains all controls without horizontal overflow when the actual rendered text sizes are doubled",
+      "passed": true
+    },
+    {
+      "name": "Denied microphone permission gives an error without uploading audio",
+      "passed": true
+    },
+    {
+      "name": "Revoking caregiver access removes the visible Attention rows and care facts",
+      "passed": true
+    },
+    {
+      "name": "Owner revocation clears the open companion care view and blocks further patient reads",
+      "passed": true
+    },
+    {
+      "name": "All four optional capture purposes reach the server as bounded hints without starting recording or changing a pending proposal",
+      "passed": true
+    }
+  ],
+  "pageErrors": [],
+  "source_sha256": {
+    "frontend/src/Companion.tsx": "8ce1d6f3461c59344c24b4c5b33e11ca8502b5af7381fabf5c3c2e3da9db3348",
+    "frontend/src/companionApi.ts": "b246bd406373e62197c9f272588db3286ff12eb19e391b652ebd794f3773bc5f",
+    "frontend/src/companion.css": "53b69c6d9a21f671a629877718666cbd93f544964e8095c4af38cbc2700b09a0",
+    "frontend/src/App.tsx": "820ebe753a3914be2276181f5598f0f41d4b0a5d77b2fb84364ffb874bf72872",
+    "frontend/src/AskParse.tsx": "1a3f3bab042fec5533f6da973194b9a79e6106be56cab6465f79cbb9a2606b10",
+    "frontend/src/CareVocabulary.tsx": "050b403fab7c40c66ae1585d815e2a473f1a5b449c679776dae576d91eec06ce",
+    "frontend/src/CompanionOnboarding.tsx": "03a961bae7132bbb8aa9e70660151742336c11487aaf28a4c7610dcde1f8615c",
+    "frontend/src/ProposalCorrection.tsx": "94ddf5f1ff766c4e8b82eb548cd75b1a79464f66984d2418a6ca74f7f663a3ed",
+    "frontend/src/SummaryPrint.tsx": "fe78fdfa2b1ce62a6d4af0a63dd476216e6d7b8fe31fa8b8d5bb70c6bc83f4a0",
+    "frontend/src/styles.css": "37993e0cbfd713d5e8cd231c08ba6f957e3fa54e38c3d1822f30ec6e54846418",
+    "backend/app/web_companion.py": "be84a9ae019f59e7422fc43068702a63db731a6ea8a5711dcf36e053bfe3085c",
+    "backend/app/phone_audio.py": "6946a462be2be4df885285bddd1a23b524ee39f1d5c0b12a1f7ea3f105ec9c5f",
+    "tools/web_companion_fixture.py": "3f0fb766030e5279d2f94c912799f3fce89258e00ed1fca99510bb49f169c05f",
+    "tools/browser_web_companion.cjs": "ceb32af73424d46160388595088512f31f0fc72e38d867e36d10437750744726",
+    "tools/receipt_browser_checks.cjs": "3ac2ce1797834e0d7ec36d65981e5a01a0e438eb43a5093a0e9f0ca4665f8a7a",
+    "tools/inbox_browser_checks.cjs": "16fdbb63a85ac4a5dc071b1243c8308b6f71398a2259568879d9c72ced5cfb07",
+    "tools/workflow_browser_checks.cjs": "e52229b3c99f5f4da01b74582a4a7ea48d44d93b503c546bf53b8ac27da447fb",
+    "tools/vocabulary_browser_checks.cjs": "5949203ce9d7e31d40a1e987b1fa65ef7620c41d053d3d79bf2df94406e14b72",
+    "tools/summary_browser_checks.cjs": "a74d8a098947a5b141106ccd47b982317b5ab9649746ef98f33a5423c0e2690f"
+  },
+  "screenshots": [
+    "web-caregiver-update.png",
+    "web-large-text.png",
+    "web-layout-1440.png",
+    "web-layout-320.png",
+    "web-layout-390.png",
+    "web-layout-768.png",
+    "web-readback.png",
+    "web-summary-200-percent-text.png",
+    "web-summary-320.png",
+    "web-summary-print.png",
+    "web-vocabulary-320.png"
+  ],
+  "device_id": "dev_6b75cc97a80c40aba01a9a798a183ee4",
+  "confirm_to_caregiver_ms": 112,
+  "captures": [
+    {
+      "scenario": "receipt-recovery",
+      "sha256": "7a4f923f1279dab44236261e3b979c61ce1122dae45fff96e66024d8bfd6c9e9",
+      "frames": 18240,
+      "sample_rate": 16000,
+      "channels": 1,
+      "sample_width": 2,
+      "vocabulary_version": 2
+    },
+    {
+      "scenario": "dose-report",
+      "sha256": "7a4f923f1279dab44236261e3b979c61ce1122dae45fff96e66024d8bfd6c9e9",
+      "frames": 18240,
+      "sample_rate": 16000,
+      "channels": 1,
+      "sample_width": 2,
+      "vocabulary_version": 2
+    },
+    {
+      "scenario": "blood-pressure",
+      "sha256": "7a4f923f1279dab44236261e3b979c61ce1122dae45fff96e66024d8bfd6c9e9",
+      "frames": 18240,
+      "sample_rate": 16000,
+      "channels": 1,
+      "sample_width": 2,
+      "vocabulary_version": 2
+    },
+    {
+      "scenario": "support",
+      "sha256": "7a4f923f1279dab44236261e3b979c61ce1122dae45fff96e66024d8bfd6c9e9",
+      "frames": 18240,
+      "sample_rate": 16000,
+      "channels": 1,
+      "sample_width": 2,
+      "vocabulary_version": 2
+    },
+    {
+      "scenario": "private-note",
+      "sha256": "7a4f923f1279dab44236261e3b979c61ce1122dae45fff96e66024d8bfd6c9e9",
+      "frames": 18240,
+      "sample_rate": 16000,
+      "channels": 1,
+      "sample_width": 2,
+      "vocabulary_version": 2
+    }
+  ],
+  "uploads": [
+    {
+      "mime": "audio/webm",
+      "bytes": 18563,
+      "sha256": "d2da044541efe0f88806b7f80ffc8351381cf519ff940c19e027fb3bf0b2b82b",
+      "normalized_bytes": 36524
+    },
+    {
+      "mime": "audio/webm",
+      "bytes": 18563,
+      "sha256": "1866e8def34dd57c0ce0d60c7eefb0e796bf06ef7eda0765e42e74704581401d",
+      "normalized_bytes": 36524
+    },
+    {
+      "mime": "audio/webm",
+      "bytes": 18563,
+      "sha256": "224a00e552aadea0e07ae05e4c8da1e85faf35bad9bf47c1da8951b990f5d4b7",
+      "normalized_bytes": 36524
+    },
+    {
+      "mime": "audio/webm",
+      "bytes": 18563,
+      "sha256": "2b3f5bbe02efc092515ac4e4123608c599db83e198f134bd14b22891a66f2de6",
+      "normalized_bytes": 36524
+    },
+    {
+      "mime": "audio/webm",
+      "bytes": 18563,
+      "sha256": "2fd2a7841ffef0f510bc2c8b4c84521b05907d969cccba2fff071d845b59c242",
+      "normalized_bytes": 36524
+    }
+  ],
+  "passed": true,
+  "print_artifacts": [
+    "web-weekly-summary.pdf"
+  ]
+}

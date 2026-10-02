@@ -117,6 +117,8 @@ Exit 0 means the requested checks pass; 1 means transport/configuration failed; 
 
 ## 7. First physical acceptance test
 
+The [first-use handoff guide](First-Use-Guide.md) explains the owner and caregiver checks across Parse's device options. For this cardholder, use its physical talk button and speaker, verify the current network connection, and check the confirmed shared record through the caregiver's own account. Browser or simulated speech checks do not establish physical operation.
+
 Use fictional information for the first run:
 
 1. Press and hold the talk button, say a short note and release it. Hear the response through the pendant speaker.

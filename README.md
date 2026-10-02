@@ -4,6 +4,8 @@ Parse helps older adults record concerns, report medication status and share con
 
 The browser companion runs at `/companion` beside the Parse dashboard. It needs no installed phone app or pendant provisioning. Pair it from the owner's dashboard, then use the phone browser to review and confirm care updates that appear in the permitted caregiver timeline.
 
+The [first-use guide](docs/careloop/First-Use-Guide.md) covers the owner, patient and caregiver handoff. Browser updates have [recording receipts](docs/careloop/Recording-Receipts.md) and [optional capture prompts with reviewed corrections](docs/careloop/Capture-and-Correction.md). The dashboard adds an [Attention panel](docs/careloop/Caregiver-Action-Inbox.md), [reviewed care names](docs/careloop/Care-Vocabulary.md), [source-linked care questions](docs/careloop/Ask-Parse.md), and [purpose-specific summaries with reviewed printing](docs/careloop/Summary-Purposes.md).
+
 For the recorded walkthrough, see the [60-second browser companion demo](docs/careloop/demo/parse-web-companion-demo.mp4). It uses fictional data and simulated speech.
 
 ## Upload the ESP32-S3 firmware
@@ -59,6 +61,7 @@ Open [http://127.0.0.1:5190/companion](http://127.0.0.1:5190/companion) in a bro
 3. Open **Settings**, choose **Parse browser** as the companion type, enter the code, and select **Approve browser**.
 4. Return to `/companion` and select **Check connection**.
 5. The caregiver demo account is `caregiver@web.invalid`, also with password `fictional-web-only`.
+6. For the guided setup, select the paired browser under **Settings → Reminder companion**, refresh the companion, and follow its speaker and microphone checks. Its static example sends no audio. The automated runner supplies the scripted first update and checks it through the caregiver's separate account.
 
 These loopback URLs work on the computer running the fixture. To use a separate physical phone, follow the HTTPS deployment setup below. Use separate browser profiles or a private window if you want owner and caregiver dashboards open at the same time.
 

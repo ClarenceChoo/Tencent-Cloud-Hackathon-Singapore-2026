@@ -8,6 +8,8 @@ import { RecordSource, RecordHistory } from './RecordSource';
 import CompanionSelection from './CompanionSelection';
 import { uiPreview } from './uiPreview';
 import BrandLogo from './BrandLogo';
+import { buildCareActions, CareAction } from './careActions';
+import { CareActionInbox } from './CareActionInbox';
 
 type View = 'overview' | 'timeline' | 'medications' | 'care' | 'support' | 'summary' | 'settings';
 const nav: { id: View; title: string; icon: typeof Heart }[] = [
@@ -61,7 +63,13 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
   const [omittedSourceIds, setOmittedSourceIds] = useState<string[]>([]);
   const [summaryReviewed, setSummaryReviewed] = useState(false);
   const [toast, setToast] = useState('');
-  const refreshInFlight = useRef(false);
+  const refreshInFlight = useRef(0);
+  const dashboardRequest = useRef(0);
+  const patientGeneration = useRef(0);
+  const mutationInFlight = useRef(false);
+  const mutationGeneration = useRef(0);
+  const selectedPatient = useRef(patientId);
+  const currentPatient = (id: string, generation: number) => mounted.current && selectedPatient.current === id && patientGeneration.current === generation;
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const accessFailed = useCallback((error: unknown) => {
@@ -79,14 +87,20 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
 
   const refreshSession = useCallback(async () => {
     const value = await api.session(); if (!mounted.current) return value; setSession(value); setCsrf(value.csrf_token);
-    const selected = value.patients[0]?.id || ''; setPatientId(current => current || selected);
+    const selected = selectedPatient.current && value.patients.some(p => p.id === selectedPatient.current)
+      ? selectedPatient.current : value.patients[0]?.id || '';
+    if (selected !== selectedPatient.current) { patientGeneration.current++; dashboardRequest.current++; setDashboard(null); }
+    selectedPatient.current = selected; setPatientId(selected);
     return value;
   }, []);
   const loadDashboard = useCallback(async (id: string) => {
     if (!id) return;
+    const generation = patientGeneration.current;
+    const request = ++dashboardRequest.current;
     setLoading(true); setError('');
-    try { setDashboard(await api.dashboard(id)); setRefreshWarning(''); } catch (err) { if (!accessFailed(err)) setError(err instanceof Error ? err.message : 'Could not load this care space.'); }
-    finally { setLoading(false); }
+    try { const next = await api.dashboard(id); if (currentPatient(id, generation) && request === dashboardRequest.current) { setDashboard(next); setRefreshWarning(''); } }
+    catch (err) { if (currentPatient(id, generation) && request === dashboardRequest.current && !accessFailed(err)) setError(err instanceof Error ? err.message : 'Could not load this care space.'); }
+    finally { if (currentPatient(id, generation) && request === dashboardRequest.current) setLoading(false); }
   }, [accessFailed]);
   useEffect(() => {
     if (sharedToken) return;
@@ -106,15 +120,17 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
     if (!session || !patientId || sharedToken || uiPreview) return;
     let active = true;
     const refresh = async () => {
-      if (!active || document.visibilityState !== 'visible' || refreshInFlight.current) return;
-      refreshInFlight.current = true;
+      if (!active || document.visibilityState !== 'visible' || refreshInFlight.current !== 0) return;
+      const generation = patientGeneration.current;
+      const request = ++dashboardRequest.current;
+      refreshInFlight.current = request;
       try {
         const value = await api.dashboard(patientId);
-        if (active) { setDashboard(value); setRefreshWarning(''); }
+        if (active && currentPatient(patientId, generation) && request === dashboardRequest.current) { setDashboard(value); setRefreshWarning(''); setLoading(false); }
       } catch (err) {
-        if (active && !accessFailed(err)) setRefreshWarning('Connection interrupted. Showing the last loaded care information.');
+        if (active && currentPatient(patientId, generation) && request === dashboardRequest.current && !accessFailed(err)) { setRefreshWarning('Connection interrupted. Showing the last loaded care information.'); setLoading(false); }
       }
-      finally { refreshInFlight.current = false; }
+      finally { if (refreshInFlight.current === request) refreshInFlight.current = 0; }
     };
     const timer = window.setInterval(refresh, 1000);
     return () => { active = false; window.clearInterval(timer); };
@@ -136,82 +152,124 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
   const canWriteCare = hasPermission(dashboard?.permissions, 'write:care');
   const canManageDevices = hasPermission(dashboard?.permissions, 'manage:devices');
   const canManageProfile = hasPermission(dashboard?.permissions, 'manage:profile');
+  const actions = useMemo(() => dashboard?.patient.id === patientId && session ? buildCareActions(dashboard, session.user.id, Date.now()) : [], [dashboard, patientId, session]);
+  const [focusAction, setFocusAction] = useState<string | null>(null);
+  useEffect(() => {
+    if (!focusAction) return;
+    const target = Array.from(document.querySelectorAll<HTMLElement>('[data-action-source]')).find(element => element.dataset.actionSource === focusAction);
+    if (target) { target.focus(); target.scrollIntoView?.({ block: 'center' }); setFocusAction(null); }
+  }, [focusAction, view, dashboard]);
+  function openCareAction(item: CareAction) {
+    if (item.kind === 'proposal' && item.action === 'review') {
+      const source = dashboard?.proposals.find(proposal => proposal.id === item.sourceId);
+      if (source) openReview(source);
+      return;
+    }
+    setFocusAction(item.key);
+    setView(item.targetView);
+  }
+  function choosePatient(id: string) {
+    patientGeneration.current++;
+    dashboardRequest.current++;
+    refreshInFlight.current = 0;
+    mutationGeneration.current++;
+    mutationInFlight.current = false;
+    selectedPatient.current = id;
+    setDashboard(null); setLoading(true); setBusy(false); setProposal(null); setNoteForSharing(null); setComposer(false);
+    setSummary(null); setSummaryPatientId(''); setSummaryText(''); setOmittedSourceIds([]); setSummaryReviewed(false);
+    setFocusAction(null); setToast(''); setError(''); setRefreshWarning(''); setPatientId(id);
+  }
 
   async function login(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault(); setBusy(true); setLoginError('');
     const data = new FormData(e.currentTarget);
-    try { const value = await api.login(String(data.get('email')), String(data.get('password'))); if (!mounted.current) return; setSession(value); setCsrf(value.csrf_token); setPatientId(value.patients[0]?.id || ''); }
+    try { const value = await api.login(String(data.get('email')), String(data.get('password'))); if (!mounted.current) return; setSession(value); setCsrf(value.csrf_token); selectedPatient.current = value.patients[0]?.id || ''; setPatientId(selectedPatient.current); }
     catch (err) { setLoginError(err instanceof Error ? err.message : 'Sign in failed.'); }
     finally { setBusy(false); }
   }
   async function logout() { setBusy(true); try { await api.logout(); } finally { if (mounted.current) onAccessLost(''); } }
   async function propose(kind: string, payload: Record<string, unknown>) {
     if (!patientId) return;
+    const sourcePatient = patientId;
+    const generation = patientGeneration.current;
     setBusy(true); setError('');
-    try { const next = await api.createProposal(patientId, kind, payload); openReview(next); }
-    catch (err) { setError(err instanceof Error ? err.message : 'The proposal could not be created.'); }
-    finally { setBusy(false); }
+    try { const next = await api.createProposal(sourcePatient, kind, payload); if (currentPatient(sourcePatient, generation)) openReview(next); }
+    catch (err) { if (currentPatient(sourcePatient, generation)) setError(err instanceof Error ? err.message : 'The proposal could not be created.'); }
+    finally { if (currentPatient(sourcePatient, generation)) setBusy(false); }
   }
   function openReview(value: Proposal) { setProposal(value); setProposalKind(value.kind); setDraftPayload(value.payload || {}); setDraftReadback(value.readback || 'Review the details below before confirming.'); setComposer(false); }
   async function revise() {
     if (!proposal) return;
+    const sourcePatient = patientId;
+    const generation = patientGeneration.current;
     setBusy(true); setError('');
-    try { openReview(await api.reviseProposal(proposal.id, draftPayload)); setToast('Revised proposal created. Please review and confirm this version.'); }
-    catch (err) { setError(err instanceof Error ? err.message : 'Could not revise this proposal.'); }
-    finally { setBusy(false); }
+    try { const revised = await api.reviseProposal(proposal.id, draftPayload); if (currentPatient(sourcePatient, generation)) { openReview(revised); setToast('Revised proposal created. Please review and confirm this version.'); } }
+    catch (err) { if (currentPatient(sourcePatient, generation)) setError(err instanceof Error ? err.message : 'Could not revise this proposal.'); }
+    finally { if (currentPatient(sourcePatient, generation)) setBusy(false); }
   }
   async function confirmProposal() {
     if (!proposal) return;
     if (stablePayload(draftPayload) !== stablePayload(proposal.payload)) { setError('Review revised details before confirming. The original proposal is unchanged.'); return; }
+    const sourcePatient = patientId;
+    const generation = patientGeneration.current;
     setBusy(true); setError('');
-    try { const result = await api.confirmProposal(proposal.id); if (result.status !== 'committed') throw new Error('The server has not confirmed this record as committed.'); setProposal(null); setToast('Confirmed and saved.'); await loadDashboard(patientId); }
-    catch (err) { setError(err instanceof Error ? err.message : 'The record is not confirmed as saved.'); }
-    finally { setBusy(false); }
+    try { const result = await api.confirmProposal(proposal.id); if (result.status !== 'committed') throw new Error('The server has not confirmed this record as committed.'); if (currentPatient(sourcePatient, generation)) { setProposal(null); setToast('Confirmed and saved.'); await loadDashboard(sourcePatient); } }
+    catch (err) { if (currentPatient(sourcePatient, generation)) setError(err instanceof Error ? err.message : 'The record is not confirmed as saved.'); }
+    finally { if (currentPatient(sourcePatient, generation)) setBusy(false); }
   }
   async function mutate(labelText: string, action: () => Promise<unknown>) {
+    if (mutationInFlight.current) return;
+    mutationInFlight.current = true;
+    const mutation = ++mutationGeneration.current;
+    const sourcePatient = patientId;
+    const generation = patientGeneration.current;
     setBusy(true); setError('');
-    try { await action(); await loadDashboard(patientId); setToast(labelText); }
-    catch (err) { setError(err instanceof Error ? err.message : 'That change was not saved.'); }
-    finally { setBusy(false); }
+    try { await action(); if (currentPatient(sourcePatient, generation)) { await loadDashboard(sourcePatient); if (currentPatient(sourcePatient, generation)) setToast(labelText); } }
+    catch (err) { if (currentPatient(sourcePatient, generation)) setError(err instanceof Error ? err.message : 'That change was not saved.'); }
+    finally { if (mutation === mutationGeneration.current) mutationInFlight.current = false; if (currentPatient(sourcePatient, generation)) setBusy(false); }
   }
   async function makeSummary(start: string, end: string) {
+    const sourcePatient = patientId; const generation = patientGeneration.current;
     setBusy(true); setError('');
-    try { const row = await api.createSummary(patientId, start, end); setSummary(row); setSummaryPatientId(patientId); setSummaryText(summaryReadable(row)); setOmittedSourceIds([]); setSummaryReviewed(false); }
-    catch (err) { setError(err instanceof Error ? err.message : 'Could not prepare the summary.'); }
-    finally { setBusy(false); }
+    try { const row = await api.createSummary(sourcePatient, start, end); if (currentPatient(sourcePatient, generation)) { setSummary(row); setSummaryPatientId(sourcePatient); setSummaryText(summaryReadable(row)); setOmittedSourceIds([]); setSummaryReviewed(false); } }
+    catch (err) { if (currentPatient(sourcePatient, generation)) setError(err instanceof Error ? err.message : 'Could not prepare the summary.'); }
+    finally { if (currentPatient(sourcePatient, generation)) setBusy(false); }
   }
   async function saveSummary() {
     if (!summary?.id) return;
+    const sourcePatient = patientId; const generation = patientGeneration.current;
     setBusy(true); setError('');
     try {
       const edits=parseSummaryDraft(summaryText,summary.sections as Row[]|undefined);
       const sections=(Array.isArray(summary.sections)?summary.sections as Row[]:[]).map((section,sectionIndex)=>({title:label(section,'title')||'Visit summary',items:(Array.isArray(section.items)?section.items as Row[]:[]).map((item,itemIndex)=>{const sourceId=label(item,'source_id');const edit=edits.find(entry=>entry.sectionIndex===sectionIndex&&entry.itemIndex===itemIndex);return {text:edit?.text??label(item,'text'),...(sourceId?{source_id:sourceId}:{})};}).filter(item=>!item.source_id||!omittedSourceIds.includes(String(item.source_id)))}));
       const saved = await api.updateSummary(String(summary.id), { sections, omitted_source_ids: omittedSourceIds, reviewed: true });
-      setSummary(saved); setSummaryText(summaryReadable(saved)); setSummaryReviewed(true); setToast('Review saved. It has not been shared.');
+      if (currentPatient(sourcePatient, generation)) { setSummary(saved); setSummaryText(summaryReadable(saved)); setSummaryReviewed(true); setToast('Review saved. It has not been shared.'); }
     }
-    catch (err) { setError(err instanceof Error ? err.message : 'Review was not saved.'); }
-    finally { setBusy(false); }
+    catch (err) { if (currentPatient(sourcePatient, generation)) setError(err instanceof Error ? err.message : 'Review was not saved.'); }
+    finally { if (currentPatient(sourcePatient, generation)) setBusy(false); }
   }
   async function revokeSummaryShare() {
     if (!summary?.id) return;
+    const sourcePatient = patientId; const generation = patientGeneration.current;
     setBusy(true); setError('');
-    try { await api.revokeSummaryShare(String(summary.id)); setSummary({...summary,url:null,share_token:null,expires_at:null,shared_at:null}); setToast('The read-only link has been revoked.'); }
-    catch (err) { setError(err instanceof Error ? err.message : 'The read-only link could not be revoked.'); }
-    finally { setBusy(false); }
+    try { await api.revokeSummaryShare(String(summary.id)); if (currentPatient(sourcePatient, generation)) { setSummary({...summary,url:null,share_token:null,expires_at:null,shared_at:null}); setToast('The read-only link has been revoked.'); } }
+    catch (err) { if (currentPatient(sourcePatient, generation)) setError(err instanceof Error ? err.message : 'The read-only link could not be revoked.'); }
+    finally { if (currentPatient(sourcePatient, generation)) setBusy(false); }
   }
   async function shareSummary() {
     if (!summary?.id) return;
+    const sourcePatient = patientId; const generation = patientGeneration.current;
     setBusy(true); setError('');
-    try { const shared = await api.shareSummary(String(summary.id)); setSummary({...summary,...shared}); setToast('Read-only summary sharing is active.'); }
-    catch (err) { setError(err instanceof Error ? err.message : 'Summary was not shared.'); }
-    finally { setBusy(false); }
+    try { const shared = await api.shareSummary(String(summary.id)); if (currentPatient(sourcePatient, generation)) { setSummary({...summary,...shared}); setToast('Read-only summary sharing is active.'); } }
+    catch (err) { if (currentPatient(sourcePatient, generation)) setError(err instanceof Error ? err.message : 'Summary was not shared.'); }
+    finally { if (currentPatient(sourcePatient, generation)) setBusy(false); }
   }
   function beginComposer(kind:string,seed:Record<string,unknown>={}) { setComposerKind(kind); setComposerSeed(seed); setComposer(true); }
   const greeting = view === 'timeline' ? `${displayName(patient)}’s care timeline` : ({overview:'Today’s care', medications:'Medications', care:'Care plan', support:'Support', summary:'Visit summary', settings:'Care preferences'} as Partial<Record<View,string>>)[view];
 
   if (sharedToken) return <SharedSummaryPublic data={publicView.data} loading={publicView.loading} error={publicView.error} />;
   if (!session) return <Login onSubmit={login} loading={loading || busy} error={loginError} />;
-  const d = dashboard;
+  const d = dashboard?.patient.id === patientId ? dashboard : null;
   return <div className="app-shell">
     <header className="site-header">
       <button className="brand" aria-label="Parse home" onClick={() => { setView('timeline'); setMobileMenu(false); }}><BrandLogo /></button>
@@ -222,32 +280,33 @@ function CareApp({skipSession,initialLoginError,onAccessLost}:{skipSession:boole
     <main className="main-area">
       <div className="page-content">
         {uiPreview && <div className="preview-banner" role="status"><strong>UI demo · fictional sample data</strong><span>Explore the care views. Nothing here is connected, saved, shared, or sent to a device.</span></div>}
-        <div className="workspace-bar"><div className="patient-select-wrap"><label className="patient-select-label"><span>Care space</span><select value={patientId} onChange={e => setPatientId(e.target.value)} aria-label="Choose patient profile">{session.patients.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label><ChevronDown size={14} className="select-chevron"/></div><div className="workspace-actions">{(demo || uiPreview) && <span className="demo-badge"><span className="demo-dot"/>{uiPreview ? 'Fictional UI demo' : 'Fictional demo data'}</span>}<button className="icon-button" aria-label="Refresh care data" onClick={() => loadDashboard(patientId)}><RefreshCw size={16}/></button></div></div>
+        <div className="workspace-bar"><div className="patient-select-wrap"><label className="patient-select-label"><span>Care space</span><select value={patientId} onChange={e => choosePatient(e.target.value)} aria-label="Choose patient profile">{session.patients.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label><ChevronDown size={14} className="select-chevron"/></div><div className="workspace-actions">{(demo || uiPreview) && <span className="demo-badge"><span className="demo-dot"/>{uiPreview ? 'Fictional UI demo' : 'Fictional demo data'}</span>}<button className="icon-button" aria-label="Refresh care data" onClick={() => loadDashboard(patientId)}><RefreshCw size={16}/></button></div></div>
         <div className="page-heading"><div><h1>{greeting}</h1><p className="lead">{weekdayDate(patient?.timezone)}<span className="page-timezone">{patient?.timezone.replaceAll('_',' ')}</span></p></div>{view !== 'summary' && canWriteCare && <button className="button button-primary" onClick={() => beginComposer('health_note')}><Plus size={19}/> Add entry</button>}</div>
         {(error || toast) && <div className={`feedback ${error ? 'feedback-error' : 'feedback-success'}`} role={error ? 'alert' : 'status'}>{error || toast}<button aria-label="Dismiss" onClick={() => { setError(''); setToast(''); }}><X size={15} /></button></div>}
         {refreshWarning && <p className="source-note" role="status">{refreshWarning}</p>}
         {loading ? <div className="loading-card"><span className="spinner" /><p>Loading confirmed care information…</p></div> : error && !d ? <div className="empty-card"><CircleHelp size={24} /><h2>This care space isn’t available</h2><p>Check your access or try again. No new information has been saved.</p><button className="button" onClick={() => loadDashboard(patientId)}>Try again</button></div> : d ? <>
-          {view === 'overview' && <Overview data={d} canWriteCare={canWriteCare} onNavigate={setView} canShareNote={canManageSharing} canDeleteNote={canWriteCare} onShareNote={setNoteForSharing} onDeleteNote={deleteNote} onCompose={beginComposer} />}
+          {view === 'overview' && <><CareActionInbox items={actions} onOpen={openCareAction}/><Overview data={d} canWriteCare={canWriteCare} onNavigate={setView} canShareNote={canManageSharing} canDeleteNote={canWriteCare} onShareNote={setNoteForSharing} onDeleteNote={deleteNote} onCompose={beginComposer} /></>}
     {view === 'timeline' && <Timeline key={patientId} data={d} onNavigate={setView} onReviewProposal={openReview} onCorrect={row=>beginComposer('measurement',measurementSeed(row))} canWriteCare={canWriteCare} canShareNote={canManageSharing} canDeleteNote={canWriteCare} onShareNote={setNoteForSharing} onDeleteNote={deleteNote} />}
           {view === 'medications' && <Medications data={d} canWriteCare={canWriteCare} onCompose={beginComposer} onPlan={payload => mutate('Medication plan saved after review.', () => api.createMedicationPlan(patientId, payload))} busy={busy} />}
           {view === 'care' && <CarePlan data={d} canWriteCare={canWriteCare} onCompose={beginComposer} onCreate={(kind,payload) => propose(kind,payload)} />}
           {view === 'support' && <Support data={d} currentUserId={session.user.id} canWriteCare={canWriteCare} onCompose={beginComposer} onCreate={(kind,payload)=>propose(kind,payload)} onAcknowledge={id => mutate('Request acknowledged.', () => api.acknowledge(id))} onResolve={(id,outcome) => mutate('Resolution saved.', () => api.resolve(id,outcome))} />}
           {view === 'summary' && (canManageSharing ? <Summary timezone={patient?.timezone || dashboard?.patient.timezone || 'Asia/Singapore'} summary={summary} summaryText={summaryText} setSummaryText={text=>{setSummaryText(text);setSummaryReviewed(false);}} omittedSourceIds={omittedSourceIds} setOmittedSourceIds={ids=>{setOmittedSourceIds(ids);setSummaryReviewed(false);}} reviewed={summaryReviewed} makeSummary={makeSummary} saveSummary={saveSummary} shareSummary={shareSummary} revokeShare={revokeSummaryShare} busy={busy} /> : <section className="card empty-card"><Shield size={24}/><h2>Summary sharing is owner managed</h2><p>This account does not have permission to prepare or share appointment summaries.</p></section>)}
-          {view === 'settings' && <SettingsView onReleaseRemoved={async (id,generation)=>{await api.releaseRemovedPhone(id,generation);await loadDashboard(patientId);setToast('Old phone removed. Choose a companion to resume reminders.')}} onSelect={async (id,generation,poweredOff)=>{await api.selectCompanion(patientId,id,generation,poweredOff);await loadDashboard(patientId);setToast('Reminder companion updated.')}} data={d} patient={d.patient} onProfile={payload=>mutate('Care preferences saved.',()=>api.updateProfile(patientId,payload))} onClaim={async (code,kind) => {await (kind==='phone'?api.approvePhone(code,patientId):api.claimDevice(code, patientId));await loadDashboard(patientId);setToast(kind==='phone'?'Companion paired. Return to the Parse companion.':'Cardholder paired. Connect it to Wi-Fi to bring it online.');}} onRevoke={id => mutate('Device access revoked.', () => api.revokeDevice(id))} onGrant={(userId,scopes)=>mutate('Sharing permission added.',()=>api.grant(patientId,userId,scopes))} onRevokeGrant={id=>mutate('Sharing permission removed.',()=>api.revokeGrant(id))} canManageSharing={canManageSharing} canManageDevices={canManageDevices && !uiPreview} canManageProfile={canManageProfile} />}
+          {view === 'settings' && <SettingsView onReleaseRemoved={(id,generation)=>mutate('Old phone removed. Choose a companion to resume reminders.',()=>api.releaseRemovedPhone(id,generation))} onSelect={(id,generation,poweredOff)=>mutate('Reminder companion updated.',()=>api.selectCompanion(patientId,id,generation,poweredOff))} data={d} patient={d.patient} onProfile={payload=>mutate('Care preferences saved.',()=>api.updateProfile(patientId,payload))} onClaim={(code,kind) => mutate(kind==='phone'?'Companion paired. Return to the Parse companion.':'Cardholder paired. Connect it to Wi-Fi to bring it online.',()=>kind==='phone'?api.approvePhone(code,patientId):api.claimDevice(code,patientId))} onRevoke={id => mutate('Device access revoked.', () => api.revokeDevice(id))} onGrant={(userId,scopes)=>mutate('Sharing permission added.',()=>api.grant(patientId,userId,scopes))} onRevokeGrant={id=>mutate('Sharing permission removed.',()=>api.revokeGrant(id))} canManageSharing={canManageSharing} canManageDevices={canManageDevices && !uiPreview} canManageProfile={canManageProfile} />}
         </> : <div className="empty-card"><Heart size={25} /><h2>Your care space is ready</h2><p>There are no care records to show yet.</p></div>}
         <footer className="page-footer"><span>Parse · Your everyday care record</span><span><a href="/landing/">About Parse</a><Shield size={13}/> Shared only with permission</span></footer>
       </div>
     </main>
     {composer && d && <Composer kind={composerKind} doses={d.doses} recipients={d.allowed_recipients||[]} seed={composerSeed} timezone={patient?.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone} setKind={setComposerKind} onClose={() => setComposer(false)} onCreate={propose} busy={busy} />}
-    {noteForSharing && d && canManageSharing && <NoteSharingDialog note={noteForSharing} grants={d.access_grants||[]} busy={busy} onClose={()=>setNoteForSharing(null)} onSave={async ids=>{setBusy(true);setError('');try{await api.setNoteSharing(String(noteForSharing.id),ids);setNoteForSharing(null);setSummary(null);setSummaryPatientId('');setSummaryText('');setOmittedSourceIds([]);setSummaryReviewed(false);setToast('Note sharing updated. Any affected summary must be prepared and reviewed again.');await loadDashboard(patientId);}catch(err){setError(err instanceof Error?err.message:'Note sharing was not updated.');}finally{setBusy(false);}}} />}
+    {noteForSharing && d && canManageSharing && <NoteSharingDialog note={noteForSharing} grants={d.access_grants||[]} busy={busy} onClose={()=>setNoteForSharing(null)} onSave={async ids=>{const sourcePatient=patientId;const generation=patientGeneration.current;setBusy(true);setError('');try{await api.setNoteSharing(String(noteForSharing.id),ids);if(currentPatient(sourcePatient,generation)){setNoteForSharing(null);setSummary(null);setSummaryPatientId('');setSummaryText('');setOmittedSourceIds([]);setSummaryReviewed(false);await loadDashboard(sourcePatient);if(currentPatient(sourcePatient,generation))setToast('Note sharing updated. Any affected summary must be prepared and reviewed again.');}}catch(err){if(currentPatient(sourcePatient,generation))setError(err instanceof Error?err.message:'Note sharing was not updated.');}finally{if(currentPatient(sourcePatient,generation))setBusy(false);}}} />}
     {proposal && <ReviewDialog key={proposal.id} kind={proposalKind} payload={draftPayload} setPayload={setDraftPayload} readback={draftReadback} expiresAt={proposal.expires_at} revise={revise} confirm={confirmProposal} busy={busy} error={error} onClose={() => setProposal(null)} />}
   </div>;
 
   async function deleteNote(note: Row) {
     const wording = label(note, 'wording', 'text', 'content', 'note') || 'this care note';
     if (!window.confirm(`Delete “${wording}”? This will also invalidate summaries that cite it.`)) return;
+    const sourcePatient = patientId; const generation = patientGeneration.current;
     await mutate('Care note deleted. Affected summaries are no longer valid.', () => api.deleteNote(String(note.id)));
-    setSummary(null); setSummaryPatientId(''); setSummaryText(''); setOmittedSourceIds([]); setSummaryReviewed(false);
+    if (currentPatient(sourcePatient, generation)) { setSummary(null); setSummaryPatientId(''); setSummaryText(''); setOmittedSourceIds([]); setSummaryReviewed(false); }
   }
 }
 
@@ -261,7 +320,6 @@ function Empty({ title, text, action }: { title: string; text: string; action?: 
 function Status({ children, warm = false }: { children: React.ReactNode; warm?: boolean }) { return <span className={`status ${warm ? 'status-warm' : ''}`}><span className="status-dot" />{children}</span>; }
 
 function Overview({ data, onNavigate, canShareNote, canDeleteNote, canWriteCare, onShareNote, onDeleteNote, onCompose }: { data: Dashboard; canWriteCare:boolean; canShareNote:boolean; canDeleteNote:boolean; onNavigate: (v: View) => void; onShareNote:(note:Row)=>void; onDeleteNote:(note:Row)=>void; onCompose: (kind:string,seed?:Record<string,unknown>)=>void }) {
-  const needsReview = data.proposals.filter(p => ['pending','awaiting_confirmation'].includes(p.status));
   const pendingRequests = data.support_requests.filter(r => !['resolved','closed'].includes(stateText(r).toLowerCase()));
   const activePlan = data.medication_plans.find(plan => plan.active === true);
   const today = localDay(new Date(), data.patient.timezone);
@@ -273,7 +331,6 @@ function Overview({ data, onNavigate, canShareNote, canDeleteNote, canWriteCare,
   const latest = data.measurements.filter(m => label(m,'type','kind').toLowerCase().includes('blood') || val(m,'systolic') !== null).slice(0,4);
   const device = data.devices.find(item=>item.id===data.active_companion?.device_id);
   return <div className="view-stack">
-    {needsReview.length > 0 && <section className="review-banner"><span className="banner-icon"><Clock3 size={18}/></span><div><b>{needsReview.length} item{needsReview.length === 1 ? '' : 's'} waiting for review</b><p>These are proposals. They are not saved care records until confirmed.</p></div><button className="text-link" onClick={() => onNavigate('timeline')}>Review items <span>→</span></button></section>}
     <div className="metric-row"><Metric value={String(data.notes.length)} label="Confirmed notes" icon={FileText} detail="In this care space"/><Metric value={String(pendingRequests.length)} label="Open support requests" icon={Users} detail="Awaiting follow-up"/><Metric value={String(data.preventive_tasks.filter(t => ['due','needs_discussion'].includes(stateText(t).toLowerCase())).length)} label="Tasks to check" icon={CalendarDays} detail="From the care plan"/></div>
     <div className="dashboard-grid"><div className="column-stack">
       <section className="card"><SectionHead title="Today’s medication check-ins" action={<button className="text-link" onClick={() => onNavigate('medications')}>Open plan <span>→</span></button>}/>{meds.length ? <div className="list">{meds.map((dose,i)=><DoseRow key={String(dose.id||i)} row={dose}/>)}</div> : <Empty title="No dose reports yet" text="An unanswered reminder stays unconfirmed." action={<button className="text-link" onClick={() => onNavigate('medications')}>View medication plan →</button>}/>}<div className="card-footnote"><Shield size={14}/> A reminder or playback does not mean a dose was taken.</div></section>
@@ -375,7 +432,7 @@ function CareAside({data,onNavigate}: {data:Dashboard;onNavigate:(view:View)=>vo
     <button className="device-status" onClick={() => onNavigate('settings')}><span className={`device-dot ${device?.status === 'connected' ? 'is-connected' : ''}`}/><span>{device ? `${device.device_type === 'phone' ? device.platform === 'web' ? 'Browser' : 'Phone' : 'Cardholder'} ${device.status === 'connected' ? 'connected' : device.status === 'revoked' ? 'revoked' : 'not connected'}` : data.active_companion ? 'No reminder companion selected' : 'Device status unavailable'}{Boolean(device?.last_seen) && <small>Last seen {niceDate(device?.last_seen)}</small>}</span><ChevronRight size={15}/></button>
   </aside>;
 }
-function ProposalList({proposals,canReview,onReview}:{proposals:Proposal[];canReview:boolean;onReview:(proposal:Proposal)=>void}) { const awaiting=proposals.filter(p=>['pending','awaiting_confirmation'].includes(p.status)); return awaiting.length>0?<section className="card proposal-list"><SectionHead eyebrow="Needs a decision" title="Proposals awaiting confirmation"/>{awaiting.map(p=>{const expired=Boolean(p.expires_at&&Date.now()>=new Date(p.expires_at).getTime());return <div className="proposal-row" key={p.id}><Clock3 size={16}/><div><b>{prettyState(p.kind)}</b><p>{p.readback||'Review the proposal details before confirming.'}</p><small>{expired?'Expired':p.expires_at?`Expires ${niceDate(p.expires_at)}`:'Expiry unavailable'}</small></div>{canReview&&<button className="button" disabled={expired} onClick={()=>onReview(p)}>{expired?'Expired':'Review'}</button>}<span className="status status-warm">Not saved</span></div>;})}</section>:null; }
+function ProposalList({proposals,canReview,onReview}:{proposals:Proposal[];canReview:boolean;onReview:(proposal:Proposal)=>void}) { const awaiting=proposals.filter(p=>['pending','awaiting_confirmation'].includes(p.status)); return awaiting.length>0?<section className="card proposal-list"><SectionHead eyebrow="Needs a decision" title="Proposals awaiting confirmation"/>{awaiting.map(p=>{const expired=Boolean(p.expires_at&&Date.now()>=new Date(p.expires_at).getTime());return <div className="proposal-row" key={p.id} data-action-source={`proposal:${p.id}`} tabIndex={-1}><Clock3 size={16}/><div><b>{prettyState(p.kind)}</b><p>{p.readback||'Review the proposal details before confirming.'}</p><small>{expired?'Expired':p.expires_at?`Expires ${niceDate(p.expires_at)}`:'Expiry unavailable'}</small></div>{canReview&&<button className="button" disabled={expired} onClick={()=>onReview(p)}>{expired?'Expired':'Review'}</button>}<span className="status status-warm">Not saved</span></div>;})}</section>:null; }
 
 function Medications({data,onCompose,onPlan,busy,canWriteCare}:{data:Dashboard;canWriteCare:boolean;onCompose:(kind:string)=>void;onPlan:(p:Record<string,unknown>)=>void;busy:boolean}) {
  const emptyForm={name:'',instructions:'',schedule:'',timezone:data.patient?.timezone||'',source:''};
@@ -393,13 +450,13 @@ function Field({label:lab,value,onChange,type='text'}:{label:string;value:string
 
 function TaskTransition({row,onPropose}:{row:Row;onPropose:(payload:Record<string,unknown>)=>void}) {const transitions:Record<string,string[]>={planned:['due','arranged','declined','needs_discussion'],due:['arranged','declined','needs_discussion'],arranged:['completed','declined','needs_discussion'],completed:['needs_discussion'],declined:['needs_discussion','arranged'],needs_discussion:['planned','due','arranged','declined']};const current=label(row,'state').toLowerCase();const options=transitions[current]||[];const [open,setOpen]=useState(false);const [state,setState]=useState(options[0]||'needs_discussion');const [appointmentDate,setAppointmentDate]=useState('');const [completionDate,setCompletionDate]=useState('');return <div className="task-transition"><button className="text-link task-update" onClick={()=>{setState(options[0]||'needs_discussion');setOpen(!open);}}>{open?'Close update':'Propose an update →'}</button>{open&&<div className="transition-form"><label>New status<select aria-label="New status" value={state} onChange={e=>setState(e.target.value)}>{options.map(value=><option key={value} value={value}>{prettyState(value)}</option>)}</select></label>{['arranged','completed'].includes(state)&&<label>{state==='arranged'?'Appointment date':'Completion date'}<input type="date" value={state==='arranged'?appointmentDate:completionDate} onChange={e=>state==='arranged'?setAppointmentDate(e.target.value):setCompletionDate(e.target.value)}/></label>}<button className="button button-soft" disabled={!options.length} onClick={()=>onPropose({task_id:row.id,state,...(state==='arranged'&&appointmentDate?{appointment_date:appointmentDate}:{}),...(state==='completed'&&completionDate?{completion_date:completionDate}:{})})}>Review proposed change</button>{!options.length&&<p className="source-note">No further task update is available from this status.</p>}</div>}</div>;}
 
-function CarePlan({data,onCompose,onCreate,canWriteCare}:{data:Dashboard;canWriteCare:boolean;onCompose:(kind:string)=>void;onCreate:(k:string,p:Record<string,unknown>)=>void}) { const tasks=data.preventive_tasks; return <div className="view-stack"><section className="card"><SectionHead eyebrow="From an existing care plan" title="Preventive care and follow-ups" action={canWriteCare&&<button className="button button-primary" onClick={()=>onCompose('preventive_task')}><Plus size={15}/> Add task</button>}/><p className="section-intro">Parse tracks tasks you enter. It does not calculate screening eligibility, book appointments, or infer that a task is complete.</p>{tasks.length?tasks.map((r,i)=><div className="care-task" key={String(r.id||i)}><div className="task-icon"><Stethoscope size={17}/></div><div className="care-task-copy"><div className="care-task-head"><h3>{label(r,'title','description','task_type')||'Care plan task'}</h3><Status warm={['due','needs_discussion'].includes(stateText(r).toLowerCase())}>{prettyState(stateText(r))}</Status></div><p>{label(r,'details','notes')||'No additional details provided.'}</p><div className="med-plan-meta"><span>{val(r,'due_date')?`Due ${niceDate(val(r,'due_date'))}`:'Due date not provided'}</span>{val(r,'appointment_date')!=null&&<><span>·</span><span>{`Arranged ${niceDate(val(r,'appointment_date'))}`}</span></>}{val(r,'completion_date','completed_at')!=null&&<><span>·</span><span>{`Completed ${niceDate(val(r,'completion_date','completed_at'))}`}</span></>}</div><div className="source-note">Source: {label(r,'source')||'Care plan source not provided'}</div><RecordSource row={r}/><RecordHistory row={r}/>{canWriteCare&&<TaskTransition row={r} onPropose={payload=>onCreate('preventive_task',payload)} />}</div></div>):<Empty title="No care-plan tasks" text="Add a screening, vaccination or follow-up that already appears in the care plan."/>}</section><section className="card info-card"><Shield size={17}/><p>Only dates and statuses explicitly reported by a person become arranged or completed. The timeline preserves the confirmed update.</p></section></div>; }
+function CarePlan({data,onCompose,onCreate,canWriteCare}:{data:Dashboard;canWriteCare:boolean;onCompose:(kind:string)=>void;onCreate:(k:string,p:Record<string,unknown>)=>void}) { const tasks=data.preventive_tasks; return <div className="view-stack"><section className="card"><SectionHead eyebrow="From an existing care plan" title="Preventive care and follow-ups" action={canWriteCare&&<button className="button button-primary" onClick={()=>onCompose('preventive_task')}><Plus size={15}/> Add task</button>}/><p className="section-intro">Parse tracks tasks you enter. It does not calculate screening eligibility, book appointments, or infer that a task is complete.</p>{tasks.length?tasks.map((r,i)=><div className="care-task" key={String(r.id||i)} data-action-source={`preventive_task:${String(r.id||i)}`} tabIndex={-1}><div className="task-icon"><Stethoscope size={17}/></div><div className="care-task-copy"><div className="care-task-head"><h3>{label(r,'title','description','task_type')||'Care plan task'}</h3><Status warm={['due','needs_discussion'].includes(stateText(r).toLowerCase())}>{prettyState(stateText(r))}</Status></div><p>{label(r,'details','notes')||'No additional details provided.'}</p><div className="med-plan-meta"><span>{val(r,'due_date')?`Due ${niceDate(val(r,'due_date'))}`:'Due date not provided'}</span>{val(r,'appointment_date')!=null&&<><span>·</span><span>{`Arranged ${niceDate(val(r,'appointment_date'))}`}</span></>}{val(r,'completion_date','completed_at')!=null&&<><span>·</span><span>{`Completed ${niceDate(val(r,'completion_date','completed_at'))}`}</span></>}</div><div className="source-note">Source: {label(r,'source')||'Care plan source not provided'}</div><RecordSource row={r}/><RecordHistory row={r}/>{canWriteCare&&<TaskTransition row={r} onPropose={payload=>onCreate('preventive_task',payload)} />}</div></div>):<Empty title="No care-plan tasks" text="Add a screening, vaccination or follow-up that already appears in the care plan."/>}</section><section className="card info-card"><Shield size={17}/><p>Only dates and statuses explicitly reported by a person become arranged or completed. The timeline preserves the confirmed update.</p></section></div>; }
 
 function FollowupOutcome({followup,onCreate}:{followup:Row;onCreate:(payload:Record<string,unknown>)=>void}) {const [open,setOpen]=useState(false);const [outcome,setOutcome]=useState('');return <div className="followup-outcome"><button className="text-link" onClick={()=>setOpen(!open)}>{open?'Close':'Record follow-up outcome →'}</button>{open&&<div className="resolve-row"><input aria-label="Reported follow-up outcome" value={outcome} onChange={e=>setOutcome(e.target.value)} placeholder="What was reported?"/><button className="button button-soft" disabled={!outcome.trim()} onClick={()=>onCreate({followup_id:String(followup.id),reported_outcome:outcome,resolution_state:'resolved'})}>Review outcome</button></div>}</div>;}
 
 function FollowupProposal({row,onCreate}:{row:Row;onCreate:(payload:Record<string,unknown>)=>void}) {const [checkAt,setCheckAt]=useState('');const [permissionScope,setPermissionScope]=useState('private');return <div className="followup-form"><label>When to check in<input type="datetime-local" required value={checkAt} onChange={e=>setCheckAt(e.target.value)}/></label><label>Who may see this check-in<select aria-label="Who may see this check-in" value={permissionScope} onChange={e=>setPermissionScope(e.target.value)}><option value="private">Private</option><option value="related_recipients">People already shared on the related request</option></select></label><button className="button button-soft" disabled={!checkAt} onClick={()=>onCreate({related_type:'support_request',related_id:String(row.id),check_at:new Date(checkAt).toISOString(),permission_scope:permissionScope})}>Review follow-up</button></div>;}
 
-function Support({data,currentUserId,onCompose,onCreate,onAcknowledge,onResolve,canWriteCare}:{data:Dashboard;currentUserId:string;onCompose:(kind:string)=>void;onCreate:(kind:string,payload:Record<string,unknown>)=>void;onAcknowledge:(id:string)=>void;onResolve:(id:string,outcome:string)=>void;canWriteCare:boolean}) { const [outcomes,setOutcomes]=useState<Record<string,string>>({}); const [followupOpen,setFollowupOpen]=useState(''); const canAcknowledge=hasPermission(data.permissions,'ack:support');const canResolve=hasPermission(data.permissions,'resolve:support')||hasPermission(data.permissions,'write:care'); return <div className="view-stack"><section className="card"><SectionHead eyebrow="Shared requests" title="Follow up together" action={canWriteCare&&<button className="button button-primary" onClick={()=>onCompose('support_request')}><Plus size={15}/> New request</button>}/><p className="section-intro">A request is visible here only under the person's sharing permissions. Acknowledging it means you have seen it; resolving it records a reported outcome.</p>{data.support_requests.length?data.support_requests.map((r,i)=>{const st=stateText(r).toLowerCase();const id=String(r.id||i);return <div className="support-item" key={id}><div className="support-icon"><Heart size={17}/></div><div className="support-copy"><div className="care-task-head"><h3>{label(r,'title','request','request_text','text')||'Support request'}</h3><Status warm={!['resolved','closed'].includes(st)}>{prettyState(stateText(r))}</Status></div><p className="support-quote">“{label(r,'description','content','request_text','text')||'Request details unavailable'}”</p><div className="source-note">{label(r,'requester_name','created_by') ? `${label(r,'requester_name','created_by')} · `:''}{niceDate(val(r,'created_at','occurred_at'))}{label(r,'recipient_name','shared_with')?` · Shared with ${label(r,'recipient_name','shared_with')}`:''}</div><RecordSource row={r}/>{canAcknowledge&&currentUserId===String(r.recipient_user_id)&&(st==='sent'||st==='open'||st==='pending')?<button className="button button-soft" onClick={()=>onAcknowledge(id)}><Check size={15}/> Acknowledge</button>:null}{canWriteCare&&<button className="text-link" onClick={()=>setFollowupOpen(followupOpen===id?'':id)}>Schedule a follow-up →</button>}{canWriteCare&&followupOpen===id&&<FollowupProposal row={r} onCreate={payload=>onCreate('followup',payload)}/ >}{canResolve&&!['resolved','closed'].includes(st)&&<div className="resolve-row"><input placeholder="Outcome to record" value={outcomes[id]||''} onChange={e=>setOutcomes({...outcomes,[id]:e.target.value})}/><button className="button" disabled={!outcomes[id]} onClick={()=>onResolve(id,outcomes[id])}>Record resolution</button></div>}</div></div>}) : <Empty title="No shared requests" text="New support requests will appear here when the person chooses to share them."/>}</section>{data.followups.length>0&&<section className="card"><SectionHead eyebrow="Agreed check-ins" title="Follow-ups"/>{data.followups.map((f,i)=><div className="permission-row" key={String(f.id||i)}><div><b>{label(f,'description','related_type')||'Follow-up'}</b><span>{niceDate(val(f,'check_at'))} · {label(f,'resolution_state','status')||'Open'}{label(f,'reported_outcome')?` · ${label(f,'reported_outcome')}`:''}</span><RecordSource row={f}/><RecordHistory row={f}/></div>{!['resolved'].includes(label(f,'resolution_state','status').toLowerCase())&&canWriteCare&&<FollowupOutcome followup={f} onCreate={payload=>onCreate('followup',payload)}/>}</div>)}</section>}<section className="card info-card"><CircleHelp size={17}/><p>{label(data.patient,'calling_route')?`Configured calling route: ${label(data.patient,'calling_route')}. Parse does not dispatch emergency services.`:'No calling route is configured. Parse does not dispatch emergency services.'}</p></section></div>; }
+function Support({data,currentUserId,onCompose,onCreate,onAcknowledge,onResolve,canWriteCare}:{data:Dashboard;currentUserId:string;onCompose:(kind:string)=>void;onCreate:(kind:string,payload:Record<string,unknown>)=>void;onAcknowledge:(id:string)=>void;onResolve:(id:string,outcome:string)=>void;canWriteCare:boolean}) { const [outcomes,setOutcomes]=useState<Record<string,string>>({}); const [followupOpen,setFollowupOpen]=useState(''); const canAcknowledge=hasPermission(data.permissions,'ack:support');const canResolve=hasPermission(data.permissions,'resolve:support')||hasPermission(data.permissions,'write:care'); return <div className="view-stack"><section className="card"><SectionHead eyebrow="Shared requests" title="Follow up together" action={canWriteCare&&<button className="button button-primary" onClick={()=>onCompose('support_request')}><Plus size={15}/> New request</button>}/><p className="section-intro">A request is visible here only under the person's sharing permissions. Acknowledging it means you have seen it; resolving it records a reported outcome.</p>{data.support_requests.length?data.support_requests.map((r,i)=>{const st=stateText(r).toLowerCase();const id=String(r.id||i);return <div className="support-item" key={id} data-action-source={`support_request:${id}`} tabIndex={-1}><div className="support-icon"><Heart size={17}/></div><div className="support-copy"><div className="care-task-head"><h3>{label(r,'title','request','request_text','text')||'Support request'}</h3><Status warm={!['resolved','closed'].includes(st)}>{prettyState(stateText(r))}</Status></div><p className="support-quote">“{label(r,'description','content','request_text','text')||'Request details unavailable'}”</p><div className="source-note">{label(r,'requester_name','created_by') ? `${label(r,'requester_name','created_by')} · `:''}{niceDate(val(r,'created_at','occurred_at'))}{label(r,'recipient_name','shared_with')?` · Shared with ${label(r,'recipient_name','shared_with')}`:''}</div><RecordSource row={r}/>{canAcknowledge&&currentUserId===String(r.recipient_user_id)&&(st==='sent'||st==='open'||st==='pending')?<button className="button button-soft" onClick={()=>onAcknowledge(id)}><Check size={15}/> Acknowledge</button>:null}{canWriteCare&&<button className="text-link" onClick={()=>setFollowupOpen(followupOpen===id?'':id)}>Schedule a follow-up →</button>}{canWriteCare&&followupOpen===id&&<FollowupProposal row={r} onCreate={payload=>onCreate('followup',payload)}/ >}{canResolve&&!['resolved','closed'].includes(st)&&<div className="resolve-row"><input placeholder="Outcome to record" value={outcomes[id]||''} onChange={e=>setOutcomes({...outcomes,[id]:e.target.value})}/><button className="button" disabled={!outcomes[id]} onClick={()=>onResolve(id,outcomes[id])}>Record resolution</button></div>}</div></div>}) : <Empty title="No shared requests" text="New support requests will appear here when the person chooses to share them."/>}</section>{data.followups.length>0&&<section className="card"><SectionHead eyebrow="Agreed check-ins" title="Follow-ups"/>{data.followups.map((f,i)=><div className="permission-row" key={String(f.id||i)} data-action-source={`followup:${String(f.id||i)}`} tabIndex={-1}><div><b>{label(f,'description','related_type')||'Follow-up'}</b><span>{niceDate(val(f,'check_at'))} · {label(f,'resolution_state','status')||'Open'}{label(f,'reported_outcome')?` · ${label(f,'reported_outcome')}`:''}</span><RecordSource row={f}/><RecordHistory row={f}/></div>{!['resolved'].includes(label(f,'resolution_state','status').toLowerCase())&&canWriteCare&&<FollowupOutcome followup={f} onCreate={payload=>onCreate('followup',payload)}/>}</div>)}</section>}<section className="card info-card"><CircleHelp size={17}/><p>{label(data.patient,'calling_route')?`Configured calling route: ${label(data.patient,'calling_route')}. Parse does not dispatch emergency services.`:'No calling route is configured. Parse does not dispatch emergency services.'}</p></section></div>; }
 
 function PressureChart({rows,onCorrect}:{rows:Row[];onCorrect:(row:Row)=>void}) { const readings=rows.map(r=>({r,s:Number(val(r,'systolic')),d:Number(val(r,'diastolic'))})).filter(x=>Number.isFinite(x.s)&&Number.isFinite(x.d)).reverse(); if(!readings.length)return <Empty title="No confirmed readings" text="Values without confirmed numbers are not plotted."/>; const values=readings.flatMap(p=>[p.s,p.d]);const min=Math.floor((Math.min(...values)-10)/10)*10;const max=Math.ceil((Math.max(...values)+10)/10)*10; const y=(n:number)=>130-(n-min)/(max-min)*105;const x=(i:number)=>readings.length<2?160:i*(320/(readings.length-1));const systolic=readings.map((p,i)=>`${x(i)},${y(p.s)}`).join(' ');const diastolic=readings.map((p,i)=>`${x(i)},${y(p.d)}`).join(' ');return <><div className="chart-caption"><span>{readings.length} confirmed {readings.length===1?'reading':'readings'}</span><span>mmHg · both reported values · no interpretation</span></div><div className="chart-wrap"><svg viewBox="0 0 320 150" role="img" aria-label={`Blood pressure readings: ${readings.map(p=>`${p.s} systolic and ${p.d} diastolic`).join(', ')}`}><line x1="0" x2="320" y1={y(Math.round(((min+max)/2)/10)*10)} y2={y(Math.round(((min+max)/2)/10)*10)} className="chart-gridline"/><polyline points={systolic} className="chart-line"/><polyline points={diastolic} className="chart-line chart-diastolic"/>{readings.map((p,i)=><g key={String(p.r.id||i)}><circle cx={x(i)} cy={y(p.s)} r="4" className="chart-point"/><circle cx={x(i)} cy={y(p.d)} r="3" className="chart-point chart-diastolic-point"/><text x={x(i)} y={y(p.s)-8} textAnchor="middle" className="chart-label">{p.s}/{p.d}</text></g>)}</svg></div><div className="chart-legend"><span><i/> Systolic</span><span><i/> Diastolic</span></div><div className="reading-list">{readings.slice(-3).reverse().map((p,i)=><div key={String(p.r.id||i)}><b>{p.s}/{p.d} <small>mmHg</small></b><span>{label(p.r,'occurrence_text')?`About ${label(p.r,'occurrence_text')}`:niceDate(val(p.r,'occurred_at'))}</span><button className="text-link" onClick={()=>onCorrect(p.r)}>Correct</button></div>)}</div><p className="chart-disclaimer">Each point is a reported observation. Differences alone do not show a trend, diagnosis or cause.</p></>; }
 
@@ -470,10 +527,11 @@ function Composer({kind,doses,recipients,seed,timezone,setKind,onClose,onCreate,
 }
 
 function ReviewDialog({kind,payload,setPayload,readback,revise,confirm,busy,error,onClose,expiresAt}:{kind:string;payload:Record<string,unknown>;setPayload:(p:Record<string,unknown>)=>void;readback:string;revise:()=>void;confirm:()=>void;busy:boolean;error:string;onClose:()=>void;expiresAt?:string}) {
+ const dialogRef=useRef<HTMLElement>(null);useEffect(()=>{dialogRef.current?.focus();},[]);
  const [serverPayloadFingerprint]=useState(()=>stablePayload(payload));const dirty=stablePayload(payload)!==serverPayloadFingerprint;const expired=Boolean(expiresAt&&Date.now()>=new Date(expiresAt).getTime());
  const editableKeys=new Set(['wording','symptom','occurrence_text','occurred_at','systolic','diastolic','source_description','reporting_actor','dose_instance_id','report_state','taken_time_text','task_type','description','source','due_date','state','appointment_date','completion_date','request_text','urgency','barrier_text','related_type','related_id','check_at','permission_scope','reported_outcome']);
  const editable=Object.entries(payload).filter(([key,value])=>editableKeys.has(key)&&['string','number','boolean'].includes(typeof value));
  const displayOnly=Object.entries(payload).filter(([key,value])=>!editableKeys.has(key)&&value!==null&&value!==undefined&&!['share_with_user_ids','permitted_user_ids','recipient_user_id'].includes(key)&&(!Array.isArray(value)||key==='share_with_names')&&(typeof value!=='object'||key==='share_with_names'));
  const reviseLabel=dirty?'Review revised details':'Create a new reviewed version';
- return <div className="modal-backdrop"><section className="modal-card review-modal" role="dialog" aria-modal="true" aria-labelledby="review-title"><div className="modal-head"><div><div className="eyebrow">Not saved yet · {prettyState(kind)}</div><h2 id="review-title">Review before confirming</h2></div><button className="icon-button" aria-label="Close review" onClick={onClose}><X size={18}/></button></div><div className="readback-box"><div className="readback-icon"><CheckCircle2 size={16}/></div><div><b>Server read-back</b><p>{readback}</p></div></div>{editable.length>0&&<div className="review-fields">{editable.map(([key,value])=><label key={key}>{prettyState(key)}<input aria-label={prettyState(key)} value={String(value)} onChange={e=>setPayload({...payload,[key]:e.target.value})}/></label>)}</div>}{displayOnly.length>0&&<div className="review-fields review-fields-readonly">{displayOnly.map(([key,value])=><div key={key}><span>{prettyState(key)}</span><b>{key==='share_with_names'&&Array.isArray(value)?value.join(', '):String(value)}</b></div>)}</div>}{error&&<div className="inline-error" role="alert">{error}</div>}{expired&&<div className="inline-error" role="alert">This proposal expired. Create a new proposal before confirming.</div>}{dirty&&<div className="inline-error" role="status">These edits are not the server-reviewed proposal yet. Create a revised version and review its new read-back before confirming.</div>}<div className="modal-note"><Shield size={15}/> Confirming commits only the exact proposal returned by the server.</div><div className="modal-actions"><button className="button" disabled={busy||expired||!dirty} onClick={revise}>{reviseLabel}</button><button className="button button-primary" disabled={busy||expired||dirty} onClick={confirm}>{busy?'Saving…':'Confirm and save'}</button></div></section></div>;
+ return <div className="modal-backdrop"><section ref={dialogRef} tabIndex={-1} className="modal-card review-modal" role="dialog" aria-modal="true" aria-labelledby="review-title"><div className="modal-head"><div><div className="eyebrow">Not saved yet · {prettyState(kind)}</div><h2 id="review-title">Review before confirming</h2></div><button className="icon-button" aria-label="Close review" onClick={onClose}><X size={18}/></button></div><div className="readback-box"><div className="readback-icon"><CheckCircle2 size={16}/></div><div><b>Server read-back</b><p>{readback}</p></div></div>{editable.length>0&&<div className="review-fields">{editable.map(([key,value])=><label key={key}>{prettyState(key)}<input aria-label={prettyState(key)} value={String(value)} onChange={e=>setPayload({...payload,[key]:e.target.value})}/></label>)}</div>}{displayOnly.length>0&&<div className="review-fields review-fields-readonly">{displayOnly.map(([key,value])=><div key={key}><span>{prettyState(key)}</span><b>{key==='share_with_names'&&Array.isArray(value)?value.join(', '):String(value)}</b></div>)}</div>}{error&&<div className="inline-error" role="alert">{error}</div>}{expired&&<div className="inline-error" role="alert">This proposal expired. Create a new proposal before confirming.</div>}{dirty&&<div className="inline-error" role="status">These edits are not the server-reviewed proposal yet. Create a revised version and review its new read-back before confirming.</div>}<div className="modal-note"><Shield size={15}/> Confirming commits only the exact proposal returned by the server.</div><div className="modal-actions"><button className="button" disabled={busy||expired||!dirty} onClick={revise}>{reviseLabel}</button><button className="button button-primary" disabled={busy||expired||dirty} onClick={confirm}>{busy?'Saving…':'Confirm and save'}</button></div></section></div>;
 }

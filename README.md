@@ -1,12 +1,56 @@
 # Parse — Tencent Cloud Hackathon Singapore 2026
 
-Parse helps older adults record concerns, report medication status and share confirmed updates with permitted caregivers. The current software setup is a browser companion, a React caregiver dashboard and a shared FastAPI backend. The ESP32-S3 cardholder and native app remain separate ways to access the same care system.
+Parse helps older adults record concerns, report medication status and share confirmed updates with permitted caregivers. The current hosted prototype combines the care dashboard and live phone audio on ChatGPT Sites, with the Aurora Pearl theme and current Parse logo. The original React/FastAPI implementation, ESP32-S3 cardholder and native app are also retained in this repository.
 
-The browser companion runs at `/companion` beside the Parse dashboard. It needs no installed phone app or pendant provisioning. Pair it from the owner's dashboard, then use the phone browser to review and confirm care updates that appear in the permitted caregiver timeline.
+The original FastAPI browser companion runs at `/companion` beside its dashboard. It needs no installed phone app or pendant provisioning. Pair it from the owner's dashboard, then use the phone browser to review and confirm care updates that appear in the permitted caregiver timeline. The hosted Sites demo has the separate pairing and review flow below.
 
 The [first-use guide](docs/careloop/First-Use-Guide.md) covers the owner, patient and caregiver handoff. Browser updates have [recording receipts](docs/careloop/Recording-Receipts.md) and [optional capture prompts with reviewed corrections](docs/careloop/Capture-and-Correction.md). The dashboard adds an [Attention panel](docs/careloop/Caregiver-Action-Inbox.md), [reviewed care names](docs/careloop/Care-Vocabulary.md), [source-linked care questions](docs/careloop/Ask-Parse.md), and [purpose-specific summaries with reviewed printing](docs/careloop/Summary-Purposes.md).
 
 For the recorded walkthrough, see the [60-second browser companion demo](docs/careloop/demo/parse-web-companion-demo.mp4). It uses fictional data and simulated speech.
+
+## Hosted dashboard and voice tool demo
+
+Open the [Parse dashboard](https://parse-shared-voice.iians0n.chatgpt.site/) on a laptop using an invited ChatGPT account. The [public phone companion](https://parse-phone-companion.iians0n.chatgpt.site/phone) needs no ChatGPT sign-in, but it must be paired and approved by a dashboard account before recording.
+
+1. In **Phone & voice**, create a pairing QR and scan it with the phone's camera. Open the link in Safari on iPhone, choose **Connect this phone**, compare the six-digit code, and approve it on the laptop.
+2. On the laptop, choose **Listen live**; on the phone, choose **Start recording**. Keep the phone page open and visible. Clips are limited to 20 seconds.
+3. Say one request, then tap **Stop recording**. Audio streams while you speak; transcription happens after Stop.
+4. When the transcript appears on the laptop, choose **Review care update**. This triggers OpenAI function calling for that recording.
+5. For a proposed change, check the server read-back and choose **Confirm and save**. For a status question, medicine explanation or clarification, read the response in **Phone & voice**; no care record is added.
+
+Use fictional demo information. Record a new clip for every new request, correction or spoken confirmation. Reopening the same recording reuses its interpretation. Finish each proposal before starting an unrelated request; pending proposals expire after two minutes.
+
+### Things to say
+
+Replace bracketed names and dates with the values shown in your dashboard. These examples cover all **11 implemented voice functions**; the exact response depends on the current records and any missing details.
+
+| Functionality | Example to say | Function | Expected result |
+| --- | --- | --- | --- |
+| Private care note | “Please record that I enjoyed a short walk in the garden this morning. Keep this note private.” | `propose_health_note` | A private note proposal; after confirmation, find it in **Timeline**. |
+| Medication report | “I have not yet taken the Sample daily medicine dose scheduled for [date] at nine a.m. Singapore time.” | `report_medication` | A report for that dose in **Medications** after confirmation. Pick an **unconfirmed**, **not yet** or **uncertain** dose; the sample's first dose is already marked taken. |
+| Reported blood pressure | “Please record my blood pressure as 120 over 80, measured using my fictional home blood pressure monitor this morning. I am the patient reporting this reading.” | `record_measurement` | A reading proposal with both values, source and approximate time; after confirmation, check **Timeline** and the blood-pressure chart in **Today**. |
+| Existing care-plan task | “The existing task to review the care plan at a routine appointment needs discussion.” | `update_preventive_task` | A status-change proposal for the matching task in **Care plan**. Use a task whose current status permits that transition. |
+| Ask a permitted person for support | “Please ask [name shown in Care circle] to help me collect groceries. This is a routine request.” | `request_support` | A proposal addressed to that permitted person; after confirmation, find the open request in **Support**. It does not send an email or dispatch help. |
+| Resolve an existing follow-up | “Close the follow-up called Check that transport is arranged. I have arranged the ride.” | `update_followup` | A resolution proposal containing your reported outcome; after confirmation, the open transport follow-up becomes resolved in **Support**. |
+| Review the current proposal by voice | “Yes, those details are correct.” | `confirm_current_update` | Reopens the one current, unexpired proposal. You must still click **Confirm and save** on the laptop. |
+| Read medicine instructions | “What instructions are recorded for Sample daily medicine?” | `get_medication_explanation` | Shows the active checked plan's stored instructions and source in **Phone & voice**. |
+| Check a support request | “What is the status of the request to arrange a ride to the appointment?” | `get_support_status` | Shows the stored open, acknowledged or resolved status of the matching request, including any recorded human outcome. |
+| Check a follow-up | “What is the status of the follow-up called Check that transport is arranged?” | `get_followup_status` | Shows the matching follow-up's stored status and any human-reported outcome. |
+| Ask for a missing detail or chat | “My blood pressure was 120 over 80.” Or: “Good morning, how are you?” | `respond_to_user` | The incomplete reading should prompt a question about missing facts; the greeting gets a brief nonclinical reply. Neither saves a care record. |
+
+To demonstrate correction, leave exactly one note proposal pending, close its review window without saving, and record: **“Actually, change the note to say I enjoyed a short walk in the garden yesterday afternoon. Keep it private.”** Choose **Review care update**, inspect the revised read-back, then confirm it. Corrections use the original proposal function; they are not a twelfth function.
+
+The [complete voice demo guide](docs/careloop/Voice-Tool-Demo.md) includes a suggested walkthrough, more medication and follow-up examples, sharing setup, repeat-demo tips and current verification limits.
+
+### Other dashboard functions
+
+- **Today**: attention items, confirmed-note counts, open support requests and reported blood-pressure readings.
+- **Ask Parse**: preset questions with links to permitted source records, including the latest reading, open support requests and dose reports. These are separate from the phone's voice function calls.
+- **Timeline, Medications, Care plan and Support**: saved care history, checked medication plans, reported doses, task transitions, request acknowledgement and recorded outcomes. **Add entry** also supports manual proposals and review.
+- **Visit summary**: purpose-specific drafts with source records, editing, review, printing and controlled sharing. Changing a source can invalidate an earlier review or share link.
+- **Settings**: care profile, reviewed names and sharing permissions for already invited teammates. Each account starts with its own fictional care space; a Site invitation alone does not share another account's care records or recordings.
+
+The hosted demo supports live audio, transcription after Stop, and one application function per reviewed recording. Background reminders, push notifications and generated spoken replies are not enabled. OpenAI API use is billed separately from hosting. The instructions below cover the retained FastAPI/local implementation; its `/companion` routes and fictional local logins differ from the hosted Sites demo.
 
 ## Product films
 
@@ -129,6 +173,7 @@ See the [browser evidence JSON](docs/careloop/evidence/web-companion-ui-2026-09-
 
 ## More detail
 
+- [Voice tool demo guide](docs/careloop/Voice-Tool-Demo.md): phrases for all eleven hosted voice functions, expected results and a demonstration sequence.
 - [Web companion guide](docs/careloop/Web-Companion.md): product behavior, browser limits, demo and test evidence.
 - [Deployment instructions](deploy/README.md): HTTPS, provider configuration and explicit production provisioning.
 - [Backend setup](backend/README.md): local backend and administrator commands.

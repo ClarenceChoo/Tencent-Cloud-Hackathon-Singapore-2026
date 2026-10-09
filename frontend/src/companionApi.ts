@@ -94,6 +94,9 @@ export const companionApi = {
   enroll: () => request<Enrollment & { csrf_token?: string }>('/enrollments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: json({ display_name: 'Parse browser' }) }),
   enrollment: () => request<Enrollment>('/enrollments/current'),
   home: () => request<Home>('/home'),
+  presence: (lifecycle: 'foreground' | 'background', microphone: 'granted' | 'denied' | 'undetermined' | 'unknown') => request<{server_time: string}>('/presence', {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: json({ lifecycle, microphone_permission: microphone, notification_permission: 'undetermined' }),
+  }),
   upload: (bytes: Blob, key: string, context: string | null, signal: AbortSignal, captureIntent: CaptureIntent | null = null) => request<Receipt>('/turns', { method: 'POST', body: bytes, signal, headers: { 'Content-Type': bytes.type, 'Idempotency-Key': key, ...(context ? { 'X-Context-Id': context } : {}), ...(!context && captureIntent ? { 'X-Care-Intent': captureIntent } : {}) } }),
   receipt: (key: string, signal?: AbortSignal) => request<Receipt>('/turn-receipts/' + encodeURIComponent(key), { signal }),
   turn: (id: string, signal?: AbortSignal) => request<TurnStatus>('/turns/' + encodeURIComponent(id), { signal }),

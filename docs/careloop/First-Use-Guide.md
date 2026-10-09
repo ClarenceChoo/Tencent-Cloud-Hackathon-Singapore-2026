@@ -6,13 +6,13 @@ This guide is for a care-space owner setting up Parse with the person who will u
 
 - An administrator or care-space owner must have created the patient space and the intended users and access grants. The owner needs device-management access. A caregiver needs their own account and permission for the particular shared record.
 - Use an HTTPS Parse service and a supported, current browser for the browser companion. The browser needs network access while its page is open. Keep the owner dashboard and the patient’s companion in their separate sessions.
-- Decide which paired device should receive reminders. Pairing does not select a reminder destination. The owner chooses one under **Settings → Reminder companion**.
-- Check the service status shown in Settings. “Configured” says the provider is configured; it does not prove a live voice turn succeeded. “Simulated” means fixture speech for testing.
+- Decide which paired device should receive reminders. Pairing does not select a reminder destination. The owner chooses one under **Connect → Reminder companion**.
+- Check the service status shown under Connect. “Configured” says the provider is configured; it does not prove a live voice turn succeeded. “Simulated” means fixture speech for testing.
 
 ## Browser companion
 
 1. On the patient’s browser, open `/companion` and choose **Connect this browser**. Read the short-lived code on that page. The code is for owner approval; do not place it in a message or a care note.
-2. In a separate owner dashboard session, open **Settings → Pair your companion**, select **Parse browser**, enter that exact code, and approve it for the intended patient. Back in the patient’s browser, choose **Check connection**. Confirm the displayed person before continuing. If the code expires, start a fresh enrollment.
+2. In a separate owner dashboard session, open **Connect → Pair your companion**, select **Parse browser**, enter that exact code, and approve it for the intended patient. Back in the patient’s browser, choose **Check connection**. Confirm the displayed person before continuing. If the code expires, start a fresh enrollment.
 3. Check the current connection and ask the owner to select this browser as the reminder companion if that is the intended destination. The patient can refresh the browser to see the selection. Browser reminders play only while the companion page is open and visible; the browser does not deliver closed-page alerts or keep durable audio.
 4. Open the **First-use guide** on the companion page. Choose **Play speaker check** and listen to the entire short message. It tests output audio only. If speech is simulated, the guide says so and does not mark live voice as verified.
 5. Choose **Check microphone permission**. The browser asks only after this tap. The exercise immediately releases the microphone and sends no audio. Cancel, leave the page, or switch away while permission is pending to discard a late grant. If permission is denied, change the browser or operating-system permission and retry.
@@ -21,7 +21,7 @@ This guide is for a care-space owner setting up Parse with the person who will u
 
 The **static example** in the guide is only explanatory text. It never asks for microphone access, calls the care API, saves a record, or proves a speech provider works. A successful non-simulated completed turn is the only basis for the guide’s session-local live voice indicator. Reloading the page clears speaker, microphone and first-update proof; current pairing, patient and reminder selection are read again.
 
-If upload status is uncertain, use **Check recording** and its receipt before starting another recording. The browser keeps an opaque receipt identifier for recovery, never the care text or audio. If access is revoked, the patient changes, or the device identity changes, the guide clears its temporary proof. The owner should revoke the old installation in Settings when replacing it.
+If upload status is uncertain, use **Check recording** and its receipt before starting another recording. The browser keeps an opaque receipt identifier for recovery, never the care text or audio. If access is revoked, the patient changes, or the device identity changes, the guide clears its temporary proof. The owner should revoke the old installation under Connect when replacing it.
 
 ## Native phone app
 

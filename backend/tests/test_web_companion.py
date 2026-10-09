@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import threading
 import wave
+from datetime import timedelta
 from concurrent.futures import ThreadPoolExecutor
 from uuid import uuid4
 
@@ -14,6 +15,7 @@ from sqlalchemy import select
 from app import models as m
 from app.phone_audio import MAX_INPUT, normalize_phone_audio
 from app.services import validate_wav
+from app.security import utcnow
 from conftest import ORIGIN, login, wav_bytes
 from test_phone_identity import approve
 
@@ -37,6 +39,40 @@ def enroll(client):
     created = client.post("/v1/web/enrollments", json={"display_name": "Browser companion"}, headers=WEB)
     assert created.status_code == 201, created.text
     return created
+
+
+def test_browser_presence_requires_approval_csrf_and_current_device_access(env):
+    client, app, ids = env
+    created = enroll(client)
+    csrf = created.json()["csrf_token"]
+    device_id = created.json()["device_id"]
+    body = {"lifecycle": "foreground", "microphone_permission": "undetermined", "notification_permission": "undetermined"}
+    headers = {**WEB, "X-CSRF-Token": csrf}
+    assert client.put("/v1/web/presence", json=body, headers=headers).status_code == 403
+    assert approve(client, ids, created.json()["code"]).status_code == 200
+    assert client.put("/v1/web/presence", json=body, headers=WEB).status_code == 403
+    assert client.put("/v1/web/presence", json=body, headers={**headers, "Origin": "https://other.invalid"}).status_code == 403
+    response = client.put("/v1/web/presence", json=body, headers=headers)
+    assert response.status_code == 200, response.text
+    assert response.headers["Cache-Control"] == "private, no-store"
+    assert set(response.json()) == {"server_time"}
+
+    def status():
+        data = client.get(f"/v1/app/patients/{ids['patient']}/dashboard").json()
+        return next(row for row in data["devices"] if row["id"] == device_id)
+
+    assert status()["status"] == "connected"
+    assert status()["phone_presence"]["foreground_ready"] is False  # No microphone permission was requested.
+    assert client.put("/v1/web/presence", json={**body, "lifecycle": "background"}, headers=headers).status_code == 200
+    assert status()["status"] == "stale"
+    assert client.put("/v1/web/presence", json=body, headers=headers).status_code == 200
+    with app.state.db.SessionLocal() as db:
+        db.get(m.Device, device_id).last_seen = utcnow() - timedelta(seconds=16)
+        db.commit()
+    assert status()["status"] == "stale"
+    owner = login(client)
+    assert client.post(f"/v1/app/devices/{device_id}/revoke", headers=owner).status_code == 200
+    assert client.put("/v1/web/presence", json=body, headers=headers).status_code == 403
 
 
 def test_webm_opus_decodes_and_rejects_other_streams(tmp_path, webm):

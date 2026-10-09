@@ -39,7 +39,8 @@ async function main() {
     await page.getByLabel('Email address').fill(role + '@careloop.invalid');
     await page.getByLabel('Password', { exact: true }).fill('fictional-browser-only');
     await page.getByRole('button', { name: /^Continue/ }).click();
-    await page.getByRole('heading', { name: /care timeline/i }).waitFor();
+    await page.getByRole('heading', { name: 'Today’s care', exact: true }).waitFor();
+    await require('./dashboard_navigation.cjs').navigateDashboard(page, 'Timeline');
     const session = await (await context.request.get('/v1/auth/session')).json();
     const api = async (route, data, method = data === undefined ? 'GET' : 'POST') => {
       const response = await context.request.fetch('/v1' + route, { method, headers: { Origin: origin, 'X-CSRF-Token': session.csrf_token }, ...(data === undefined ? {} : { data }) });
@@ -48,7 +49,7 @@ async function main() {
     };
     return { context, page, session, api, dash: () => api(`/app/patients/${fixture.patient_id}/dashboard`) };
   }
-  const nav = (page, name) => page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name, exact: true }).click();
+  const nav = (page, name) => require('./dashboard_navigation.cjs').navigateDashboard(page, name);
   async function upload(name, context, key = randomUUID()) {
     const started = performance.now();
     const headers = { Authorization: 'Bearer ' + token, 'Content-Type': 'audio/mp4', 'Idempotency-Key': key, ...(context ? { 'X-Context-Id': context } : {}) };
@@ -74,7 +75,7 @@ async function main() {
         void response.text().then(text => restrictedResponses.push(text)).catch(() => {});
     });
     const enrollment = await json(await phone('/phone/enrollments', { platform: 'ios', display_name: 'Fictional phone HTTP fixture' }, 'POST', { 'Idempotency-Key': randomUUID() }));
-    await nav(owner.page, 'Settings');
+    await nav(owner.page, 'Connect');
     await owner.page.getByLabel('Companion type').selectOption('phone');
     await owner.page.getByLabel('One-use device code').fill(enrollment.code);
     await owner.page.getByRole('button', { name: 'Approve phone', exact: true }).click();

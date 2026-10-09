@@ -23,6 +23,8 @@ VITE_UI_PREVIEW=true npm run build
 
 The app uses the cookie session and CSRF token returned by `/v1/auth/session` or `/v1/auth/login`. Every proposed health change remains uncommitted until the user reviews and confirms it. Summary sharing is a separate action after saving the review.
 
+The main navigation is **Today, Timeline, Medications, Care, Log**. Care groups tasks with requests/follow-ups; Settings is the header gear, Check records is on Today, and Prepare summary is on Timeline. A separate **Connect** button opens companion pairing and reminder selection, then reflects the selected companion's current live status as **Connected**, **Waiting for connection** or **Offline**. The [Activity Log guide](../docs/careloop/Activity-Log.md) explains connection states, filters, permission-scoped history and recording receipts. The Log reads paginated persistent backend evidence; the public UI preview uses only fictional in-memory examples. Clicks suppress the focus outline while keyboard tabbing retains it.
+
 The companion's [first-use guide](../docs/careloop/First-Use-Guide.md), [recording receipts](../docs/careloop/Recording-Receipts.md), and [capture/correction controls](../docs/careloop/Capture-and-Correction.md) use the same confirmation pipeline. The dashboard's [Attention panel](../docs/careloop/Caregiver-Action-Inbox.md) and [Ask Parse](../docs/careloop/Ask-Parse.md) show permitted source records. [Reviewed names](../docs/careloop/Care-Vocabulary.md) require an explicit versioned save. [Summary purposes and printing](../docs/careloop/Summary-Purposes.md) preserve provenance and require a current review. These controls retain the light Aurora Pearl theme.
 
 ## Vercel preview

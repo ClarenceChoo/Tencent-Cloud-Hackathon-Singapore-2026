@@ -27,7 +27,8 @@ async function main(){
     const page=await context.newPage();page.setDefaultTimeout(15000);await page.goto('/');
     await page.getByLabel('Email address').fill(email);await page.getByLabel('Password',{exact:true}).fill(password);
     await page.getByRole('button',{name:/^Continue/}).click();
-    await page.getByRole('heading',{name:/care timeline/i}).waitFor();
+    await page.getByRole('heading',{name:'Today’s care',exact:true}).waitFor();
+    await require('./dashboard_navigation.cjs').navigateDashboard(page, 'Timeline');
     const session=await (await context.request.get('/v1/auth/session')).json();
     const dash=async()=>{const response=await context.request.get(`/v1/app/patients/${session.patients[0].id}/dashboard`);assert(response.ok());return response.json()};
     return {context,page,session,dash};
@@ -45,8 +46,8 @@ async function main(){
   try{
     const owner=await login('owner@careloop.invalid','fictional-demo-only');
     const caregiver=await login('caregiver@careloop.invalid','fictional-caregiver-only');
-    const nav=(page,name)=>page.getByRole('navigation',{name:'Main navigation'}).getByRole('button',{name,exact:true}).click();
-    await nav(owner.page,'Settings');
+    const nav=(page,name)=>require('./dashboard_navigation.cjs').navigateDashboard(page,name);
+    await nav(owner.page,'Connect');
     await owner.page.getByLabel('One-use device code').fill('WRONG-CODE');
     await owner.page.getByRole('button',{name:'Pair cardholder',exact:true}).click();
     await owner.page.getByRole('alert').filter({hasText:'Claim code is invalid'}).waitFor();
@@ -72,7 +73,7 @@ async function main(){
     assert.equal((await caregiver.dash()).notes.length,1);
     pass('Fixture audio needs confirmation; exactly one shared note appears in the open caregiver timeline');
     await caregiver.page.screenshot({path:path.join(directory,'caregiver-timeline.png'),fullPage:true});
-    await nav(caregiver.page,'Settings');
+    await nav(caregiver.page,'Connect');
     assert.equal(await caregiver.page.getByLabel('One-use device code').count(),0);
     assert.equal(await caregiver.page.getByRole('button',{name:'Revoke device access'}).count(),0);
     pass('Caregiver can observe connection status but cannot pair or revoke devices');

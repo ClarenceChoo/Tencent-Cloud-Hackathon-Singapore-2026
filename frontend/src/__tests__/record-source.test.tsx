@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { fireEvent, cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RecordSource, RecordHistory } from '../RecordSource';
 import App from '../App';
@@ -38,6 +38,7 @@ it('shows a phone-origin timeline entry and the selected phone instead of the fi
   vi.stubGlobal('scrollTo',vi.fn());
   vi.stubGlobal('fetch',vi.fn(async (url:RequestInfo|URL)=>new Response(JSON.stringify(String(url).endsWith('/auth/session')?session:dashboard),{headers:{'Content-Type':'application/json'}})));
   render(<App/>);
+  fireEvent.click(await screen.findByRole('button', { name: 'Timeline' }));
   await screen.findByRole('heading',{name:'Fictional confirmed note'});
   expect(screen.getByText(/Recorded via Parse phone/)).toBeTruthy();
   expect(screen.getByRole('button',{name:/Phone connected/})).toBeTruthy();

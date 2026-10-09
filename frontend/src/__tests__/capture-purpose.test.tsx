@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import Companion from '../Companion';
 import type { Home } from '../companionApi';
 
-const api = vi.hoisted(() => ({ session: vi.fn(), enrollment: vi.fn(), home: vi.fn(), pending: vi.fn(), speaker: vi.fn(), upload: vi.fn() }));
+const api = vi.hoisted(() => ({ session: vi.fn(), enrollment: vi.fn(), home: vi.fn(), presence: vi.fn(), pending: vi.fn(), speaker: vi.fn(), upload: vi.fn() }));
 vi.mock('../companionApi', async importOriginal => {
   const original = await importOriginal<typeof import('../companionApi')>();
   return { ...original, companionApi: { ...original.companionApi, ...api } };
@@ -21,6 +21,7 @@ beforeEach(() => {
   api.session.mockResolvedValue({ has_installation: true, csrf_token: 'csrf' });
   api.enrollment.mockResolvedValue({ status: 'paired', device_id: 'phone_123', patient: { id: 'p1', name: 'Mei' } });
   api.home.mockResolvedValue(home);
+  api.presence.mockResolvedValue({ server_time: '2026-10-09T00:00:00Z' });
   api.pending.mockResolvedValue({ active_companion: home.active_companion, commands: [], checkins: [] });
 });
 afterEach(() => cleanup());

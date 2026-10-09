@@ -181,7 +181,8 @@ async function main() {
     await page.getByLabel('Email address').fill(role + '@native.invalid');
     await page.getByLabel('Password', { exact: true }).fill('fictional-native-only');
     await page.getByRole('button', { name: /^Continue/ }).click();
-    await page.getByRole('heading', { name: /care timeline/i }).waitFor();
+    await page.getByRole('heading', { name: 'Today’s care', exact: true }).waitFor();
+    await require('./dashboard_navigation.cjs').navigateDashboard(page, 'Timeline');
     const session = await (await context.request.get('/v1/auth/session')).json();
     const api = async (route, data, method = data === undefined ? 'GET' : 'POST') => {
       const response = await context.request.fetch('/v1' + route, { method,
@@ -216,7 +217,7 @@ async function main() {
     const owner = await login('owner');
     const caregiver = await login('caregiver');
     const restricted = await login('restricted');
-    await owner.page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Settings', exact: true }).click();
+    await require('./dashboard_navigation.cjs').navigateDashboard(owner.page, 'Connect');
     if (pairingRecoveryContinue) {
       const bytes = fs.readFileSync(path.join(directory, 'native-pairing-recovery-checkpoint.json'));
       const checkpoint = JSON.parse(bytes);

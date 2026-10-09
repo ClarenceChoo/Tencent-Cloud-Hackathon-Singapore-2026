@@ -36,11 +36,12 @@ it('opens the exact support source and moves keyboard focus there', async () => 
   vi.stubGlobal('scrollTo', vi.fn());
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).includes('/auth/') ? json(session) : json(withRequest)));
   render(<App/>);
+  fireEvent.click(await screen.findByRole('button', { name: 'Timeline' }));
   await screen.findByRole('heading', { name: /care timeline/i });
   fireEvent.click(screen.getByRole('button', { name: 'Today' }));
   fireEvent.click(screen.getByRole('button', { name: 'Open request Support request: Please help arrange a visit' }));
   await waitFor(() => expect(document.activeElement?.getAttribute('data-action-source')).toBe('support_request:request-1'));
-  expect(screen.getByRole('heading', { name: 'Support' })).toBeTruthy();
+  expect(screen.getByRole('heading', { name: 'Care' })).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Acknowledge' })).toBeTruthy(); // source permission and recipient still govern writes
 });
 
@@ -52,6 +53,7 @@ it.each([
   vi.stubGlobal('scrollTo', vi.fn());
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).includes('/auth/') ? json(session) : json({ ...data, ...patch })));
   render(<App/>);
+  fireEvent.click(await screen.findByRole('button', { name: 'Timeline' }));
   await screen.findByRole('heading', { name: /care timeline/i });
   fireEvent.click(screen.getByRole('button', { name: 'Today' }));
   fireEvent.click(screen.getByRole('button', { name: button }));
@@ -62,6 +64,7 @@ it('opens a permitted proposal in its existing review dialog', async () => {
   vi.stubGlobal('scrollTo', vi.fn());
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).includes('/auth/') ? json(session) : json({ ...data, permissions: ['write:care'], proposals: [{ id: 'proposal-1', kind: 'health_note', readback: 'Check this note', payload: { wording: 'Fictional note' }, status: 'pending' }] })));
   render(<App/>);
+  fireEvent.click(await screen.findByRole('button', { name: 'Timeline' }));
   await screen.findByRole('heading', { name: /care timeline/i });
   fireEvent.click(screen.getByRole('button', { name: 'Today' }));
   fireEvent.click(screen.getByRole('button', { name: 'Review Proposal: Check this note' }));
@@ -83,6 +86,7 @@ it('removes the previous care space immediately on patient switch and ignores it
     return oldCalls === 1 ? json(firstData) : new Promise<Response>(resolve => { finishOld = resolve; });
   }));
   render(<App/>);
+  fireEvent.click(await screen.findByRole('button', { name: 'Timeline' }));
   await screen.findByRole('heading', { name: /care timeline/i });
   fireEvent.click(screen.getByRole('button', { name: 'Today' }));
   expect(screen.getAllByText('Old private request').length).toBeGreaterThan(0);
@@ -110,6 +114,7 @@ it('rejects an old A response after switching A to B and back to A', async () =>
     return json(aCalls === 1 ? staleA : freshA);
   }));
   render(<App/>);
+  fireEvent.click(await screen.findByRole('button', { name: 'Timeline' }));
   await screen.findByRole('heading', { name: /care timeline/i });
   fireEvent.click(screen.getByRole('button', { name: 'Today' }));
   fireEvent.click(screen.getByRole('button', { name: 'Refresh care data' }));
@@ -135,6 +140,7 @@ it('keeps a newer same-patient dashboard when an older refresh completes last', 
     return json(calls === 1 ? stale : fresh);
   }));
   render(<App/>);
+  fireEvent.click(await screen.findByRole('button', { name: 'Timeline' }));
   await screen.findByRole('heading', { name: /care timeline/i });
   fireEvent.click(screen.getByRole('button', { name: 'Today' }));
   fireEvent.click(screen.getByRole('button', { name: 'Refresh care data' }));
@@ -157,8 +163,10 @@ it('sends only one acknowledgement while repeated source clicks are pending', as
     return json(withRequest);
   }));
   render(<App/>);
+  fireEvent.click(await screen.findByRole('button', { name: 'Timeline' }));
   await screen.findByRole('heading', { name: /care timeline/i });
-  fireEvent.click(screen.getByRole('button', { name: 'Support' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Care' }));
+  fireEvent.click(screen.getByRole('button', { name: /Requests & follow-ups/ }));
   const button = screen.getByRole('button', { name: 'Acknowledge' });
   fireEvent.click(button);
   fireEvent.click(button);
@@ -183,11 +191,13 @@ it('does not let an old mutation callback repopulate the same care space after A
     return json(aReads === 1 ? oldA : freshA);
   }));
   render(<App/>);
+  fireEvent.click(await screen.findByRole('button', { name: 'Timeline' }));
   await screen.findByRole('heading', { name: /care timeline/i });
-  fireEvent.click(screen.getByRole('button', { name: 'Support' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Care' }));
+  fireEvent.click(screen.getByRole('button', { name: /Requests & follow-ups/ }));
   fireEvent.click(screen.getByRole('button', { name: 'Acknowledge' }));
   fireEvent.change(screen.getByLabelText('Choose patient profile'), { target: { value: 'patient-2' } });
-  await screen.findByRole('heading', { name: 'Support' });
+  await screen.findByRole('heading', { name: 'Care' });
   fireEvent.change(screen.getByLabelText('Choose patient profile'), { target: { value: 'patient-1' } });
   await screen.findByText('Fresh assignment');
   await act(async () => { finishAck(json({ status: 'acknowledged' })); });

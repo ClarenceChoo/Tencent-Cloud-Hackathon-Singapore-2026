@@ -1,4 +1,4 @@
-import type { Dashboard, Session } from './api';
+import type { ActivityFilters, ActivityItem, ActivityPage, Dashboard, Session } from './api';
 
 export const uiPreview = import.meta.env.VITE_UI_PREVIEW === 'true';
 export const previewOnlyMessage = 'UI demo only: fictional sample data. This action is not saved or shared.';
@@ -12,6 +12,21 @@ const patient = {
 
 export function previewSession(): Session {
   return { user: { id: 'sample-caregiver', name: 'Alex Tan (sample)', email: 'sample@example.invalid', role: 'caregiver' }, patients: [patient], csrf_token: '' };
+}
+
+export function previewActivity(filters: ActivityFilters): ActivityPage {
+  const items: ActivityItem[] = [
+    { id: 'sample-log-note', record_id: 'sample-note', recorded_at: time(-1, 17), event: 'Care note confirmed', category: 'notes', summary: 'Enjoyed a short walk in the garden and felt comfortable afterward.', status: 'confirmed', source: 'Sample care dashboard' },
+    { id: 'sample-log-dose', record_id: 'sample-dose-1', recorded_at: time(0, 9), event: 'Medication report confirmed', category: 'medications', summary: 'Sample daily medicine: reported taken.', status: 'confirmed', source: 'Sample care dashboard' },
+    { id: 'sample-log-request', record_id: 'sample-request', recorded_at: time(-1, 11), event: 'Support request confirmed', category: 'support', summary: 'Could someone help arrange a ride to the appointment?', status: 'confirmed', source: 'Sample care dashboard' },
+    { id: 'sample-log-reading', record_id: 'sample-reading', recorded_at: time(-2, 9), event: 'Blood-pressure reading confirmed', category: 'readings', summary: '122 / 78 mmHg, sample home monitor.', status: 'confirmed', source: 'Sample care dashboard' },
+  ];
+  const dateOf = (value: string) => new Intl.DateTimeFormat('en-CA', { timeZone: patient.timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(value));
+  const search = (filters.search || '').toLowerCase();
+  return { items: items.filter(item => (!filters.category || filters.category === 'all' || item.category === filters.category) &&
+    (!filters.start || dateOf(item.recorded_at) >= filters.start) && (!filters.end || dateOf(item.recorded_at) <= filters.end) &&
+    `${item.event} ${item.summary} ${item.source}`.toLowerCase().includes(search)).sort((a, b) => b.recorded_at.localeCompare(a.recorded_at)),
+    next_cursor: null, timezone: patient.timezone };
 }
 
 /** Fresh in-memory fixture on every read. It contains no real patient or service data. */

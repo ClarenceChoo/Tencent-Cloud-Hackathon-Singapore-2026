@@ -1,0 +1,261 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" type="device" compressed="false">
+  <diagram id="system-overview" name="System overview">
+    <mxGraphModel dx="1600" dy="1120" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1120" background="#F8FAFD" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="host" value="&lt;b&gt;Tencent Cloud host · Docker Compose&lt;/b&gt;&lt;br&gt;Proposed deployment / single backend instance" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#EDF3FA;strokeColor=#B8CBDF;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;spacingTop=20;fontSize=21;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="415" y="160" width="730" height="850" />
+        </mxCell>
+        <mxCell id="backend" value="&lt;b&gt;FastAPI application · Uvicorn&lt;/b&gt;&lt;br&gt;One process: API handlers, voice worker, scheduler" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#F9FCFF;strokeColor=#9CB8D7;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;spacingTop=20;fontSize=21;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="450" y="420" width="660" height="400" />
+        </mxCell>
+        <mxCell id="client-browser" style="edgeStyle=none;rounded=0;html=1;strokeColor=#1769D2;strokeWidth=2;endArrow=block;endFill=1;startArrow=block;startFill=1;exitX=1.0;exitY=0.4962962962962963;exitPerimeter=0;entryX=0.0;entryY=0.49523809523809526;entryPerimeter=0;" edge="1" parent="1" source="browser" target="caddy">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="390" y="312" />
+              <mxPoint x="390" y="312" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="client-dashboard" style="edgeStyle=none;rounded=0;html=1;strokeColor=#1769D2;strokeWidth=2;endArrow=block;endFill=1;startArrow=block;startFill=1;exitX=1.0;exitY=0.4962962962962963;exitPerimeter=0;entryX=0.0;entryY=0.49523809523809526;entryPerimeter=0;" edge="1" parent="1" source="dashboard" target="caddy">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="390" y="492" />
+              <mxPoint x="390" y="312" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="client-native" style="edgeStyle=none;rounded=0;html=1;strokeColor=#1769D2;strokeWidth=2;endArrow=block;endFill=1;dashed=1;dashPattern=6 4;startArrow=block;startFill=1;exitX=1.0;exitY=0.4962962962962963;exitPerimeter=0;entryX=0.0;entryY=0.49523809523809526;entryPerimeter=0;" edge="1" parent="1" source="native" target="caddy">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="390" y="672" />
+              <mxPoint x="390" y="312" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="client-hardware" style="edgeStyle=none;rounded=0;html=1;strokeColor=#1769D2;strokeWidth=2;endArrow=block;endFill=1;dashed=1;dashPattern=6 4;startArrow=block;startFill=1;exitX=1.0;exitY=0.4962962962962963;exitPerimeter=0;entryX=0.0;entryY=0.49523809523809526;entryPerimeter=0;" edge="1" parent="1" source="hardware" target="caddy">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="390" y="852" />
+              <mxPoint x="390" y="312" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="proxy" style="edgeStyle=none;rounded=0;html=1;strokeColor=#1769D2;strokeWidth=2;endArrow=block;endFill=1;startArrow=block;startFill=1;exitX=0.5;exitY=1.0;exitPerimeter=0;entryX=0.5;entryY=0.0;entryPerimeter=0;" edge="1" parent="1" source="caddy" target="backend">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="api-voice" style="edgeStyle=none;rounded=0;html=1;strokeColor=#617991;strokeWidth=2;endArrow=block;endFill=1;startArrow=block;startFill=1;exitX=1.0;exitY=0.5058823529411764;exitPerimeter=0;entryX=0.0;entryY=0.14333333333333334;entryPerimeter=0;" edge="1" parent="1" source="api" target="adapter">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="api-care" style="edgeStyle=none;rounded=0;html=1;strokeColor=#147D75;strokeWidth=2;endArrow=block;endFill=1;startArrow=block;startFill=1;exitX=0.49295774647887325;exitY=1.0;exitPerimeter=0;entryX=0.49295774647887325;entryY=0.0;entryPerimeter=0;" edge="1" parent="1" source="api" target="care">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="care-db" style="edgeStyle=none;rounded=0;html=1;strokeColor=#147D75;strokeWidth=2;endArrow=block;endFill=1;startArrow=block;startFill=1;exitX=0.15492957746478872;exitY=1.0;exitPerimeter=0;entryX=0.19148936170212766;entryY=0.0;entryPerimeter=0;" edge="1" parent="1" source="care" target="db">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="530" y="852" />
+              <mxPoint x="650" y="852" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="schedule-db" style="edgeStyle=none;rounded=0;html=1;strokeColor=#147D75;strokeWidth=2;endArrow=block;endFill=1;startArrow=block;startFill=1;exitX=0.7746478873239436;exitY=1.0;exitPerimeter=0;entryX=0.40425531914893614;entryY=0.0;entryPerimeter=0;" edge="1" parent="1" source="scheduler" target="db">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="voice-db" style="edgeStyle=none;rounded=0;html=1;strokeColor=#147D75;strokeWidth=2;endArrow=block;endFill=1;startArrow=block;startFill=1;exitX=0.5238095238095238;exitY=1.0;exitPerimeter=0;entryX=0.9042553191489362;entryY=0.0;entryPerimeter=0;" edge="1" parent="1" source="adapter" target="db">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="speech-in" style="edgeStyle=none;rounded=0;html=1;strokeColor=#7E63A1;strokeWidth=2;endArrow=block;endFill=1;startArrow=block;startFill=1;exitX=1.0;exitY=0.15;exitPerimeter=0;entryX=0.0;entryY=0.5;entryPerimeter=0;" edge="1" parent="1" source="adapter" target="asr">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="1170" y="550" />
+              <mxPoint x="1170" y="300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="interpret" style="edgeStyle=none;rounded=0;html=1;strokeColor=#7E63A1;strokeWidth=2;endArrow=block;endFill=1;startArrow=block;startFill=1;exitX=1.0;exitY=0.31666666666666665;exitPerimeter=0;entryX=0.0;entryY=0.4962962962962963;entryPerimeter=0;" edge="1" parent="1" source="adapter" target="llm">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="1190" y="600" />
+              <mxPoint x="1190" y="492" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="speech-out" style="edgeStyle=none;rounded=0;html=1;strokeColor=#7E63A1;strokeWidth=2;endArrow=block;endFill=1;startArrow=block;startFill=1;exitX=1.0;exitY=0.5166666666666667;exitPerimeter=0;entryX=0.0;entryY=0.5;entryPerimeter=0;" edge="1" parent="1" source="adapter" target="tts">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="optional-push" style="edgeStyle=none;rounded=0;html=1;strokeColor=#617991;strokeWidth=2;endArrow=block;endFill=1;dashed=1;dashPattern=6 4;exitX=1.0;exitY=0.49230769230769234;exitPerimeter=0;entryX=0.0;entryY=0.4962962962962963;entryPerimeter=0;" edge="1" parent="1" source="scheduler" target="push">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points">
+              <mxPoint x="850" y="772" />
+              <mxPoint x="850" y="850" />
+              <mxPoint x="1170" y="850" />
+              <mxPoint x="1170" y="852" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="overview-title" value="&lt;b&gt;Parse | System architecture&lt;/b&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;spacing=0;spacingTop=0;fontSize=20;fontSize=36;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="50" y="40" width="1450" height="50" />
+        </mxCell>
+        <mxCell id="subtitle" value="&lt;b&gt;Shared care backend, deliberate voice input, and confirmed updates for permitted caregivers&lt;/b&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;spacing=0;spacingTop=0;fontSize=20;fontSize=36;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="50" y="98" width="1450" height="40" />
+        </mxCell>
+        <mxCell id="clients-label" value="&lt;b&gt;CLIENTS&lt;/b&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;spacing=0;spacingTop=0;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="50" y="160" width="320" height="30" />
+        </mxCell>
+        <mxCell id="providers-label" value="&lt;b&gt;EXTERNAL SERVICES&lt;/b&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;spacing=0;spacingTop=0;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1210" y="160" width="350" height="30" />
+        </mxCell>
+        <mxCell id="browser" value="&lt;b&gt;Browser companion&lt;/b&gt;&lt;br&gt;React · /companion&lt;br&gt;MediaRecorder + review + confirm&lt;br&gt;HTTPS · /v1/web · cookie + CSRF" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#EAF2FE;strokeColor=#A6C6F3;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="50" y="245" width="310" height="135" />
+        </mxCell>
+        <mxCell id="dashboard" value="&lt;b&gt;Owner / caregiver dashboard&lt;/b&gt;&lt;br&gt;React · /&lt;br&gt;Pairing, grants, care timeline&lt;br&gt;HTTPS · /v1/app · session + CSRF" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#EAF2FE;strokeColor=#A6C6F3;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="50" y="425" width="310" height="135" />
+        </mxCell>
+        <mxCell id="native" value="&lt;b&gt;Native phone companion&lt;/b&gt;&lt;br&gt;React Native / Expo&lt;br&gt;OS secure installation credential&lt;br&gt;HTTPS / WSS · /v1/phone + device" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#C3D0DD;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;dashed=1;dashPattern=6 4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="50" y="605" width="310" height="135" />
+        </mxCell>
+        <mxCell id="hardware" value="&lt;b&gt;ESP32-S3 cardholder&lt;/b&gt;&lt;br&gt;ESP-IDF · push-to-talk WAV&lt;br&gt;Wi-Fi / phone hotspot&lt;br&gt;HTTPS / WSS · device bearer token" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#C3D0DD;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;dashed=1;dashPattern=6 4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="50" y="785" width="310" height="135" />
+        </mxCell>
+        <mxCell id="caddy" value="&lt;b&gt;Caddy · HTTPS entry point&lt;/b&gt;&lt;br&gt;TLS on 80/443 · built React files from /srv&lt;br&gt;Same origin · /v1/* and /healthz → backend:8000" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#9CB8D7;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="450" y="260" width="660" height="105" />
+        </mxCell>
+        <mxCell id="api" value="&lt;b&gt;Client API + access controls&lt;/b&gt;&lt;br&gt;Sessions / CSRF · pairing · scoped grants" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#EAF2FE;strokeColor=#A6C6F3;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="475" y="505" width="355" height="85" />
+        </mxCell>
+        <mxCell id="care" value="&lt;b&gt;Care services + confirmation&lt;/b&gt;&lt;br&gt;Validate → read-back → confirm → commit" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#E8F5F2;strokeColor=#9BCDC6;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="475" y="625" width="355" height="85" />
+        </mxCell>
+        <mxCell id="scheduler" value="&lt;b&gt;Scheduler + routing&lt;/b&gt;&lt;br&gt;Reminders, check-ins, recovery" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#C3D0DD;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="475" y="740" width="355" height="65" />
+        </mxCell>
+        <mxCell id="adapter" value="&lt;b&gt;Voice worker&lt;/b&gt;&lt;br&gt;Audio normalization&lt;br&gt;FFmpeg / FFprobe&lt;br&gt;16 kHz PCM WAV&lt;br&gt;&lt;br&gt;ASR → interpret&lt;br&gt;Validated proposals&lt;br&gt;Bounded TTS replies" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#F1EDFA;strokeColor=#C6B5E3;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="875" y="505" width="210" height="300" />
+        </mxCell>
+        <mxCell id="db" value="&lt;b&gt;PostgreSQL 17 · private database&lt;/b&gt;&lt;br&gt;SQLAlchemy · grants, proposals, confirmed records&lt;br&gt;Turns, expiring WAV assets, events and delivery ledgers" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#E8F5F2;strokeColor=#9BCDC6;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="560" y="880" width="470" height="100" />
+        </mxCell>
+        <mxCell id="asr" value="&lt;b&gt;Tencent Cloud ASR&lt;/b&gt;&lt;br&gt;SentenceRecognition&lt;br&gt;WAV → transcript" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#F1EDFA;strokeColor=#C6B5E3;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1210" y="245" width="340" height="110" />
+        </mxCell>
+        <mxCell id="llm" value="&lt;b&gt;Configured LLM endpoint&lt;/b&gt;&lt;br&gt;OpenAI-compatible chat completions&lt;br&gt;Transcript + scoped context → JSON&lt;br&gt;Model / endpoint set on server" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#F1EDFA;strokeColor=#C6B5E3;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1210" y="425" width="340" height="135" />
+        </mxCell>
+        <mxCell id="tts" value="&lt;b&gt;Tencent Cloud TTS&lt;/b&gt;&lt;br&gt;TextToVoice&lt;br&gt;Reviewed reply text → PCM / WAV" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#F1EDFA;strokeColor=#C6B5E3;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1210" y="605" width="340" height="110" />
+        </mxCell>
+        <mxCell id="push" value="&lt;b&gt;Optional Expo push&lt;/b&gt;&lt;br&gt;Native installation hints only&lt;br&gt;Phone fetches current state via API&lt;br&gt;Disabled by default" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#C3D0DD;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;dashed=1;dashPattern=6 4;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1210" y="785" width="340" height="135" />
+        </mxCell>
+        <mxCell id="private-route" value="&lt;b&gt;Private HTTP / WebSocket&lt;/b&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;spacing=0;spacingTop=0;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="805" y="383" width="230" height="26" />
+        </mxCell>
+        <mxCell id="legend" value="&lt;b&gt;Solid: primary web path and shared services     Dashed: alternate clients / optional push&lt;/b&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;spacing=0;spacingTop=0;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="50" y="1018" width="1480" height="30" />
+        </mxCell>
+        <mxCell id="status" value="&lt;b&gt;30 Sep 2026 · Live providers require configuration. Native / hardware acceptance and public deployment remain unverified.&lt;/b&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;spacing=0;spacingTop=0;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="50" y="1060" width="1490" height="35" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="voice-and-confirmation-flow" name="Voice and confirmation flow">
+    <mxGraphModel dx="1600" dy="960" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="960" background="#F8FAFD" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="capture-accept" style="edgeStyle=none;rounded=0;html=1;strokeColor=#1769D2;strokeWidth=2;endArrow=block;endFill=1;exitX=1.0;exitY=0.5;exitPerimeter=0;entryX=0.0;entryY=0.5;entryPerimeter=0;" edge="1" parent="1" source="capture" target="accept">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="accept-transcribe" style="edgeStyle=none;rounded=0;html=1;strokeColor=#1769D2;strokeWidth=2;endArrow=block;endFill=1;exitX=1.0;exitY=0.5;exitPerimeter=0;entryX=0.0;entryY=0.5;entryPerimeter=0;" edge="1" parent="1" source="accept" target="transcribe">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="transcribe-interpret" style="edgeStyle=none;rounded=0;html=1;strokeColor=#1769D2;strokeWidth=2;endArrow=block;endFill=1;exitX=1.0;exitY=0.5;exitPerimeter=0;entryX=0.0;entryY=0.5;entryPerimeter=0;" edge="1" parent="1" source="transcribe" target="interpret">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="intent-validation" style="edgeStyle=none;rounded=0;html=1;strokeColor=#147D75;strokeWidth=2;endArrow=block;endFill=1;exitX=0.5;exitY=1.0;exitPerimeter=0;entryX=0.5;entryY=0.0;entryPerimeter=0;" edge="1" parent="1" source="interpret" target="validate">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="validate-review" style="edgeStyle=none;rounded=0;html=1;strokeColor=#147D75;strokeWidth=2;endArrow=block;endFill=1;exitX=0.0;exitY=0.5;exitPerimeter=0;entryX=1.0;entryY=0.5;entryPerimeter=0;" edge="1" parent="1" source="validate" target="review">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="review-confirm" style="edgeStyle=none;rounded=0;html=1;strokeColor=#147D75;strokeWidth=2;endArrow=block;endFill=1;exitX=0.0;exitY=0.5;exitPerimeter=0;entryX=1.0;entryY=0.5;entryPerimeter=0;" edge="1" parent="1" source="review" target="confirm">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="confirm-commit" style="edgeStyle=none;rounded=0;html=1;strokeColor=#147D75;strokeWidth=2;endArrow=block;endFill=1;exitX=0.0;exitY=0.5;exitPerimeter=0;entryX=1.0;entryY=0.5;entryPerimeter=0;" edge="1" parent="1" source="confirm" target="commit">
+          <mxGeometry as="geometry" relative="1">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="flow-title" value="&lt;b&gt;Parse | From voice to a confirmed care record&lt;/b&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;spacing=0;spacingTop=0;fontSize=20;fontSize=36;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="60" y="40" width="1480" height="50" />
+        </mxCell>
+        <mxCell id="flow-subtitle" value="&lt;b&gt;Backend logic owns validation, read-back and persistence; clients provide explicit review and confirmation&lt;/b&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;spacing=0;spacingTop=0;fontSize=20;fontSize=36;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="60" y="104" width="1480" height="36" />
+        </mxCell>
+        <mxCell id="capture" value="&lt;b&gt;1  Deliberate recording&lt;/b&gt;&lt;br&gt;Browser / native / cardholder&lt;br&gt;Short recording + retry identity&lt;br&gt;User sends captured audio" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#EAF2FE;strokeColor=#A6C6F3;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="60" y="235" width="310" height="160" />
+        </mxCell>
+        <mxCell id="accept" value="&lt;b&gt;2  Accept + normalize&lt;/b&gt;&lt;br&gt;Authenticate installation&lt;br&gt;Persist idempotent turn receipt&lt;br&gt;Canonical 16 kHz PCM WAV" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#EAF2FE;strokeColor=#A6C6F3;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="430" y="235" width="310" height="160" />
+        </mxCell>
+        <mxCell id="transcribe" value="&lt;b&gt;3  Speech recognition&lt;/b&gt;&lt;br&gt;Tencent Cloud ASR&lt;br&gt;WAV → transcript&lt;br&gt;Delete raw input after ASR" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#F1EDFA;strokeColor=#C6B5E3;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="800" y="235" width="310" height="160" />
+        </mxCell>
+        <mxCell id="interpret" value="&lt;b&gt;4  Interpret intent&lt;/b&gt;&lt;br&gt;Configured LLM endpoint&lt;br&gt;Transcript + scoped care context&lt;br&gt;Structured JSON proposal" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#F1EDFA;strokeColor=#C6B5E3;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1170" y="235" width="310" height="160" />
+        </mxCell>
+        <mxCell id="validate" value="&lt;b&gt;5  Validate + propose&lt;/b&gt;&lt;br&gt;Backend schema / domain checks&lt;br&gt;Snapshot + expiry + context ID&lt;br&gt;Deterministic read-back text" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#E8F5F2;strokeColor=#9BCDC6;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1170" y="520" width="310" height="160" />
+        </mxCell>
+        <mxCell id="review" value="&lt;b&gt;6  Read-back + review&lt;/b&gt;&lt;br&gt;Tencent TTS → bounded WAVs&lt;br&gt;Client shows / plays proposal&lt;br&gt;Correct or cancel before saving" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#EAF2FE;strokeColor=#A6C6F3;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="800" y="520" width="310" height="160" />
+        </mxCell>
+        <mxCell id="confirm" value="&lt;b&gt;7  Explicit confirmation&lt;/b&gt;&lt;br&gt;Confirm UI or deliberate reply&lt;br&gt;Recheck access + proposal state&lt;br&gt;Bind to current review context" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#E8F5F2;strokeColor=#9BCDC6;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="430" y="520" width="310" height="160" />
+        </mxCell>
+        <mxCell id="commit" value="&lt;b&gt;8  Atomic care-record write&lt;/b&gt;&lt;br&gt;Commit proposal exactly once&lt;br&gt;Store provenance in PostgreSQL&lt;br&gt;Permitted caregiver reads update" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#E8F5F2;strokeColor=#9BCDC6;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="60" y="520" width="310" height="160" />
+        </mxCell>
+        <mxCell id="proposal-only" value="&lt;b&gt;Recording receipt and proposal creation do not save a confirmed care fact.&lt;/b&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;spacing=0;spacingTop=0;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="60" y="170" width="1440" height="35" />
+        </mxCell>
+        <mxCell id="correction" value="&lt;b&gt;Correct / cancel&lt;/b&gt;&lt;br&gt;Correction invalidates the old proposal and creates a fresh read-back.&lt;br&gt;Cancellation leaves the proposed care fact unsaved." style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#C3D0DD;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="60" y="755" width="680" height="108" />
+        </mxCell>
+        <mxCell id="delivery" value="&lt;b&gt;Durable delivery + recovery&lt;/b&gt;&lt;br&gt;Authenticated audio / events; WSS where used, HTTPS polling for recovery.&lt;br&gt;Reminders track playback separately from reported medication status." style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#C3D0DD;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="800" y="755" width="680" height="108" />
+        </mxCell>
+        <mxCell id="flow-footer" value="&lt;b&gt;30 Sep 2026 · Repository implementation flow. Provider access, physical operation and production deployment need separate validation.&lt;/b&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;strokeWidth=1.4;fontColor=#172D44;fontFamily=Arial;fontSize=18;align=left;verticalAlign=top;spacing=20;spacingTop=16;spacing=0;spacingTop=0;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="60" y="903" width="1480" height="35" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

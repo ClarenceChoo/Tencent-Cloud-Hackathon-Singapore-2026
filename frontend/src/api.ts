@@ -1,4 +1,4 @@
-import { previewDashboard, previewOnlyMessage, previewSession, uiPreview } from './uiPreview';
+import { previewActivity, previewDashboard, previewOnlyMessage, previewSession, uiPreview } from './uiPreview';
 
 export type User = { id: string; name: string; email: string; role: string };
 export type Patient = { id: string; name: string; timezone: string; preferred_name?: string; language?: string; daily_check_in_enabled?: boolean; daily_check_in_local_time?: string | null; calling_route?: string | null };
@@ -18,6 +18,9 @@ export type CareQueryResponse = {
   items: CareQueryItem[]; truncated: boolean;
 };
 export type Row = Record<string, unknown> & { id?: string };
+export type ActivityItem = { id: string; recorded_at: string; event: string; category: string; summary: string; status: string; source: string; record_id: string };
+export type ActivityPage = { items: ActivityItem[]; next_cursor: string | null; timezone: string };
+export type ActivityFilters = { category?: string; search?: string; start?: string; end?: string; cursor?: string };
 export type SummaryPurpose = 'doctor_visit' | 'family_handoff' | 'weekly_review';
 export type VocabularyTerm = { canonical: string; aliases: string[]; category: 'medicine' | 'person' | 'other' };
 export type VocabularyView = { version: number; terms: VocabularyTerm[]; reviewed_by_user_id: string | null; reviewed_at: string | null };
@@ -78,6 +81,11 @@ export const api = {
   session: () => request<Session>('/auth/session'),
   logout: () => request<void>('/auth/logout', json('POST')),
   dashboard: (patientId: string) => request<Dashboard>(`/app/patients/${encodeURIComponent(patientId)}/dashboard`),
+  activity: (patientId: string, filters: ActivityFilters, signal?: AbortSignal): Promise<ActivityPage> => {
+    if (uiPreview) return Promise.resolve(previewActivity(filters));
+    const params = new URLSearchParams(Object.entries(filters).filter(([, value]) => Boolean(value)) as [string, string][]);
+    return request<ActivityPage>(`/app/patients/${encodeURIComponent(patientId)}/activity?${params}`, { signal, cache: 'no-store' });
+  },
   vocabulary: (patientId: string) => request<VocabularyView>(`/app/patients/${encodeURIComponent(patientId)}/vocabulary`, { cache: 'no-store' }),
   vocabularySuggestions: (patientId: string) => request<{ suggestions: VocabularySuggestion[] }>(`/app/patients/${encodeURIComponent(patientId)}/vocabulary/suggestions`, { cache: 'no-store' }),
   updateVocabulary: (patientId: string, expectedVersion: number, terms: VocabularyTerm[]) =>

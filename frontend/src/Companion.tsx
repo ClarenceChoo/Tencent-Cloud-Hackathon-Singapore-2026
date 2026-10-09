@@ -202,6 +202,30 @@ export default function Companion() {
     const id = window.setInterval(() => { if (document.visibilityState === 'visible') void load(); }, enrollment.status === 'paired' ? 10000 : 5000);
     return () => window.clearInterval(id);
   }, [enrollment, load]);
+  useEffect(() => {
+    if (!home || !connected) return;
+    let alive = true;
+    let inFlight = false;
+    const report = async () => {
+      if (!alive || inFlight) return;
+      inFlight = true;
+      try {
+        let microphone: 'granted' | 'denied' | 'undetermined' | 'unknown' = 'unknown';
+        try {
+          const permission = await navigator.permissions?.query({ name: 'microphone' as PermissionName });
+          if (permission) microphone = permission.state === 'prompt' ? 'undetermined' : permission.state;
+        } catch { /* A browser can connect without supporting permission queries. */ }
+        if (!alive) return;
+        await companionApi.presence(document.visibilityState === 'visible' ? 'foreground' : 'background', microphone);
+      } catch (err) { if (alive) deny(err); }
+      finally { inFlight = false; }
+    };
+    void report();
+    const changed = () => { void report(); };
+    document.addEventListener('visibilitychange', changed);
+    const id = window.setInterval(() => { if (document.visibilityState === 'visible') void report(); }, 5000);
+    return () => { alive = false; window.clearInterval(id); document.removeEventListener('visibilitychange', changed); };
+  }, [home?.device_id, home?.patient.id, connected, deny]);
 
   async function enroll() {
     setBusy(true); setError('');
@@ -495,7 +519,7 @@ export default function Companion() {
 
   return <div className="companion-app"><div className="companion-frame">
     <header className="companion-header"><a href="/landing/" className="companion-wordmark" aria-label="Parse, about"><BrandLogo /></a><a href="/" className="companion-dashboard"><ArrowLeft size={19}/> Owner dashboard</a></header>
-    {booting ? <main className="companion-card"><h1>Opening Parse…</h1></main> : !enrollment ? <main className="companion-landing"><div className="companion-orbit"><Heart size={42}/></div><p className="companion-eyebrow">A calmer way to stay close</p><h1>Your care companion, right here.</h1><p>Speak naturally, hear a read-back, and choose what to save. Your care-space owner connects this browser with a private code.</p><button className="companion-button companion-primary" disabled={busy} onClick={() => void enroll()}>{busy ? 'Starting…' : 'Connect this browser'}</button>{denied.current && <button className="companion-plain" disabled={busy} onClick={() => void disconnect()}>Clear old browser pairing</button>}<p className="companion-small">The owner dashboard uses a separate sign-in.</p></main> : enrollment.status === 'awaiting_approval' ? <main className="companion-pair"><p className="companion-eyebrow">One last step</p><h1>Connect this browser</h1><p>Ask the care-space owner to open Settings in the Parse dashboard, choose <b>Parse browser</b>, and enter this code for the right person.</p><div className="companion-code" aria-label={'Pairing code ' + enrollment.code}>{enrollment.code}</div><p>Code expires {stamp(enrollment.expires_at)}. Waiting for approval…</p><button className="companion-button companion-secondary" onClick={() => void load()}><RefreshCw size={20}/> Check connection</button><button className="companion-plain" disabled={busy} onClick={() => void disconnect()}>Start over</button></main> : <main>
+    {booting ? <main className="companion-card"><h1>Opening Parse…</h1></main> : !enrollment ? <main className="companion-landing"><div className="companion-orbit"><Heart size={42}/></div><p className="companion-eyebrow">A calmer way to stay close</p><h1>Your care companion, right here.</h1><p>Speak naturally, hear a read-back, and choose what to save. Your care-space owner connects this browser with a private code.</p><button className="companion-button companion-primary" disabled={busy} onClick={() => void enroll()}>{busy ? 'Starting…' : 'Connect this browser'}</button>{denied.current && <button className="companion-plain" disabled={busy} onClick={() => void disconnect()}>Clear old browser pairing</button>}<p className="companion-small">The owner dashboard uses a separate sign-in.</p></main> : enrollment.status === 'awaiting_approval' ? <main className="companion-pair"><p className="companion-eyebrow">One last step</p><h1>Connect this browser</h1><p>Ask the care-space owner to open Connect in the Parse dashboard, choose <b>Parse browser</b>, and enter this code for the right person.</p><div className="companion-code" aria-label={'Pairing code ' + enrollment.code}>{enrollment.code}</div><p>Code expires {stamp(enrollment.expires_at)}. Waiting for approval…</p><button className="companion-button companion-secondary" onClick={() => void load()}><RefreshCw size={20}/> Check connection</button><button className="companion-plain" disabled={busy} onClick={() => void disconnect()}>Start over</button></main> : <main>
       <section className="companion-welcome"><div><p className="companion-eyebrow">Your care space</p><h1>Hello, {home?.patient.preferred_name || home?.patient.name || enrollment.patient?.name || 'there'}.</h1><p>{home ? 'Here is what matters today.' : 'Connecting to your care space…'}</p></div><div className="companion-status"><span className="companion-live"/> {connected ? 'Connected' : 'Connection needs checking'} · {enrollment.patient?.name || home?.patient.name || 'companion'}</div></section>
       {home?.voice.voice_service === 'simulated' && <div className="companion-simulation" role="status">Demo speech is simulated. Responses are for testing, not live care guidance.</div>}
       {home && !home.voice.scheduler_enabled && <div className="companion-simulation">Scheduled reminders are disabled on this server.</div>}

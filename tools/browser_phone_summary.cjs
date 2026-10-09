@@ -37,7 +37,7 @@ async function main() {
       return response.json();
     };
     await page.getByRole('button', { name: 'Open menu' }).click();
-    await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Visit summary', exact: true }).click();
+    await require('./dashboard_navigation.cjs').navigateDashboard(page, 'Visit summary');
     return { context, page, api };
   }
   try {

@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { fireEvent, cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../App';
 
@@ -21,6 +21,7 @@ it('shows confirmed medication reports by report time without inventing reports 
   vi.stubGlobal('scrollTo', vi.fn());
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => new Response(JSON.stringify(String(input).endsWith('/auth/session') ? session : dashboard), { headers: { 'Content-Type': 'application/json' } })));
   render(<App />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Timeline' }));
   const user = userEvent.setup();
   await screen.findByRole('heading', { name: /care timeline/i });
   await user.click(within(screen.getByRole('navigation', { name: 'Main navigation' })).getByRole('button', { name: /^Timeline$/ }));

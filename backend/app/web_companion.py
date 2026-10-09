@@ -120,6 +120,7 @@ def web_enroll(data: WebEnrollment, request: Request, response: Response, db=Dep
 _ROUTES = (
     ("GET", re.compile(r"enrollments/current\Z"), "/v1/phone/"),
     ("GET", re.compile(r"home\Z"), "/v1/phone/"),
+    ("PUT", re.compile(r"presence\Z"), "/v1/phone/"),
     ("POST", re.compile(r"turns\Z"), "/v1/phone/"),
     ("GET", re.compile(r"turn-receipts/[0-9a-fA-F-]{36}\Z"), "/v1/phone/"),
     ("GET", re.compile(r"turns/[^/]+\Z"), "/v1/device/"),
@@ -135,7 +136,7 @@ _ROUTES = (
 )
 
 
-@router.api_route("/{path:path}", methods=["GET", "HEAD", "POST", "DELETE"])
+@router.api_route("/{path:path}", methods=["GET", "HEAD", "POST", "PUT", "DELETE"])
 async def forward(path: str, request: Request, db=Depends(phone_db)):
     target = next((prefix + path for method, pattern, prefix in _ROUTES
                    if request.method == method and pattern.fullmatch(path)), None)

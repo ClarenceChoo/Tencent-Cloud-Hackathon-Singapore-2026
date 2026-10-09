@@ -1,5 +1,7 @@
 """Reviewed purpose summaries keep the existing access and invalidation gates."""
 
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from sqlalchemy import select
 
 from app import models as m
@@ -7,9 +9,10 @@ from conftest import login
 
 
 def _create_summary(client, patient_id, headers, **extra):
+    today = datetime.now(ZoneInfo("Asia/Singapore")).date()
     response = client.post(
         f"/v1/app/patients/{patient_id}/summaries",
-        json={"start_date": "2026-10-01", "end_date": "2026-10-03", **extra},
+        json={"start_date": str(today - timedelta(days=1)), "end_date": str(today + timedelta(days=1)), **extra},
         headers=headers,
     )
     assert response.status_code == 201, response.text

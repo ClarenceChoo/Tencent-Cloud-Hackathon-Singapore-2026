@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { uiPreview } from './uiPreview';
 import './styles.css';
+import './dashboardNavigation.css';
 import BrandLogo from './BrandLogo';
 
 const Companion = React.lazy(() => import('./Companion'));

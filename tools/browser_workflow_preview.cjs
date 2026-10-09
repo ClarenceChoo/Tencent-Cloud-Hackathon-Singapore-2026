@@ -91,12 +91,7 @@ async function main() {
     await page.screenshot({ path: path.join(output, filename), fullPage: true });
     report.screenshots.push(filename);
   };
-  const appNav = page.getByRole('navigation', { name: 'Main navigation' });
-  const navigate = async label => {
-    if (await page.getByRole('button', { name: 'Open menu', exact: true }).isVisible().catch(() => false))
-      await page.getByRole('button', { name: 'Open menu', exact: true }).click();
-    await appNav.getByRole('button', { name: label, exact: true }).click();
-  };
+  const navigate = label => require('./dashboard_navigation.cjs').navigateDashboard(page, label);
   const layouts = async view => { for (const width of [320, 390, 1440]) await capture(view, width); };
 
   try {
@@ -105,7 +100,7 @@ async function main() {
       await page.getByRole('link', { name: 'Open Parse', exact: true }).first().waitFor();
     });
     await page.getByRole('link', { name: 'Open Parse', exact: true }).first().click();
-    await page.getByRole('heading', { name: /care timeline/i }).waitFor();
+    await page.getByRole('heading', { name: 'Today’s care', exact: true }).waitFor();
     assert(await page.getByText('UI demo · fictional sample data', { exact: true }).count());
     await navigate('Today');
     await page.getByRole('heading', { name: 'Attention', exact: true }).waitFor();

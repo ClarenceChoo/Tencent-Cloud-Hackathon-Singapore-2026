@@ -12,10 +12,15 @@ const response = (body: unknown, status = 200) => new Response(JSON.stringify(bo
 async function setup() {
   let poll!: () => Promise<void>;
   let dashboard = async (): Promise<Response> => response(data);
-  vi.spyOn(window, 'setInterval').mockImplementation((handler) => { poll = handler as typeof poll; return 99; });
+  const interval = window.setInterval.bind(window);
+  vi.spyOn(window, 'setInterval').mockImplementation((handler, timeout, ...args) => {
+    if (timeout === 1000) { poll = handler as typeof poll; return 99; }
+    return interval(handler, timeout, ...args);
+  });
   vi.stubGlobal('scrollTo', vi.fn());
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).includes('/auth/') ? response(session) : dashboard()));
   render(<App/>);
+  fireEvent.click(await screen.findByRole('button', { name: 'Timeline' }));
   await screen.findByRole('heading', { name: note.wording });
   return { poll: () => act(async () => { await poll(); }), setDashboard: (next: typeof dashboard) => { dashboard = next; } };
 }
@@ -61,7 +66,7 @@ it('does not restore a late manual refresh after access loss and another sign-in
   fireEvent.change(screen.getByLabelText('Email address'), { target: { value: 'another@careloop.invalid' } });
   fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'fictional-password' } });
   fireEvent.submit(screen.getByLabelText('Email address').closest('form')!);
-  await screen.findByRole('heading', { name: /care timeline/i });
+  await screen.findByRole('heading', { name: 'Today’s care' });
   await act(async () => { finish(response(data)); });
   expect(screen.queryByRole('heading', { name: note.wording })).toBeNull();
 });

@@ -94,7 +94,7 @@ Write this NVS file during initial provisioning. Rewriting it later replaces sav
 
 ## 5. Pair and connect
 
-1. Sign in as the care-space owner. Open **Settings → Pair your cardholder**, enter the one-use code and select **Pair cardholder**. “Paired · waiting for connection” means the account binding succeeded; it is not yet proof of connectivity.
+1. Sign in as the care-space owner. Open **Connect → Pair your companion**, enter the one-use code and select **Pair cardholder**. “Paired · waiting for connection” means the account binding succeeded; it is not yet proof of connectivity.
 2. Power on the pendant. Join its `CareLoop-XXXX` setup Wi-Fi using the password on the private owner sheet. `CareLoop` remains the firmware's setup-network name for compatibility; the product is Parse.
 3. While joined to that network, open `http://192.168.4.1/`. Enter the 2.4 GHz WPA2 Wi-Fi/hotspot details and the actual HTTPS service address. The password-protected setup network expires after ten minutes; restart the unit to reopen an unfinished setup.
 4. Rejoin your usual phone network and open Parse. Look for **Online**. This requires an authenticated socket with a heartbeat in the last 15 seconds; it does not establish microphone or speaker quality.

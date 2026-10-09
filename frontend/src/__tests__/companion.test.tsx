@@ -5,7 +5,7 @@ import Companion from '../Companion';
 import { CompanionApiError, webAudioPath, type Home } from '../companionApi';
 
 const api = vi.hoisted(() => ({
-  session: vi.fn(), enrollment: vi.fn(), home: vi.fn(), enroll: vi.fn(),
+  session: vi.fn(), enrollment: vi.fn(), home: vi.fn(), enroll: vi.fn(), presence: vi.fn(),
   revise: vi.fn(), confirm: vi.fn(), cancel: vi.fn(), speech: vi.fn(),
   pending: vi.fn(), quiesce: vi.fn(), revoke: vi.fn(), ack: vi.fn(),
   upload: vi.fn(), receipt: vi.fn(), turn: vi.fn(), reminder: vi.fn(), speaker: vi.fn(),
@@ -25,6 +25,7 @@ beforeEach(() => {
   api.session.mockResolvedValue({ has_installation: true, csrf_token: 'csrf' });
   api.enrollment.mockResolvedValue({ status: 'paired', device_id: 'phone_123', patient: { id: 'p1', name: 'Mei' } });
   api.home.mockImplementation(async () => current);
+  api.presence.mockResolvedValue({ server_time: '2026-10-09T00:00:00Z' });
   api.pending.mockResolvedValue({ active_companion: current.active_companion, commands: [], checkins: [] });
   audioFetch.mockResolvedValue({ blob: new Blob(['example'], { type: 'audio/wav' }), duration: 1 });
   api.revise.mockImplementation(async (_proposal, payload) => {
@@ -34,7 +35,34 @@ beforeEach(() => {
   });
   api.confirm.mockImplementation(async () => { current = { ...current, current_proposal: null }; return { status: 'committed' }; });
 });
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+
+it('reports live presence without recording and reports background when hidden', async () => {
+  const query = vi.fn(async () => ({ state: 'prompt' as PermissionState }));
+  const previous = Object.getOwnPropertyDescriptor(navigator, 'permissions');
+  Object.defineProperty(navigator, 'permissions', { configurable: true, value: { query } });
+  const visible = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
+  try {
+    render(<Companion/>);
+    await waitFor(() => expect(api.presence).toHaveBeenCalledWith('foreground', 'undetermined'));
+    expect(query).toHaveBeenCalledWith({ name: 'microphone' });
+    expect(api.upload).not.toHaveBeenCalled();
+    visible.mockReturnValue('hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+    await waitFor(() => expect(api.presence).toHaveBeenCalledWith('background', 'undetermined'));
+  } finally {
+    if (previous) Object.defineProperty(navigator, 'permissions', previous);
+    else Reflect.deleteProperty(navigator, 'permissions');
+  }
+});
+
+it('does not report presence before owner approval', async () => {
+  api.enrollment.mockResolvedValue({ status: 'awaiting_approval', device_id: 'phone_123', code: 'P-DEMO-12345', expires_at: '2099-01-01T00:00:00Z' });
+  render(<Companion/>);
+  await screen.findByLabelText('Pairing code P-DEMO-12345');
+  expect(api.presence).not.toHaveBeenCalled();
+  expect(api.home).not.toHaveBeenCalled();
+});
 
 it('accepts only canonical reply asset IDs on the browser audio route', () => {
   const id = 'audio_' + 'a'.repeat(32);

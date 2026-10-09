@@ -2,12 +2,12 @@ import asyncio
 import json
 import secrets
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Dict, Optional, Set
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
+from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Query, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import func, select, update
@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 from . import models as m
 from .config import Settings, get_settings
 from .care_queries import load_query_source, run_care_query
+from .activity_log import activity_log, record_audit
 from .database import Database
 from .device_setup import device_status, service_readiness, PROTOCOL
 from .phone import EnrollmentLimiter, router as phone_router
@@ -307,7 +308,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
     async def web_no_store(request: Request, call_next):
         response = await call_next(request)
         if (request.url.path.startswith("/v1/web/") or
-                "/queries" in request.url.path or "/query-sources/" in request.url.path or
+                "/queries" in request.url.path or "/activity" in request.url.path or "/query-sources/" in request.url.path or
                 "/vocabulary" in request.url.path):
             response.headers["Cache-Control"] = "private, no-store"
         return response
@@ -341,6 +342,19 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         row.revoked_at = utcnow()
         db.commit()
         response.delete_cookie("careloop_session", path="/")
+
+    @app.get("/v1/app/patients/{patient_id}/activity")
+    def patient_activity(patient_id: str, request: Request, db: Session = Depends(get_db),
+                         category: str = "all", search: str = Query(default="", max_length=200),
+                         start: Optional[date] = None, end: Optional[date] = None,
+                         cursor: Optional[str] = Query(default=None, max_length=512),
+                         limit: int = Query(default=40, ge=1, le=100)):
+        user, _, _, scopes = _patient_access(request, db, patient_id)
+        patient = db.get(m.Patient, patient_id)
+        if not patient:
+            raise HTTPException(404, "Care space not found")
+        return activity_log(db, patient, user.id, scopes, category=category, search=search,
+                            start=start, end=end, cursor=cursor, limit=limit)
 
     @app.get("/v1/app/patients/{patient_id}/dashboard")
     def dashboard(patient_id: str, request: Request, db: Session = Depends(get_db)):
@@ -491,6 +505,9 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         if "*" not in scopes and item.recipient_user_id != user.id:
             raise HTTPException(status_code=403, detail="Support request is assigned to another recipient")
         item.status, item.outcome, item.resolved_at = "resolved", data.outcome, utcnow()
+        db.add(m.AuditEvent(actor_type="user", actor_id=user.id, patient_id=item.patient_id,
+                            action="support.outcome_recorded", object_type="support_request", object_id=item.id,
+                            details={"outcome": data.outcome}))
         invalidate_summaries(db, item.patient_id, item.id)
         db.commit()
         return {"id": item.id, "status": item.status, "resolved_at": iso(item.resolved_at), "outcome": item.outcome}
@@ -536,7 +553,9 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         db.refresh(device)
         from .notification_api import invalidate_notifications
         invalidate_notifications(db,device.id)
-        device.revoked_at = device.revoked_at or utcnow()
+        if not device.revoked_at:
+            record_audit(db, user.id, device.patient_id, "device.revoked", "device", device.id)
+            device.revoked_at = utcnow()
         db.commit()
         await request.app.state.sockets.close_device(device.id)
         return {"device_id": device.id, "status": "revoked"}
@@ -574,6 +593,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         if "*" not in scopes and user.id not in (note.shared_with_user_ids or []):
             raise HTTPException(status_code=403, detail="Health note access is not permitted")
         note.deleted_at = utcnow()
+        record_audit(db, user.id, note.patient_id, "note.deleted", "health_note", note.id)
         related_followups = db.scalars(select(m.FollowUp).where(m.FollowUp.patient_id == note.patient_id, m.FollowUp.related_type == "health_note", m.FollowUp.related_id == note.id)).all()
         for followup in related_followups:
             followup.permitted_user_ids = []
@@ -597,6 +617,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
             if not recipient or (recipient.expires_at and aware(recipient.expires_at) <= utcnow()):
                 raise HTTPException(status_code=422, detail="A sharing recipient is not currently permitted")
         if set(note.shared_with_user_ids or []) != set(data.user_ids):
+            record_audit(db, user.id, note.patient_id, "note.sharing_updated", "health_note", note.id)
             note.shared_with_user_ids = data.user_ids
             note.version += 1
             related_followups = db.scalars(select(m.FollowUp).where(m.FollowUp.patient_id == note.patient_id, m.FollowUp.related_type == "health_note", m.FollowUp.related_id == note.id, m.FollowUp.permission_scope == "related_recipients")).all()
@@ -624,6 +645,8 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         else:
             grant = m.AccessGrant(patient_id=patient_id, user_id=data.user_id, relationship="caregiver", scopes=data.scopes, expires_at=data.expires_at)
             db.add(grant)
+        db.flush()
+        record_audit(db, user.id, patient_id, "access.updated", "access_grant", grant.id)
         db.commit()
         return {"id": grant.id, "user_id": grant.user_id, "scopes": grant.scopes, "expires_at": iso(grant.expires_at)}
 
@@ -638,6 +661,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         if target.user_id == user.id:
             raise HTTPException(status_code=409, detail="Owner cannot revoke their current access grant")
         target.revoked_at = utcnow()
+        record_audit(db, user.id, target.patient_id, "access.revoked", "access_grant", target.id)
         shared_notes = db.scalars(select(m.HealthNote).where(m.HealthNote.patient_id == target.patient_id, m.HealthNote.deleted_at.is_(None))).all()
         for note in shared_notes:
             if target.user_id in (note.shared_with_user_ids or []):
@@ -727,6 +751,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         ])
         summary.omitted_source_ids = data.omitted_source_ids
         summary.status, summary.reviewed_at = "reviewed", utcnow()
+        record_audit(db, user.id, summary.patient_id, "summary.reviewed", "summary", summary.id)
         active_shares = db.scalars(select(m.SummaryShare).where(m.SummaryShare.summary_id == summary.id, m.SummaryShare.revoked_at.is_(None))).all()
         for share in active_shares:
             share.revoked_at = utcnow()

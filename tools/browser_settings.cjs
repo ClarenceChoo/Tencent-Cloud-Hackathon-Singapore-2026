@@ -17,7 +17,7 @@ async function main() {
     assert(response.ok(), `HTTP ${response.status()} on ${route}`);
     return response.json();
   }
-  const nav = name => page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name, exact: true }).click();
+  const nav = name => require('./dashboard_navigation.cjs').navigateDashboard(page, name);
   const save = async (button, suffix, method = 'POST') => {
     const result = page.waitForResponse(r => new URL(r.url()).pathname.endsWith(suffix) && r.request().method() === method);
     await button.click();
@@ -74,7 +74,7 @@ async function main() {
       const code = text.match(/One-time claim code[^:]*: ([A-Z0-9-]+)/)?.[1];
       const credential = text.match(/Device credential[^:]*: (\S+)/)?.[1];
       assert(code && credential, 'Expected private output from provision-device');
-      await nav('Settings');
+      await nav('Connect');
       await page.getByLabel('One-use device code').fill(code);
       await save(page.getByRole('button', { name: 'Pair cardholder', exact: true }), '/devices/claim');
       const device = (await dashboard()).devices.find(item => !item.revoked_at);

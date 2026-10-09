@@ -5,7 +5,7 @@ import App from '../App';
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
-function mount(permissions = ['*']) {
+async function mount(permissions = ['*']) {
   const patient = { id:'patient-1', name:'Mei Tan', timezone:'Asia/Singapore' };
   const session = { user:{id:'owner',name:'Alex Tan',role:'owner'}, patients:[patient], csrf_token:'test' };
   const dashboard = {
@@ -23,11 +23,12 @@ function mount(permissions = ['*']) {
   vi.stubGlobal('scrollTo',vi.fn());
   vi.stubGlobal('fetch',vi.fn(async (input:RequestInfo | URL) => new Response(JSON.stringify(String(input).endsWith('/auth/session') ? session : dashboard),{headers:{'Content-Type':'application/json'}})));
   render(<App/>);
+  await userEvent.setup().click(await screen.findByRole('button', { name: 'Timeline' }));
   return userEvent.setup();
 }
 
 it('filters the timeline, uses the patient timezone and keeps scheduled doses outside reported history',async () => {
-  const user = mount();
+  const user = await mount();
   await screen.findByRole('heading',{name:'Mei Tan’s care timeline'});
   const timeline = within(await screen.findByRole('region',{name:'Care timeline'}));
   const day = within(timeline.getByRole('region',{name:'2026-01-02'}));
@@ -51,7 +52,7 @@ it('filters the timeline, uses the patient timezone and keeps scheduled doses ou
 });
 
 it('lets a read-only viewer expand entries without exposing write or sharing controls',async () => {
-  const user = mount(['read:dashboard']);
+  const user = await mount(['read:dashboard']);
   const timeline = within(await screen.findByRole('region',{name:'Care timeline'}));
   expect(screen.queryByRole('button',{name:'Add entry'})).toBeNull();
   await user.click(within(screen.getByRole('group',{name:'Filter timeline'})).getByRole('button',{name:'Notes'}));

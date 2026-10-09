@@ -26,7 +26,7 @@ async function main() {
     return text ? JSON.parse(text) : null;
   }
   async function dashboard() { return api(`/app/patients/${session.patients[0].id}/dashboard`); }
-  async function nav(name) { await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name, exact: true }).click(); }
+  const nav = name => require('./dashboard_navigation.cjs').navigateDashboard(page, name);
   async function confirm() {
     const response = page.waitForResponse(r => /\/proposals\/[^/]+\/confirm$/.test(new URL(r.url()).pathname) && r.request().method() === 'POST');
     await page.getByRole('dialog').getByRole('button', { name: 'Confirm and save' }).click();

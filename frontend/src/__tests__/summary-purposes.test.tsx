@@ -40,7 +40,8 @@ function setup() {
 }
 
 async function openSummary() {
-  fireEvent.click(await screen.findByRole('button', { name: 'Visit summary' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Timeline' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Prepare summary' }));
   await screen.findByLabelText('Summary purpose');
 }
 

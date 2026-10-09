@@ -36,7 +36,8 @@ async function main() {
     await page.getByLabel('Email address').fill(role + '@web.invalid');
     await page.getByLabel('Password', { exact: true }).fill('fictional-web-only');
     await page.getByRole('button', { name: /^Continue/ }).click();
-    await page.getByRole('heading', { name: /care timeline/i }).waitFor();
+    await page.getByRole('heading', { name: 'Today’s care', exact: true }).waitFor();
+    await require('./dashboard_navigation.cjs').navigateDashboard(page, 'Timeline');
     const session = await (await context.request.get('/v1/auth/session')).json();
     const api = async (route, data, method = data === undefined ? 'GET' : 'POST') => {
       const response = await context.request.fetch('/v1' + route, { method,
@@ -62,7 +63,7 @@ async function main() {
       uploadCount++; captureIntents.push(req.headers()['x-care-intent'] || null);
     }
   });
-  const nav = (view, name) => view.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name, exact: true }).click();
+  const nav = (view, name) => require('./dashboard_navigation.cjs').navigateDashboard(view, name);
   const screenshot = async name => { const file = name + '.png'; await page.screenshot({ path: path.join(dir, file), fullPage: true }); report.screenshots.push(file); };
   const currentHome = async () => { const res = await phone.request.get('/v1/web/home'); assert(res.ok()); return res.json(); };
   const arm = (name, transcript, interpretation) => {
@@ -96,7 +97,7 @@ async function main() {
     await page.getByRole('button', { name: 'Connect this browser', exact: true }).click();
     const code = page.locator('.companion-code'); await code.waitFor(); const possession = (await code.textContent()).trim();
     assert.match(possession, /^P-[A-F0-9]{5}-[A-F0-9]{5}$/);
-    await nav(owner.page, 'Settings');
+    await nav(owner.page, 'Connect');
     // Browser enrollment shares owner approval, with browser-specific wording in the dashboard.
     const select = owner.page.getByLabel('Companion type');
     await select.selectOption('browser');
@@ -113,6 +114,7 @@ async function main() {
     pass('Owner-approved browser pairing works through the dashboard; credentials are HttpOnly and unsafe calls require CSRF');
     await checkReviewedVocabulary({ owner, restricted, fixture, nav, pass, dir });
 
+    await nav(owner.page, 'Connect');
     await owner.page.getByRole('button', { name: 'Refresh care data' }).click();
     await owner.page.getByLabel('Send reminders to', { exact: true }).selectOption(paired.device_id);
     await owner.page.getByRole('button', { name: 'Save reminder companion', exact: true }).click();

@@ -30,6 +30,8 @@ def main():
         parser.exit(1, "Install dependencies first:\n  cd backend && uv sync --frozen --extra test\n  cd ../frontend && npm ci\n")
     for port in (args.api_port, args.web_port):
         with socket.socket() as check:
+            # Permit restarting after closed connections enter TIME_WAIT.
+            check.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             try:
                 check.bind(("127.0.0.1", port))
             except OSError:

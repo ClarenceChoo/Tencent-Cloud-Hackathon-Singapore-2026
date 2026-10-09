@@ -52,7 +52,7 @@ This produces Hermes JavaScript bundles, not an installable application. Use `np
 Use the [first-use handoff guide](First-Use-Guide.md) to coordinate the owner, patient and intended caregiver. On the native app, use its **Test speaker** action, hold or tap recording control and native permission prompts. Verify the resulting explicitly shared record under the caregiver's account. A browser guide's session proof does not establish native audio or background alert delivery.
 
 1. Open the native app and enter the Parse HTTPS origin. It generates a random 32-byte installation credential and keeps it in SecureStore. The screen shows a different ten-minute possession code.
-2. Sign into the existing owner dashboard, open Settings, select **Parse phone app**, and approve that code for the intended patient. A device token cannot sign into the owner dashboard.
+2. Sign into the existing owner dashboard, open **Connect**, select **Parse phone app**, and approve that code for the intended patient. A device token cannot sign into the owner dashboard.
 3. Return to the native app. It polls the enrollment using its own credential and loads the same care record. Choose the microphone permission only when starting a recording.
 4. Hold the talk control, speak, and release. The accessible tap switch provides start/stop taps. The recorder is capped below the server's 20-second limit. It does not request background recording or continuous listening.
 5. Listen to the read-back and sharing choice. Speak a correction or use **Confirm and save**. The spoken Saved message is fetched only after a server commitment. Observe the existing caregiver dashboard under the appropriate account.
@@ -67,7 +67,7 @@ If protected pairing data is missing, damaged or temporarily unavailable, the ph
 
 If retry cannot recover the pairing, choose **Reset this phone** and confirm. Reset drains local audio, cancels and verifies the removal of scheduled alerts, dismisses delivered notifications and removes the protected pending-turn, playback and pairing records. It preserves the hold/tap preference and saved server care records. Failed cleanup keeps setup blocked. A durable reset marker prevents a restart from reopening an identity with a partly cleared playback history; repeat the reset after storage becomes available. If device storage remains unreadable, use the operating system's app-data reset or reinstall before pairing again.
 
-With a lost credential, the app cannot authenticate server cleanup for the old phone. After local reset completes, the care-space owner must revoke that old phone in dashboard Settings and use **Finish removing this phone**, acknowledging the actual reset. New native enrollment requires fresh owner approval. Selecting the replacement for reminders is a separate action; reset does not silently transfer the old identity or reminder route.
+With a lost credential, the app cannot authenticate server cleanup for the old phone. After local reset completes, the care-space owner must revoke that old phone through dashboard **Connect** and use **Finish removing this phone**, acknowledging the actual reset. New native enrollment requires fresh owner approval. Selecting the replacement for reminders is a separate action; reset does not silently transfer the old identity or reminder route.
 
 If a saved phone cannot reach the service at startup, it shows **Cannot reach Parse** and **Retry connection**, keeping its existing installation identity. It checks current enrollment and access again before loading care or enabling recording. The app retries while foregrounded; retrying does not create a new identity or confirm a care update. Use **Start a new pairing** only when replacing the connection deliberately. If a connection fails after care has loaded, a warning at the top labels those details as previously loaded until a successful refresh. Connection failures do not display raw native transport errors; access denial still switches to the separate revoked-access and cleanup flow.
 
@@ -107,7 +107,7 @@ For support and follow-up status questions, the interpreter identifies a record 
 
 ## Select the reminder companion
 
-In the owner dashboard, Settings → Reminder companion selects exactly one paired phone or cardholder. Pairing alone does not select a new device. Existing databases backfill only an unambiguous single device; ambiguous installations start paused.
+In the owner dashboard, **Connect → Reminder companion** selects exactly one paired phone or cardholder. Pairing alone does not select a new device. Existing databases backfill only an unambiguous single device; ambiguous installations start paused.
 
 Before switching away from a cardholder, physically power it off and acknowledge this in the dashboard. The legacy firmware can hold downloaded speech that the server cannot stop remotely. Before switching away from a phone, use **Settings → Pause reminders** on that phone. The app stops admitted audio operations, disables recording, cancels and verifies removal of scheduled native alerts, then attests cleanup to the server. The server deactivates only that installation. Owner revocation does not pretend to stop already downloaded audio; the revoked phone can still use the restricted cleanup endpoint, which exposes no care records.
 

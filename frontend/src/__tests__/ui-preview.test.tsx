@@ -11,6 +11,7 @@ async function preview() {
   vi.stubGlobal('fetch', fetch);
   const { default: App } = await import('../App');
   render(<App />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Timeline' }));
   await screen.findByRole('heading', { name: /maya’s care timeline/i });
   return fetch;
 }
@@ -23,13 +24,24 @@ it('opens sample care views without login or backend traffic', async () => {
   expect(await screen.findByRole('heading', { name: /walk in the garden/i })).toBeTruthy();
   for (const [tab, content] of [
     ['Today', 'Today’s medication check-ins'], ['Medications', 'Current instructions'],
-    ['Care plan', 'Review the care plan at a routine appointment.'],
-    ['Support', 'Follow up together'], ['Visit summary', 'A summary you can review'],
+    ['Care', 'Review the care plan at a routine appointment.'],
+    ['Requests & follow-ups', 'Follow up together'], ['Timeline', 'Maya’s care timeline'], ['Prepare summary', 'A summary you can review'],
     ['Settings', 'How the companion addresses them'],
   ]) {
-    fireEvent.click(screen.getByRole('button', { name: tab }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp('^' + tab) }));
     expect(screen.getByText(content, { exact: false })).toBeTruthy();
   }
+  expect(fetch).not.toHaveBeenCalled();
+});
+
+it('shows fictional Log activity and filters it without backend traffic', async () => {
+  const fetch = await preview();
+  fireEvent.click(screen.getByRole('button', { name: 'Log' }));
+  await screen.findByRole('heading', { name: 'Care note confirmed' });
+  fireEvent.change(screen.getByLabelText('Category'), { target: { value: 'notes' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Apply filters' }));
+  await screen.findByText('1 entry loaded');
+  expect(screen.queryByRole('heading', { name: 'Medication report confirmed' })).toBeNull();
   expect(fetch).not.toHaveBeenCalled();
 });
 

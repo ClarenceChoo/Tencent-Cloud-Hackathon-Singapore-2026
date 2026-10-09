@@ -5,7 +5,10 @@ import { uiPreview } from './uiPreview';
 
 export default function DeviceSetup({data,canManage,onClaim,onRevoke}:{data:Dashboard;canManage:boolean;onClaim:(code:string,kind?:'phone'|'pendant')=>Promise<void>;onRevoke:(id:string)=>void}) {
   const [code,setCode]=useState('');
-  const [kind,setKind]=useState<'phone'|'browser'|'pendant'>('pendant');
+  const [kind,setKind]=useState<'phone'|'browser'|'pendant'>(()=>{
+    const selected=data.devices.find(device=>device.id===data.active_companion?.device_id);
+    return selected?.device_type==='phone'?selected.platform==='web'?'browser':'phone':'pendant';
+  });
   const [pairing,setPairing]=useState(false);
   const [error,setError]=useState('');
   const [revokeId,setRevokeId]=useState('');

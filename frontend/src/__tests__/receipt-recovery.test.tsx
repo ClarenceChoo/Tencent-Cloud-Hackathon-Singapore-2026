@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import Companion from '../Companion';
 import { CompanionApiError, type Home, type TurnStatus } from '../companionApi';
 
-const api = vi.hoisted(() => ({ session: vi.fn(), enrollment: vi.fn(), home: vi.fn(), enroll: vi.fn(), revise: vi.fn(), confirm: vi.fn(), cancel: vi.fn(), speech: vi.fn(), pending: vi.fn(), quiesce: vi.fn(), revoke: vi.fn(), ack: vi.fn(), upload: vi.fn(), receipt: vi.fn(), turn: vi.fn(), reminder: vi.fn(), speaker: vi.fn() }));
+const api = vi.hoisted(() => ({ session: vi.fn(), enrollment: vi.fn(), home: vi.fn(), presence: vi.fn(), enroll: vi.fn(), revise: vi.fn(), confirm: vi.fn(), cancel: vi.fn(), speech: vi.fn(), pending: vi.fn(), quiesce: vi.fn(), revoke: vi.fn(), ack: vi.fn(), upload: vi.fn(), receipt: vi.fn(), turn: vi.fn(), reminder: vi.fn(), speaker: vi.fn() }));
 vi.mock('../companionApi', async importOriginal => ({ ...await importOriginal<typeof import('../companionApi')>(), companionApi: api }));
 const key = '12345678-1234-1234-1234-123456789abc';
 const pending = { key, context: null, createdAt: Date.now(), deviceId: 'device_123', patientId: 'patient_1' };
@@ -22,6 +22,7 @@ beforeEach(() => {
   api.session.mockResolvedValue({ has_installation: true, csrf_token: 'csrf' });
   api.enrollment.mockImplementation(async () => currentEnrollment);
   api.home.mockImplementation(async () => currentHome);
+  api.presence.mockResolvedValue({ server_time: '2026-10-09T00:00:00Z' });
   api.pending.mockResolvedValue({ active_companion: currentHome.active_companion, commands: [], checkins: [] });
   api.receipt.mockResolvedValue({ turn_id: 'turn_12345678', status: 'accepted', received_at: '2026-10-02T01:00:00Z' });
 });

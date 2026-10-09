@@ -42,7 +42,8 @@ async function main() {
     await dashPage.getByLabel('Email address').fill(role + '@web.invalid');
     await dashPage.getByLabel('Password', { exact: true }).fill('fictional-web-only');
     await dashPage.getByRole('button', { name: /^Continue/ }).click();
-    await dashPage.getByRole('heading', { name: /care timeline/i }).waitFor();
+    await dashPage.getByRole('heading', { name: 'Today’s care', exact: true }).waitFor();
+    await require('./dashboard_navigation.cjs').navigateDashboard(dashPage, 'Timeline');
   }
   async function record(name, transcript, interpretation) {
     arm(name, transcript, interpretation);
@@ -65,7 +66,7 @@ async function main() {
     const code = (await phonePage.locator('.companion-code').textContent()).trim();
     assert.match(code, /^P-[A-F0-9]{5}-[A-F0-9]{5}$/);
     await sleep(2200);
-    await dashPage.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Settings', exact: true }).click();
+    await require('./dashboard_navigation.cjs').navigateDashboard(dashPage, 'Connect');
     await dashPage.getByLabel('Companion type').selectOption('browser');
     await dashPage.getByLabel('One-use device code').fill(code);
     await sleep(2200);

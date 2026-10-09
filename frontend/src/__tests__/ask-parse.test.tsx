@@ -171,8 +171,8 @@ it('opens a freshly revalidated reading in the existing timeline and focuses its
   vi.stubGlobal('fetch', fetcher);
   vi.stubGlobal('scrollTo', vi.fn());
   render(<App/>);
-  await screen.findByRole('heading', { name: /care timeline/i });
-  fireEvent.click(screen.getByRole('button', { name: 'Ask Parse' }));
+  await screen.findByRole('heading', { name: 'Today’s care' });
+  fireEvent.click(screen.getByRole('button', { name: 'Check records' }));
   fireEvent.click(screen.getByRole('button', { name: 'Find answer' }));
   await screen.findByText('121/79 mmHg');
   fireEvent.click(screen.getByRole('button', { name: 'View source' }));

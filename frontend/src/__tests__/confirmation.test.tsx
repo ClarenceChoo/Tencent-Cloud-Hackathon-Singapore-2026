@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../App';
 
@@ -33,6 +33,7 @@ describe('care record confirmation', () => {
     vi.stubGlobal('fetch', fetchMock);
     const user = userEvent.setup();
     render(<App />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Timeline' }));
 
     await screen.findByRole('heading', { name: /care timeline/i });
     await user.click(await screen.findByRole('button', { name: /add entry/i }));

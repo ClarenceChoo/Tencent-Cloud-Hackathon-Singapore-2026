@@ -4,7 +4,7 @@ Parse's browser companion links an older adult's voice interactions to the exist
 
 ## Product flow
 
-Open `/companion` on the same HTTPS service as the dashboard. Choose **Connect this browser**, then ask the owner to approve its one-use code in dashboard Settings. The companion is a separate, patient-scoped installation; its pairing does not sign the user into the administrative dashboard.
+Open `/companion` on the same HTTPS service as the dashboard. Choose **Connect this browser**, then ask the owner to approve its one-use code through the dashboard’s **Connect** button. The companion is a separate, patient-scoped installation; its pairing does not sign the user into the administrative dashboard.
 
 The [first-use guide](First-Use-Guide.md) separates approval, current connection, reminder selection, speaker playback, microphone permission and the first confirmed update. Its static example creates no care data. Speaker, microphone and first-update proof stay in the current session and clear on reload or identity changes. A simulated response never verifies live speech, and caregiver visibility must be checked under that recipient's own account.
 
@@ -23,6 +23,8 @@ Microphone access requires permission and a secure context: HTTPS in deployment,
 Recording format is chosen from supported browser formats. The browser checks support before starting; the server normalizes bounded AAC/M4A or Opus/WebM to the same canonical WAV used by the native companion. This includes streaming WebM without container-duration metadata. See [MediaRecorder format detection](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/isTypeSupported_static).
 
 ## Connection and data
+
+The dashboard's separate **Connect** button shows the selected companion's live connection state. A paired browser reports foreground presence every five seconds while its companion page is visible, and reports background state when hidden. Closing the page stops reporting; its status becomes Offline after the existing 15-second freshness window. This status report does not open the microphone, start recording or verify voice-service readiness. Selecting that browser for reminders remains a separate owner action under **Connect → Reminder companion**.
 
 The web adapter under `/v1/web` keeps its installation credential in an HttpOnly, SameSite=Strict cookie. It checks origin and CSRF for mutations and forwards only an allowlisted set of operations to the existing phone/device handlers. It does not exchange the installation credential for an owner session. JavaScript storage is limited to recovery and playback identifiers; captured audio and care text are not persisted there.
 

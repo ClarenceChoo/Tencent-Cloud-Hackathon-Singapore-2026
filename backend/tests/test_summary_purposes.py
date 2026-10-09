@@ -1,7 +1,8 @@
 """Purpose templates preserve provenance and separate authored questions."""
 
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -87,10 +88,11 @@ def test_all_purposes_preserve_source_ids_and_versions_across_generation(env):
     confirmed = client.post(f"/v1/app/proposals/{proposed.json()['id']}/confirm", json={"confirmed": True}, headers=headers)
     assert confirmed.status_code == 200, confirmed.text
     results = []
+    today = datetime.now(ZoneInfo("Asia/Singapore")).date()
     for purpose in ("doctor_visit", "family_handoff", "weekly_review"):
         response = client.post(
             f"/v1/app/patients/{ids['patient']}/summaries",
-            json={"start_date": "2026-10-01", "end_date": "2026-10-03", "purpose": purpose},
+            json={"start_date": str(today - timedelta(days=1)), "end_date": str(today + timedelta(days=1)), "purpose": purpose},
             headers=headers,
         )
         assert response.status_code == 201, response.text

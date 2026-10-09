@@ -143,7 +143,7 @@ Replace `COM4` with the currently detected port. The board has appeared as both 
 | Speaker battery-click test | Pass | The speaker coil and attached speaker leads respond electrically. |
 | Amplifier firmware loop | Pass at software level | The application repeatedly writes I2S buffers and logs `TONE` and `SILENCE` without an ESP-IDF error. |
 | Acoustic amplifier output | Pass | Re-stripping and securely clamping the speaker leads in the green terminal produced the repeating tone. |
-| Integrated CareLoop firmware build | Pass | Built with ESP-IDF 5.4.2 using the bench profile in `firmware/sdkconfig.careloop.bench`. |
+| Integrated CareLoop firmware build | Pass | Built with ESP-IDF 5.4.2 using the verified pin values recorded in this handover. |
 | Integrated CareLoop firmware flash and boot | Pass | Flashed through `COM3`; the board detected 16 MB flash and initialized 8 MB Octal PSRAM. |
 | Integrated button-to-speaker path | Pass with temporary jumper | Momentarily connecting GPIO18 to ground triggered the offline audio prompt. A permanent tactile button is not yet fitted. |
 | Prompt intelligibility | Functional, needs tuning | The offline prompt was understandable but slightly muffled. Final enclosure acoustics and playback quality remain to be assessed. |
@@ -177,7 +177,7 @@ A basic DMM cannot reliably prove the fast `BCLK`, `LRC`, and `DIN` waveforms. T
 
 ## Integration and enclosure notes
 
-- The tested firmware profile is [`firmware/sdkconfig.careloop.bench`](../../firmware/sdkconfig.careloop.bench): microphone GPIO4/5/6, amplifier GPIO7/15/16, and active-low PTT GPIO18. Amplifier `SD/EN` is tied to 3.3 V, so its firmware enable GPIO remains `-1`.
+- The tested local build used microphone GPIO4/5/6, amplifier GPIO7/15/16, and active-low PTT GPIO18. Amplifier `SD/EN` is tied to 3.3 V, so its firmware enable GPIO remains `-1`.
 - Until the tactile button is installed, a brief GPIO18-to-GND contact can simulate one button press. Arrange jumper wires only while USB is unplugged, then reconnect USB before testing.
 - Keep the microphone and speaker physically separated and aligned with their respective enclosure openings to reduce feedback.
 - Do not judge final sound quality while the loose speaker is face-down, covered, or pressed against the table. Assess the muffled prompt again with the speaker facing outward in its intended enclosure opening.
@@ -197,7 +197,7 @@ Never drive the 8 ohm speaker directly from an ESP32 GPIO.
 
 1. Photograph and label every working connection before teammates move any wires.
 2. Fit and verify the permanent tactile button between GPIO18 and ground, or retain the clearly labelled temporary jumper for the demo rehearsal.
-3. Give the team the bench profile and this handover before they flash another build. Confirm that their Bluetooth/backend firmware preserves the verified GPIO map.
+3. Give the team this handover before they flash another build. Confirm that their Bluetooth/backend firmware preserves the verified GPIO map.
 4. Run one complete fictional demo flow: deliberate press, microphone capture, backend receipt, processing, returned audio, and audible speaker playback. Do not use real patient data.
 5. Reassess the muffled prompt with the speaker correctly oriented and mounted. Adjust audio assets or gain only after enclosure placement is ruled out.
 6. Complete several full power-cycle rehearsals before moving the circuit to perfboard or recording the final demo video.

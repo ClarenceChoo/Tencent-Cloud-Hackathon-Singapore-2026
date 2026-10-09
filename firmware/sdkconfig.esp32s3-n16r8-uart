@@ -1,0 +1,17 @@
+# ESP32-S3, 16 MB Quad flash, 8 MB Octal PSRAM, USB-to-UART console.
+# Verified chip/flash/eFuse capabilities on the connected board, 9 Oct 2026.
+# Peripheral GPIOs retain their disabled defaults until wiring is confirmed.
+CONFIG_IDF_TARGET="esp32s3"
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+CONFIG_ESPTOOLPY_FLASHMODE_DIO=y
+CONFIG_ESPTOOLPY_FLASHFREQ_80M=y
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_MODE_OCT=y
+CONFIG_SPIRAM_SPEED_80M=y
+CONFIG_SPIRAM_BOOT_INIT=y
+CONFIG_SPIRAM_USE_MALLOC=y
+CONFIG_ESP_CONSOLE_UART_DEFAULT=y
+CONFIG_ESP_CONSOLE_UART_BAUDRATE=115200
+# Parse uses a custom partition table; give its application room to grow.
+# A diagnostic selecting the standard single-app table ignores this filename.
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.esp32s3-n16r8.csv"

@@ -1,0 +1,766 @@
+[
+  {
+    "type": "function",
+    "name": "propose_health_note",
+    "description": "Use for one care action only. If speech contains multiple independent events or requests, ask which one to handle first; do not merge or drop actions. Propose one general health observation or symptom the speaker reports. Keep it private unless they explicitly ask to share it with one identified permitted recipient. Route blood-pressure values to record_measurement and dose-status reports to report_medication. Does not create medication reminders. Dashboard review and explicit confirmation are required before saving.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "type": "string",
+          "enum": [
+            "propose",
+            "correct"
+          ],
+          "description": "Use correct only when revising the identified current proposal."
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "wording": {
+              "maxLength": 4000,
+              "minLength": 1,
+              "type": "string"
+            },
+            "symptom": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "occurrence_text": {
+              "anyOf": [
+                {
+                  "maxLength": 1000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Preserve the speaker's approximate time, such as this morning. Use null when occurred_at is supplied or no time was stated."
+            },
+            "occurred_at": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only an exact date and clock time stated by the speaker. Use null for approximate time; never infer midnight from today or this morning."
+            },
+            "timezone": {
+              "anyOf": [
+                {
+                  "maxLength": 80,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "share_with_user_ids": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "wording",
+            "symptom",
+            "occurrence_text",
+            "occurred_at",
+            "timezone",
+            "share_with_user_ids"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "strict": true
+  },
+  {
+    "type": "function",
+    "name": "report_medication",
+    "description": "Use for one care action only. If speech contains multiple independent events or requests, ask which one to handle first; do not merge or drop actions. Propose only the speaker-reported status of one uniquely identified dose in the active checked plan. This records a report; it does not set a reminder, change a plan or dose, or confirm medication was taken unless the speaker says so. Ask which dose when multiple entries match. Dashboard review and explicit confirmation are required before saving.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "type": "string",
+          "enum": [
+            "propose",
+            "correct"
+          ],
+          "description": "Use correct only when revising the identified current proposal."
+        },
+        "payload": {
+          "type": "object",
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "dose_instance_id": {
+                  "type": "string"
+                },
+                "report_state": {
+                  "type": "string",
+                  "enum": [
+                    "reported_taken"
+                  ]
+                },
+                "taken_time_text": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 500
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Only when the speaker explicitly says when this dose was taken; otherwise null."
+                }
+              },
+              "required": [
+                "dose_instance_id",
+                "report_state",
+                "taken_time_text"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "dose_instance_id": {
+                  "type": "string"
+                },
+                "report_state": {
+                  "type": "string",
+                  "enum": [
+                    "reported_skipped",
+                    "reported_not_yet",
+                    "reported_uncertain"
+                  ]
+                },
+                "taken_time_text": {
+                  "type": "null",
+                  "description": "Must be null unless report_state is reported_taken and the speaker explicitly stated when it was taken."
+                }
+              },
+              "required": [
+                "dose_instance_id",
+                "report_state",
+                "taken_time_text"
+              ]
+            }
+          ]
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "strict": true
+  },
+  {
+    "type": "function",
+    "name": "record_measurement",
+    "description": "Use for one care action only. If speech contains multiple independent events or requests, ask which one to handle first; do not merge or drop actions. Propose one externally reported blood-pressure reading. Require the spoken systolic and diastolic values and the measurement source; clarify missing facts instead of storing a general note. Preserve approximate time as spoken and never infer a value or exact time. This is not a microphone/device measurement. Dashboard review and explicit confirmation are required before saving.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "type": "string",
+          "enum": [
+            "propose",
+            "correct"
+          ],
+          "description": "Use correct only when revising the identified current proposal."
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "measurement_type": {
+              "type": "string",
+              "enum": [
+                "blood_pressure"
+              ]
+            },
+            "systolic": {
+              "maximum": 300,
+              "minimum": 40,
+              "type": "integer"
+            },
+            "diastolic": {
+              "maximum": 200,
+              "minimum": 20,
+              "type": "integer"
+            },
+            "unit": {
+              "type": "string",
+              "enum": [
+                "mmHg"
+              ]
+            },
+            "occurred_at": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "occurrence_text": {
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Copy an exact short excerpt of the speaker’s approximate time, such as this morning. Do not paraphrase or supply a default. Ask for the time if neither an approximate time nor an exact date and clock time were stated."
+            },
+            "timezone": {
+              "maxLength": 80,
+              "minLength": 1,
+              "type": "string"
+            },
+            "source_description": {
+              "maxLength": 1000,
+              "minLength": 1,
+              "type": "string",
+              "description": "Copy the speaker’s stated source/device/location as an exact short excerpt from this transcript or the directly preceding clarification conversation. Never use a placeholder such as unknown or not specified. If no source is stated, ask for it with respond_to_user."
+            },
+            "reporting_actor": {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string",
+              "enum": [
+                "patient",
+                "caregiver"
+              ]
+            },
+            "supersedes_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "measurement_type",
+            "systolic",
+            "diastolic",
+            "unit",
+            "occurred_at",
+            "occurrence_text",
+            "timezone",
+            "source_description",
+            "reporting_actor",
+            "supersedes_id"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "strict": true
+  },
+  {
+    "type": "function",
+    "name": "update_preventive_task",
+    "description": "Use for one care action only. If speech contains multiple independent events or requests, ask which one to handle first; do not merge or drop actions. Propose one supported preventive-care task transition or creation. Existing tasks must match a supplied task ID. Create only when the speaker explicitly states the task and required plan details. This function cannot create medication reminders or edit medication plans. Dashboard review and explicit confirmation are required before saving.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "type": "string",
+          "enum": [
+            "propose",
+            "correct"
+          ],
+          "description": "Use correct only when revising the identified current proposal."
+        },
+        "payload": {
+          "anyOf": [
+            {
+              "additionalProperties": false,
+              "properties": {
+                "task_id": {
+                  "type": "string"
+                },
+                "task_type": {
+                  "type": "null"
+                },
+                "description": {
+                  "type": "null"
+                },
+                "source": {
+                  "type": "null"
+                },
+                "due_date": {
+                  "type": "null"
+                },
+                "timezone": {
+                  "type": "null"
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "planned",
+                    "due",
+                    "arranged",
+                    "completed",
+                    "declined",
+                    "needs_discussion"
+                  ]
+                },
+                "appointment_date": {
+                  "anyOf": [
+                    {
+                      "format": "date",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "completion_date": {
+                  "anyOf": [
+                    {
+                      "format": "date",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "task_id",
+                "task_type",
+                "description",
+                "source",
+                "due_date",
+                "timezone",
+                "state",
+                "appointment_date",
+                "completion_date"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "task_id": {
+                  "type": "null"
+                },
+                "task_type": {
+                  "maxLength": 80,
+                  "type": "string"
+                },
+                "description": {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                "source": {
+                  "maxLength": 1000,
+                  "type": "string"
+                },
+                "due_date": {
+                  "format": "date",
+                  "type": "string"
+                },
+                "timezone": {
+                  "maxLength": 80,
+                  "type": "string"
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "planned",
+                    "due",
+                    "arranged",
+                    "completed",
+                    "declined",
+                    "needs_discussion"
+                  ]
+                },
+                "appointment_date": {
+                  "anyOf": [
+                    {
+                      "format": "date",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "completion_date": {
+                  "anyOf": [
+                    {
+                      "format": "date",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "task_id",
+                "task_type",
+                "description",
+                "source",
+                "due_date",
+                "timezone",
+                "state",
+                "appointment_date",
+                "completion_date"
+              ],
+              "type": "object"
+            }
+          ]
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "strict": true
+  },
+  {
+    "type": "function",
+    "name": "request_support",
+    "description": "Use for one care action only. If speech contains multiple independent events or requests, ask which one to handle first; do not merge or drop actions. Propose one support request for one explicitly identified permitted recipient. This only prepares a request for dashboard review; it does not send or dispatch help. Clarify the recipient when ambiguous. For urgent danger, use the supplied calling_route guidance. Explicit dashboard confirmation is required before sharing.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "type": "string",
+          "enum": [
+            "propose",
+            "correct"
+          ],
+          "description": "Use correct only when revising the identified current proposal."
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "request_text": {
+              "maxLength": 2000,
+              "minLength": 1,
+              "type": "string"
+            },
+            "recipient_user_id": {
+              "type": "string"
+            },
+            "urgency": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "routine",
+                    "urgent"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "barrier_text": {
+              "anyOf": [
+                {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "request_text",
+            "recipient_user_id",
+            "urgency",
+            "barrier_text"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "strict": true
+  },
+  {
+    "type": "function",
+    "name": "update_followup",
+    "description": "Use for one care action only. If speech contains multiple independent events or requests, ask which one to handle first; do not merge or drop actions. Propose one follow-up tied to a supplied record, with the stated check time and sharing choice, or resolve a supplied follow-up using a human-reported outcome. Do not infer an outcome from silence. Ask permission before sharing; medication-report follow-ups must remain private. Dashboard review and explicit confirmation are required before saving.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "type": "string",
+          "enum": [
+            "propose",
+            "correct"
+          ],
+          "description": "Use correct only when revising the identified current proposal."
+        },
+        "payload": {
+          "additionalProperties": false,
+          "properties": {
+            "followup_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "related_type": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "support_request",
+                    "health_note",
+                    "medication_report"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "related_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "check_at": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "permission_scope": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "minLength": 1,
+                  "type": "string",
+                  "enum": [
+                    "private",
+                    "related_recipients"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "reported_outcome": {
+              "anyOf": [
+                {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "resolution_state": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "open",
+                    "resolved"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "type": "object",
+          "required": [
+            "followup_id",
+            "related_type",
+            "related_id",
+            "check_at",
+            "permission_scope",
+            "reported_outcome",
+            "resolution_state"
+          ]
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "strict": true
+  },
+  {
+    "type": "function",
+    "name": "confirm_current_update",
+    "description": "Use for one request only. If speech contains multiple independent actions or questions, ask which one to handle first. Use only when the current utterance clearly and explicitly confirms the single identified current proposal. The server rechecks the words and permissions. This function does not save the care update; the person must still review and confirm it on the dashboard.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "strict": true
+  },
+  {
+    "type": "function",
+    "name": "get_medication_explanation",
+    "description": "Use for one request only. If speech contains multiple independent actions or questions, ask which one to handle first. Read the reviewed instructions and source for one uniquely identified medicine in the active checked plan. Use only for a question about those stored instructions. Do not add medical advice, recommend dose changes, or infer that the medicine caused a symptom.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "medicine_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "medicine_id"
+      ],
+      "additionalProperties": false
+    },
+    "strict": true
+  },
+  {
+    "type": "function",
+    "name": "get_support_status",
+    "description": "Use for one request only. If speech contains multiple independent actions or questions, ask which one to handle first. Read stored status for one uniquely identified support request. Report acknowledgement or resolution only when the stored record explicitly contains it; never infer that someone has seen or acted on the request.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "record_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_id"
+      ],
+      "additionalProperties": false
+    },
+    "strict": true
+  },
+  {
+    "type": "function",
+    "name": "get_followup_status",
+    "description": "Use for one request only. If speech contains multiple independent actions or questions, ask which one to handle first. Read stored status for one uniquely identified follow-up. Report an outcome only when the record contains a human-reported outcome; silence does not mean resolved.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "record_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_id"
+      ],
+      "additionalProperties": false
+    },
+    "strict": true
+  },
+  {
+    "type": "function",
+    "name": "respond_to_user",
+    "description": "Use to ask which action to handle first when speech contains multiple independent events or requests; never handle only one silently. Also use for one focused clarification or ordinary conversation. Ask one focused clarification question when a required fact, reference, or intended action is ambiguous or missing. Use chat for ordinary conversation or to explain a capability limit, such as medication reminders not being supported here. Never claim a record was saved, a request sent, or a person acknowledged it.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "intent": {
+          "type": "string",
+          "enum": [
+            "clarify",
+            "chat"
+          ]
+        },
+        "spoken_text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 600
+        }
+      },
+      "required": [
+        "intent",
+        "spoken_text"
+      ],
+      "additionalProperties": false
+    },
+    "strict": true
+  }
+]

@@ -26,3 +26,12 @@ firmware/components/careloop_core/test/network_poll_tests
 .DS_Store
 runtime/
 *.log
+
+# Local hosted-worker state and secrets
+.wrangler/
+.dev.vars*
+# Standalone ESP32 diagnostic build output
+firmware/diagnostics/**/build*/
+firmware/diagnostics/**/managed_components/
+firmware/diagnostics/**/sdkconfig
+firmware/diagnostics/**/sdkconfig.old

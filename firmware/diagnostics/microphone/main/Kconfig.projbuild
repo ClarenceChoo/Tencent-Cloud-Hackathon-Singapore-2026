@@ -1,0 +1,24 @@
+menu "Parse microphone diagnostic"
+config PARSE_MIC_BLE
+    bool "Use the Bluetooth bench transport instead of the optional Wi-Fi probe"
+    default n
+config PARSE_MIC_WIRING_CONFIRMED
+    bool "INMP441 wiring and left channel have been confirmed"
+    default n
+config PARSE_MIC_BCLK_GPIO
+    int "INMP441 SCK GPIO"
+    range -1 48
+    default -1
+config PARSE_MIC_WS_GPIO
+    int "INMP441 WS GPIO"
+    range -1 48
+    default -1
+config PARSE_MIC_DATA_GPIO
+    int "INMP441 SD GPIO"
+    range -1 48
+    default -1
+config PARSE_MIC_AMP_ENABLE_GPIO
+    int "Confirmed amplifier enable GPIO to hold low (-1 if absent)"
+    range -1 48
+    default -1
+endmenu

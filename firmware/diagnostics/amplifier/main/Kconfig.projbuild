@@ -1,0 +1,24 @@
+menu "Parse amplifier bench diagnostic"
+config PARSE_BENCH_WIRING_CONFIRMED
+    bool "MAX98357A power, speaker and GPIO wiring have been checked"
+    default n
+    help
+        Only enable after checking the physical wiring. The diagnostic leaves
+        all peripheral GPIOs untouched when this setting is disabled.
+config PARSE_BENCH_BCLK_GPIO
+    int "MAX98357A BCLK GPIO"
+    range -1 48
+    default -1
+config PARSE_BENCH_WS_GPIO
+    int "MAX98357A LRC/LRCLK GPIO"
+    range -1 48
+    default -1
+config PARSE_BENCH_DATA_GPIO
+    int "MAX98357A DIN GPIO"
+    range -1 48
+    default -1
+config PARSE_BENCH_ENABLE_GPIO
+    int "MAX98357A SD/enable GPIO (-1 if not connected to ESP32)"
+    range -1 48
+    default -1
+endmenu

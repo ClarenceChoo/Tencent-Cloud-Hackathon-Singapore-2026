@@ -17,13 +17,14 @@ MAX_INPUT = 2 * 1024 * 1024
 DECODER_SLOTS = threading.BoundedSemaphore(2)
 
 
-def _decode(executable, arguments):
+def _decode(executable, arguments, input_bytes=None):
     binary = shutil.which(executable)
     if not binary:
         raise HTTPException(503, 'Phone audio decoder is not installed on this server')
     try:
         result = subprocess.run(
             [sys.executable, str(Path(__file__).with_name('audio_subprocess.py')), binary, *arguments],
+            input=input_bytes,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10,
             env={'PATH': os.environ.get('PATH', ''), 'LANG': 'C'}, check=False)
     except (subprocess.TimeoutExpired, OSError):

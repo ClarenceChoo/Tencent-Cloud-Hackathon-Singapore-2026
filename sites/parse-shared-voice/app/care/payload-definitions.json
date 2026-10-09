@@ -1,0 +1,485 @@
+{
+  "health_note": {
+    "additionalProperties": false,
+    "properties": {
+      "wording": {
+        "maxLength": 4000,
+        "minLength": 1,
+        "title": "Wording",
+        "type": "string"
+      },
+      "symptom": {
+        "anyOf": [
+          {
+            "maxLength": 200,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Symptom"
+      },
+      "occurrence_text": {
+        "anyOf": [
+          {
+            "maxLength": 1000,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Preserve the speaker's approximate time, such as this morning. Use null when occurred_at is supplied or no time was stated.",
+        "title": "Occurrence Text"
+      },
+      "occurred_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Only an exact date and clock time stated by the speaker. Use null for approximate time; never infer midnight from today or this morning.",
+        "title": "Occurred At"
+      },
+      "timezone": {
+        "anyOf": [
+          {
+            "maxLength": 80,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Timezone"
+      },
+      "share_with_user_ids": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Share With User Ids",
+        "type": "array"
+      },
+      "share_with_names": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Share With Names",
+        "type": "array"
+      }
+    },
+    "required": [
+      "wording"
+    ],
+    "title": "HealthNotePayload",
+    "type": "object"
+  },
+  "medication_report": {
+    "additionalProperties": false,
+    "properties": {
+      "dose_instance_id": {
+        "title": "Dose Instance Id",
+        "type": "string"
+      },
+      "report_state": {
+        "title": "Report State",
+        "type": "string"
+      },
+      "taken_time_text": {
+        "anyOf": [
+          {
+            "maxLength": 500,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Taken Time Text"
+      },
+      "plan_version": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Plan Version"
+      }
+    },
+    "required": [
+      "dose_instance_id",
+      "report_state"
+    ],
+    "title": "MedicationReportPayload",
+    "type": "object"
+  },
+  "measurement": {
+    "additionalProperties": false,
+    "properties": {
+      "measurement_type": {
+        "title": "Measurement Type",
+        "type": "string"
+      },
+      "systolic": {
+        "maximum": 300,
+        "minimum": 40,
+        "title": "Systolic",
+        "type": "integer"
+      },
+      "diastolic": {
+        "maximum": 200,
+        "minimum": 20,
+        "title": "Diastolic",
+        "type": "integer"
+      },
+      "unit": {
+        "title": "Unit",
+        "type": "string"
+      },
+      "occurred_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Occurred At"
+      },
+      "occurrence_text": {
+        "anyOf": [
+          {
+            "maxLength": 500,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Occurrence Text"
+      },
+      "timezone": {
+        "maxLength": 80,
+        "minLength": 1,
+        "title": "Timezone",
+        "type": "string"
+      },
+      "source_description": {
+        "maxLength": 1000,
+        "minLength": 1,
+        "title": "Source Description",
+        "type": "string"
+      },
+      "reporting_actor": {
+        "maxLength": 100,
+        "minLength": 1,
+        "title": "Reporting Actor",
+        "type": "string"
+      },
+      "supersedes_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Supersedes Id"
+      }
+    },
+    "required": [
+      "measurement_type",
+      "systolic",
+      "diastolic",
+      "unit",
+      "timezone",
+      "source_description",
+      "reporting_actor"
+    ],
+    "title": "MeasurementPayload",
+    "type": "object"
+  },
+  "preventive_task": {
+    "additionalProperties": false,
+    "properties": {
+      "task_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Task Id"
+      },
+      "task_type": {
+        "anyOf": [
+          {
+            "maxLength": 80,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Task Type"
+      },
+      "description": {
+        "anyOf": [
+          {
+            "maxLength": 2000,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Description"
+      },
+      "source": {
+        "anyOf": [
+          {
+            "maxLength": 1000,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Source"
+      },
+      "due_date": {
+        "anyOf": [
+          {
+            "format": "date",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Due Date"
+      },
+      "timezone": {
+        "anyOf": [
+          {
+            "maxLength": 80,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Timezone"
+      },
+      "state": {
+        "title": "State",
+        "type": "string"
+      },
+      "appointment_date": {
+        "anyOf": [
+          {
+            "format": "date",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Appointment Date"
+      },
+      "completion_date": {
+        "anyOf": [
+          {
+            "format": "date",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Completion Date"
+      }
+    },
+    "required": [
+      "state"
+    ],
+    "title": "PreventivePayload",
+    "type": "object"
+  },
+  "support_request": {
+    "additionalProperties": false,
+    "properties": {
+      "request_text": {
+        "maxLength": 2000,
+        "minLength": 1,
+        "title": "Request Text",
+        "type": "string"
+      },
+      "recipient_user_id": {
+        "title": "Recipient User Id",
+        "type": "string"
+      },
+      "urgency": {
+        "default": "routine",
+        "title": "Urgency",
+        "type": "string"
+      },
+      "barrier_text": {
+        "anyOf": [
+          {
+            "maxLength": 2000,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Barrier Text"
+      },
+      "recipient_name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Recipient Name"
+      }
+    },
+    "required": [
+      "request_text",
+      "recipient_user_id"
+    ],
+    "title": "SupportPayload",
+    "type": "object"
+  },
+  "followup": {
+    "additionalProperties": false,
+    "properties": {
+      "followup_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Followup Id"
+      },
+      "related_type": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Related Type"
+      },
+      "related_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Related Id"
+      },
+      "check_at": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Check At"
+      },
+      "permission_scope": {
+        "anyOf": [
+          {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Permission Scope"
+      },
+      "permitted_user_ids": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Permitted User Ids",
+        "type": "array"
+      },
+      "reported_outcome": {
+        "anyOf": [
+          {
+            "maxLength": 2000,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Reported Outcome"
+      },
+      "resolution_state": {
+        "default": "open",
+        "title": "Resolution State",
+        "type": "string"
+      }
+    },
+    "title": "FollowUpPayload",
+    "type": "object"
+  }
+}

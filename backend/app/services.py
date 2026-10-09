@@ -46,11 +46,19 @@ class StrictModel(BaseModel):
 class HealthNotePayload(StrictModel):
     wording: str = Field(min_length=1, max_length=4000)
     symptom: Optional[str] = Field(default=None, max_length=200)
-    occurrence_text: Optional[str] = Field(default=None, max_length=1000)
-    occurred_at: Optional[datetime] = None
+    occurrence_text: Optional[str] = Field(default=None, max_length=1000,
+        description="Preserve the speaker's approximate time, such as this morning. Use null when occurred_at is supplied or no time was stated.")
+    occurred_at: Optional[datetime] = Field(default=None,
+        description="Only an exact date and clock time stated by the speaker. Use null for approximate time; never infer midnight from today or this morning.")
     timezone: Optional[str] = Field(default=None, max_length=80)
     share_with_user_ids: list[str] = Field(default_factory=list)
     share_with_names: list[str] = Field(default_factory=list, exclude=True)
+
+    @model_validator(mode="after")
+    def occurrence_valid(self):
+        if self.occurred_at is not None and self.occurrence_text:
+            raise ValueError("provide occurred_at or occurrence_text, not both")
+        return self
 
 
 class MedicationReportPayload(StrictModel):
@@ -958,9 +966,12 @@ def summary_dict(summary: m.VisitSummary, public: bool = False) -> dict:
 
 
 def _dt(value):
-    if value is None or isinstance(value, datetime):
-        return value
-    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if value is None:
+        return None
+    parsed = value if isinstance(value, datetime) else datetime.fromisoformat(value.replace("Z", "+00:00"))
+    # SQLite drops timezone offsets on DateTime columns. Store the UTC instant
+    # consistently so reloading a confirmed local time cannot shift it.
+    return aware(parsed).astimezone(timezone.utc)
 
 
 def _date(value):

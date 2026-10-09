@@ -1,5 +1,7 @@
 # Parse — Tencent Cloud Hackathon Singapore 2026
 
+For the current hosted dashboard and ESP32 recording flow, see [Hosted Parse and voice tools](sites/README.md), the [tool-calling guide](sites/parse-shared-voice/docs/voice-tool-calling.md), and the [laptop relay setup](tools/ESP32_VOICE_RELAY.md). The original self-hosted Python/React setup is documented below.
+
 Parse helps older adults record concerns, report medication status and share confirmed updates with permitted caregivers. The current software setup is a browser companion, a React caregiver dashboard and a shared FastAPI backend. The ESP32-S3 cardholder and native app remain separate ways to access the same care system.
 
 The browser companion runs at `/companion` beside the Parse dashboard. It needs no installed phone app or pendant provisioning. Pair it from the owner's dashboard, then use the phone browser to review and confirm care updates that appear in the permitted caregiver timeline.

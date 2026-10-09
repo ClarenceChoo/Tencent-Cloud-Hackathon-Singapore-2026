@@ -126,9 +126,12 @@ even when capture_intent suggests a different kind. Ask for clarification on a c
 corrections are correct with a complete revised payload, preserving stated facts only. A yes with corrections
 is not confirmation. Never report a medicine taken from reminder playback or ambiguous speech.
 Choose clarify with one short question when any material field is unknown. Preserve approximate time
-in occurrence_text. Keep spoken_text short, at most 35 words, and never say saved or sent.
+only in occurrence_text. Use occurred_at only for an exact date and clock time stated by the speaker.
+Never infer midnight or another exact time from today, this morning, or other approximate wording.
+Do not supply both occurrence_text and occurred_at. Omit both when no occurrence time was stated.
+Keep spoken_text short, at most 35 words, and never say saved or sent.
 Payload schemas:
-health_note: wording, optional symptom, occurrence_text, occurred_at, timezone, share_with_user_ids (empty by default).
+health_note: wording, optional symptom, either occurrence_text or occurred_at (both may be absent), timezone, share_with_user_ids (empty by default).
 medication_report: dose_instance_id from supplied doses, report_state one of reported_taken/reported_skipped/reported_not_yet/reported_uncertain, optional taken_time_text. Ask which dose if several match.
 measurement: measurement_type blood_pressure, integer systolic, integer diastolic, unit mmHg, source_description, reporting_actor patient, timezone, either occurred_at or occurrence_text. These are reported external readings, not device measurements.
 preventive_task: task_id and state planned/due/arranged/completed/declined/needs_discussion plus any stated appointment_date/completion_date; creation needs task_type,description,source,due_date,timezone,state. Refer only to an existing entered care plan.
@@ -237,7 +240,7 @@ class TencentProvider:
         if not isinstance(transcript, str) or len(transcript) > 10000:
             raise ProviderResponseError("The transcript is invalid.")
         # Deliberately limit which context reaches the model; no entire patient history.
-        permitted = {k: context[k] for k in ("device", "server_time", "capture_intent", "reviewed_vocabulary", "current_proposal", "reminder_context", "active_medication_plan", "doses", "permitted_recipients", "preventive_tasks", "support_requests", "followups") if k in context}
+        permitted = {k: context[k] for k in ("device", "server_time", "capture_intent", "reviewed_vocabulary", "current_proposal", "reminder_context", "active_medication_plan", "doses", "permitted_recipients", "health_notes", "preventive_tasks", "support_requests", "followups") if k in context}
         payload = {"model": self.config.llm_model, "temperature": 0, "max_tokens": 700,
                    "messages": [{"role": "system", "content": SYSTEM_PROMPT},
                                 {"role": "user", "content": json.dumps({"transcript": transcript, "context": permitted}, ensure_ascii=False)}]}
@@ -318,6 +321,9 @@ def get_provider(fixture_transcripts: Mapping[str, str] | None = None):
         return FixtureProvider(fixture_transcripts, os.getenv("CARELOOP_FIXTURE_REPLY_WAV", ""))
     if mode == "unconfigured":
         return UnconfiguredProvider()
+    if mode == "openai":
+        from .openai_provider import from_environment
+        return from_environment()
     if mode != "tencent":
         raise ProviderUnavailable("Unknown speech provider configuration.")
     required = ["TENCENT_SECRET_ID", "TENCENT_SECRET_KEY", "CARELOOP_LLM_API_KEY", "CARELOOP_LLM_BASE_URL", "CARELOOP_LLM_MODEL", "CARELOOP_TTS_VOICE_TYPE"]

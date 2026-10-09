@@ -1,0 +1,7 @@
+# Pin values reported by the existing careloop_amplifier_test on 9 Oct 2026.
+# These are software observations, not confirmation of the physical wiring.
+CONFIG_PARSE_BENCH_BCLK_GPIO=7
+CONFIG_PARSE_BENCH_WS_GPIO=15
+CONFIG_PARSE_BENCH_DATA_GPIO=16
+CONFIG_PARSE_BENCH_ENABLE_GPIO=17
+# CONFIG_PARSE_BENCH_WIRING_CONFIRMED is not set

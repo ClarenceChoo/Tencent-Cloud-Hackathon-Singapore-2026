@@ -118,7 +118,7 @@ docker compose --env-file deploy/.env exec -T db \
   pg_dump -U careloop -d careloop -Fc > careloop-$(date +%F).dump
 ```
 
-Keep a copy off the VM and periodically verify your recovery procedure using a separate test database. This is a single-instance prototype: additional backend replicas need shared socket routing and scheduler coordination, and the current schema bootstrap is not a migration system. Plan migrations, encrypted backups, and recovery before retaining real records.
+Keep a copy off the VM and periodically verify your recovery procedure using a separate test database. This is a single-instance prototype: additional backend replicas need shared socket routing and scheduler coordination. Database upgrades use [transactional Alembic migrations](../backend/app/migrate.py); test upgrades and restore procedures against a separate database, and plan encrypted backups before retaining real records.
 
 ## Deployment checks
 

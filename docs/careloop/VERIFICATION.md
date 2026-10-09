@@ -2,7 +2,7 @@
 
 The software now includes guided hardware pairing and a private per-device setup pack in addition to the local dashboard, backend and device API. `python3 tools/run_demo.py` starts the software demo. Follow the [hardware pairing runbook](Hardware-Pairing-Runbook.md) for the server, supplier and first-unit steps. Live speech remains dependent on configured provider access.
 
-This document separates executable software evidence from target-device acceptance. The complete physical-prototype PRD definition of done has **not** been met. No physical device, live speech account, deployment domain, measured battery/acoustics or intended-user trial has been supplied for these later integration checks.
+This document separates executable software evidence from target-device acceptance. The complete physical-prototype PRD definition of done has **not** been met. The newer [9 October hardware handover](Hardware-Handover-2026-10-09.md) records successful bench flashing and independent microphone/button checks; amplifier playback remains unresolved. Live-provider acceptance, an operational deployment, battery/acoustic measurements and intended-user trials are still not established by the evidence below. Older workstation observations retain their original dates and scope.
 
 ## Recorded results — 2 October 2026, Singapore time
 

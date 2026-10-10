@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import { Miniflare } from "miniflare";
@@ -18,7 +18,7 @@ try {
   const privateOrigin = "https://private-dashboard.example", phoneOrigin = "https://public-phone.example", owner = { userId: "owner", email: "owner@example.test" };
   const backend = { DB, BUCKET, PUBLIC_SITE_ORIGIN: privateOrigin, PUBLIC_PHONE_ORIGIN: phoneOrigin, DASHBOARD_ALLOWED_EMAILS: owner.email };
   const proxy = { PRIVATE_DASHBOARD_ORIGIN: privateOrigin, PRIVATE_VOICE_SERVICE_TOKEN: "isolated-test-credential", PUBLIC_SITE_ORIGIN: phoneOrigin };
-  for (const sql of (await readFile(new URL("drizzle/0000_daffy_charles_xavier.sql", dashboard), "utf8")).split("--> statement-breakpoint")) if (sql.trim()) await DB.prepare(sql).run();
+  for (const name of (await readdir(new URL("drizzle/", dashboard))).filter((name) => name.endsWith(".sql")).sort()) for (const sql of (await readFile(new URL(`drizzle/${name}`, dashboard), "utf8")).split("--> statement-breakpoint")) if (sql.trim()) await DB.prepare(sql).run();
   let forwarded = 0;
   async function send(url, init) {
     forwarded++;

@@ -1,0 +1,33 @@
+{
+  "version": "parse-wifi-1",
+  "chip": "ESP32-S3",
+  "flashSize": 16777216,
+  "backupSize": 2162688,
+  "sdkconfigSha256": "3fc9fb0336e326183e9de329ad1d819e5c00d7a3c64590dffbe0eec4eec38ee1",
+  "parts": [
+    {
+      "name": "bootloader",
+      "path": "/firmware/parse-wifi-1/bootloader.bin",
+      "address": 0,
+      "size": 22592,
+      "sha256": "0b8151acbe1b07b80e9faf2b2f858954b960b759dffd1e5b06d27197cbdd3979",
+      "md5": "31c12130a8012d94f0d489bad2bbab38"
+    },
+    {
+      "name": "partition-table",
+      "path": "/firmware/parse-wifi-1/partition-table.bin",
+      "address": 32768,
+      "size": 3072,
+      "sha256": "5e71c3c890e04714daa03b21a0d23953a2dadf9fdf15eec02b886f7b6e9f8c81",
+      "md5": "d845cbc34f76d600bd979245058ddbe5"
+    },
+    {
+      "name": "application",
+      "path": "/firmware/parse-wifi-1/application.bin",
+      "address": 65536,
+      "size": 1038928,
+      "sha256": "6c73a420ba7f04a266e19d0e51808b9de3095836a9bfdfa193e9dca0d82ea9b4",
+      "md5": "1a6dcedfe08ca9062e4901aae17390a2"
+    }
+  ]
+}

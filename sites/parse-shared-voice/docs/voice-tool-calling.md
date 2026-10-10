@@ -62,3 +62,7 @@ node scripts/verify-care-intents.mjs --use-approved-demo-key --key-file=/absolut
 ```
 
 The live evaluation limits requests to twenty per run and keeps all proposed care records in isolated local storage. It exercises complete reports, missing details, unsupported reminders, medication negation, grounded reads, corrections, prompt injection, multiple actions, and a two-recording clarification.
+
+## Direct ESP32 Wi-Fi
+
+The ESP32 can also send six-second microphone clips through an iPhone hotspot, using a device credential bound to one owner-approved room. This reaches the same transcription, interpretation and review pipeline; the transport does not grant tools any extra permissions. The dashboard provides the installer, hotspot provisioning, recording control, completed-clip spectrogram and spoken response player. See the [Wi-Fi setup guide](../../../tools/ESP32_WIFI_SETUP.md). Device playback through the amplifier is not part of this release.

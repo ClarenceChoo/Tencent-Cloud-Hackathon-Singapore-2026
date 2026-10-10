@@ -1,5 +1,5 @@
-export type Room = {id:string;state:"waiting"|"pending"|"paired";clientType?:"phone"|"esp32";code:string|null;createdAt:number;expiresAt:number;updatedAt:number};
-export type Recording = {id:string;roomId:string;clientType?:"phone"|"esp32";state:"receiving"|"processing"|"ready"|"interrupted";chunks:number;duration:number;createdAt:number;updatedAt:number;transcript:string|null;errorCode:string|null;audioUrl:string|null};
+export type Room = {id:string;state:"waiting"|"pending"|"paired";clientType?:"phone"|"esp32"|"esp32_wifi";code:string|null;createdAt:number;expiresAt:number;updatedAt:number};
+export type Recording = {id:string;roomId:string;clientType?:"phone"|"esp32"|"esp32_wifi";state:"receiving"|"processing"|"ready"|"interrupted";chunks:number;duration:number;createdAt:number;updatedAt:number;transcript:string|null;errorCode:string|null;audioUrl:string|null};
 export type VoiceStatus = {transcriptionConfigured:boolean;maxSeconds:number};
 export class ApiError extends Error {constructor(message:string,readonly status:number){super(message);}}
 export async function voiceApi<T>(path:string, data?:unknown, signal?:AbortSignal):Promise<T>{

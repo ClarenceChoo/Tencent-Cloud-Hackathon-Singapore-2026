@@ -6,6 +6,10 @@ This guide takes your **ESP32-S3-WROOM-1 N16R8** development board through build
 
 The product is called Parse. The firmware source, configuration names and setup Wi-Fi still use the earlier CareLoop name.
 
+## Direct Wi-Fi voice firmware
+
+For the confirmed ESP32-S3 N16R8 with an INMP441 on GPIO 4/5/6 (L/R grounded), use [`sdkconfig.parse-wifi-esp32s3-n16r8`](sdkconfig.parse-wifi-esp32s3-n16r8). It enables the direct Parse dashboard relay and 16 kHz stereo-slot microphone capture, selects the 2 MiB factory partition, and holds the MAX98357A enable on GPIO 17 low. Speaker clocks, push-to-talk GPIO, and haptics stay disabled. First boot reports a USB setup handshake; the dashboard provisions a hotspot and a one-time pairing invitation. Recordings are sent over verified HTTPS and require an explicit dashboard action or button press. This profile does not include the separate Bluetooth diagnostic image. See the [direct Wi-Fi setup guide](../tools/ESP32_WIFI_SETUP.md).
+
 **In this guide:** [Before you begin](#before-you-begin) · [What the code does](#what-the-code-does) · [Install and make a no-space checkout](#1-install-esp-idf-v542-in-a-path-without-spaces) · [Configure and build](#2-configure-your-board-and-build) · [N16R8 board notes](#esp32-s3-wroom-1-n16r8-board-notes) · [Flash](#3-find-the-usb-port-and-flash-the-application) · [Create the private pack](#4-provision-a-unique-device-token-and-setup-password) · [Flash NVS](#5-generate-and-flash-nvs-separately) · [Pair and test](#6-first-boot-owner-pairing-and-bench-test) · [Troubleshooting](#troubleshooting-and-recovery) · [Protocol](#firmware-protocol-reference) · [Source files](#where-to-look-in-the-source)
 
 ## Before you begin

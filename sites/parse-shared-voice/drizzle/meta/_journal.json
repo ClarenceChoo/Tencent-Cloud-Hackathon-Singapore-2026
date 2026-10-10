@@ -29,6 +29,20 @@
       "when": 1791556397633,
       "tag": "0003_aberrant_blackheart",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1791632034261,
+      "tag": "0004_esp32_wifi_device_auth_and_tts",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1791632281017,
+      "tag": "0005_cooing_quicksilver",
+      "breakpoints": true
     }
   ]
 }

@@ -14,18 +14,21 @@ function pick(value: Record<string, unknown>, fields: string[]) {
 }
 
 export async function forwardPhone(request: Request, bindings: PhoneProxyBindings, send: typeof fetch = fetch): Promise<Response> {
-  const url = new URL(request.url), path = url.pathname.replace(/^\/api\/voice\/phone\//, "");
-  const claim = /^rooms\/[a-f0-9-]{36}\/claim$/.test(path);
-  const allowed = url.pathname.startsWith("/api/voice/phone/") && !url.search && ((request.method === "GET" && /^rooms\/[a-f0-9-]{36}$/.test(path)) || (request.method === "POST" && (claim || /^rooms\/[a-f0-9-]{36}\/relay$/.test(path) || path === "recordings" || /^recordings\/[a-f0-9-]{36}\/(?:chunks\/[0-9]{1,2}|finish|discard|reply)$/.test(path))));
+  const url = new URL(request.url), deviceApi=url.pathname.startsWith("/api/voice/device/"),phoneApi=url.pathname.startsWith("/api/voice/phone/"),prefix=deviceApi?"device":phoneApi?"phone":"",path = prefix?url.pathname.replace(new RegExp(`^/api/voice/${prefix}/`),""):"";
+  const claim = /^rooms\/[a-f0-9-]{36}\/claim$/.test(path),deviceCredential=/^Bearer [a-f0-9]{64}$/.test(request.headers.get("Authorization")??"");
+  const phoneAllowed=phoneApi&&((request.method==="GET"&&/^rooms\/[a-f0-9-]{36}$/.test(path))||(request.method==="POST"&&(claim||/^rooms\/[a-f0-9-]{36}\/relay$/.test(path)||path==="recordings"||/^recordings\/[a-f0-9-]{36}\/(?:chunks\/[0-9]{1,2}|finish|discard|reply)$/.test(path))));
+  const deviceAllowed=deviceApi&&deviceCredential&&((request.method==="GET"&&/^rooms\/[a-f0-9-]{36}$/.test(path))||(request.method==="POST"&&(claim||/^rooms\/[a-f0-9-]{36}\/relay$/.test(path)||path==="recordings"||/^recordings\/[a-f0-9-]{36}\/(?:chunks\/[0-9]{1,2}|finish|discard)$/.test(path))));
+  const allowed=!url.search&&(phoneAllowed||deviceAllowed);
   if (!allowed) return json({ error: "This phone action was not found." }, 404);
   if (!bindings.PRIVATE_DASHBOARD_ORIGIN || !bindings.PRIVATE_VOICE_SERVICE_TOKEN || !bindings.PUBLIC_SITE_ORIGIN) return json({ error: "Phone pairing is temporarily unavailable." }, 503);
-  const cookie = phoneCookie(request);
-  if (!claim && !cookie) return json({ error: "Scan a fresh pairing QR from the dashboard." }, 403);
+  const cookie = phoneApi?phoneCookie(request):null;
+  if (phoneApi&&!claim&&!cookie) return json({ error: "Scan a fresh pairing QR from the dashboard." }, 403);
   const headers = new Headers({ "OAI-Sites-Authorization": `Bearer ${bindings.PRIVATE_VOICE_SERVICE_TOKEN}` });
   if (cookie) headers.set("Cookie", cookie);
+  if(deviceApi)headers.set("Authorization",request.headers.get("Authorization")!);
   let body: Uint8Array<ArrayBuffer> | undefined;
   if (request.method === "POST") {
-    if (request.headers.get("Origin") !== bindings.PUBLIC_SITE_ORIGIN || request.headers.get("X-Parse-Voice") !== "1" || request.headers.get("Sec-Fetch-Site") === "cross-site") return json({ error: "Open the phone companion to make this change." }, 403);
+    if (phoneApi&&(request.headers.get("Origin") !== bindings.PUBLIC_SITE_ORIGIN || request.headers.get("X-Parse-Voice") !== "1" || request.headers.get("Sec-Fetch-Site") === "cross-site")) return json({ error: "Open the phone companion to make this change." }, 403);
     const audio = /\/(?:chunks\/[0-9]{1,2}|reply)$/.test(path), contentType = audio ? "audio/wav" : "application/json", limit = path.endsWith("/reply") ? 640044 : audio ? 32044 : 4096;
     if (request.headers.get("Content-Type") !== contentType || Number(request.headers.get("Content-Length") ?? 0) > limit) return json({ error: "Use a short, valid phone request." }, 413);
     const reader = request.body?.getReader();
@@ -35,12 +38,13 @@ export async function forwardPhone(request: Request, bindings: PhoneProxyBinding
       while (true) { const part = await reader.read(); if (part.done) break; size += part.value.length; if (size > limit) return json({ error: "The phone request is too large." }, 413); parts.push(part.value); }
     } finally { await reader.cancel().catch(() => {}); }
     body = new Uint8Array(size); let offset = 0; for (const part of parts) { body.set(part, offset); offset += part.length; }
-    headers.set("Content-Type", contentType); headers.set("Origin", bindings.PUBLIC_SITE_ORIGIN); headers.set("X-Parse-Voice", "1");
+    headers.set("Content-Type", contentType);
+    if(phoneApi){headers.set("Origin", bindings.PUBLIC_SITE_ORIGIN); headers.set("X-Parse-Voice", "1");}
   }
   try {
     const destination = new URL(bindings.PRIVATE_DASHBOARD_ORIGIN);
     if (destination.protocol !== "https:" || destination.pathname !== "/" || destination.search || destination.hash || destination.username || destination.password) return json({ error: "Phone pairing is temporarily unavailable." }, 503);
-    destination.pathname = `/api/voice/phone/${path}`;
+    destination.pathname = `/api/voice/${prefix}/${path}`;
     const upstream = await send(destination.href, { method: request.method, headers, body, redirect: "manual", signal: AbortSignal.timeout(path.endsWith('/finish')?120_000:60_000) });
     if (upstream.status >= 300 && upstream.status < 400) return json({ error: "The paired dashboard is temporarily unavailable." }, 503);
     if (!upstream.headers.get("Content-Type")?.startsWith("application/json")) return json({ error: "The paired dashboard is temporarily unavailable." }, 503);
@@ -61,7 +65,7 @@ export async function forwardPhone(request: Request, bindings: PhoneProxyBinding
     for (const key of ["thisPhone", "accepted", "sequence", "reused", "stopped", "transcriptionConfigured"]) if (typeof value[key] === "boolean" || typeof value[key] === "number") safe[key] = value[key];
     const response = json(safe, upstream.status);
     const issued = upstream.headers.get("Set-Cookie")?.match(/^parse_voice_phone=([a-f0-9]{64});/);
-    if (claim && upstream.status === 201 && issued) response.headers.set("Set-Cookie", `${COOKIE}=${issued[1]}; HttpOnly; Secure; SameSite=Strict; Path=/api/voice; Max-Age=86400`);
+    if (phoneApi&&claim && upstream.status === 201 && issued) response.headers.set("Set-Cookie", `${COOKIE}=${issued[1]}; HttpOnly; Secure; SameSite=Strict; Path=/api/voice; Max-Age=86400`);
     return response;
   } catch { return json({ error: "The paired dashboard is temporarily unavailable. Keep this page open and try again." }, 503); }
 }

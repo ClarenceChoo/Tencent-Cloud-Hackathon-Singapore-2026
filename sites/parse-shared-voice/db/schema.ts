@@ -1,13 +1,13 @@
-import { sqliteTable, text, integer, index, primaryKey } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, index, uniqueIndex, primaryKey } from "drizzle-orm/sqlite-core";
 
 export const voiceRooms = sqliteTable("voice_rooms", {
   id: text("id").primaryKey(), ownerId: text("owner_id").notNull(),
-  invitationHash: text("invitation_hash").notNull(), phoneHash: text("phone_hash"),
+  invitationHash: text("invitation_hash").notNull(), phoneHash: text("phone_hash"), deviceHash: text("device_hash"),
   approvalCode: text("approval_code"), state: text("state").notNull(),
   clientType: text("client_type").notNull().default("phone"),
   createdAt: integer("created_at").notNull(), expiresAt: integer("expires_at").notNull(),
   updatedAt: integer("updated_at").notNull(),
-}, table => [index("idx_voice_rooms_owner_created").on(table.ownerId, table.createdAt)]);
+}, table => [index("idx_voice_rooms_owner_created").on(table.ownerId, table.createdAt), uniqueIndex("idx_voice_rooms_device_hash").on(table.deviceHash)]);
 
 export const voiceRecordings = sqliteTable("voice_recordings", {
   id: text("id").primaryKey(), roomId: text("room_id").notNull().references(() => voiceRooms.id),
@@ -46,6 +46,12 @@ export const careVoiceJobs = sqliteTable("care_voice_jobs", {
   recordingId:text("recording_id").primaryKey().references(()=>voiceRecordings.id),
   ownerId:text("owner_id").notNull(), state:text("state").notNull(),
   resultJson:text("result_json"), updatedAt:integer("updated_at").notNull(),
+});
+
+export const voiceTtsJobs = sqliteTable("voice_tts_jobs", {
+  recordingId:text("recording_id").primaryKey().references(()=>voiceRecordings.id),
+  ownerId:text("owner_id").notNull(), state:text("state").notNull(), errorCode:text("error_code"),
+  updatedAt:integer("updated_at").notNull(),
 });
 
 export const voiceRelayStatus = sqliteTable("voice_relay_status", {

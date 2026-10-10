@@ -7,7 +7,8 @@ export async function serveAuthorizedVoice(
   user: DashboardIdentity | null,
   bindings: VoiceBindings,
 ): Promise<Response> {
-  if (new URL(request.url).pathname.startsWith("/api/voice/phone/")) {
+  if (new URL(request.url).pathname.startsWith("/api/voice/phone/") ||
+      new URL(request.url).pathname.startsWith("/api/voice/device/")) {
     return serveVoice(request, null, bindings,(ownerId,recordingId)=>interpretRelayRecording(bindings,ownerId,recordingId));
   }
   const access = dashboardAccess(user, bindings);

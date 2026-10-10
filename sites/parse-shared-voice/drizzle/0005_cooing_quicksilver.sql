@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `idx_voice_rooms_device_hash` ON `voice_rooms` (`device_hash`);

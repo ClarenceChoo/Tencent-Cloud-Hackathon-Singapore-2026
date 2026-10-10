@@ -1,4 +1,7 @@
 menu "CareLoop hardware (supplier must confirm every pin)"
+config CARELOOP_DIRECT_WIFI
+    bool "Use Parse direct Wi-Fi voice relay"
+    default n
 config CARELOOP_MIC_BCLK_GPIO
     int "INMP441 BCLK GPIO (-1 disables microphone)"
     default -1

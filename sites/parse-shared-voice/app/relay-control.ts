@@ -20,7 +20,7 @@ function safeStatus(input:Record<string,unknown>){
 // The dashboard queues a short-lived request. Only the cookie-authenticated
 // laptop may claim it; claiming never happens as a side effect of a status read.
 export async function relayControl(request:Request,row:RelayRoom,db:D1Database,phoneApi:boolean,action:string,now:number){
-  check(row.client_type==='esp32'&&row.state==='paired',409,'Approve an ESP32 connection first.');
+  check((row.client_type==='esp32'||row.client_type==='esp32_wifi')&&row.state==='paired',409,'Approve an ESP32 connection first.');
   await db.prepare("UPDATE voice_relay_commands SET state='expired',updated_at=? WHERE room_id=? AND state IN ('queued','claimed') AND expires_at<=?").bind(now,row.id,now).run();
   async function active(){return db.prepare("SELECT * FROM voice_relay_commands WHERE room_id=? AND state IN ('queued','claimed') ORDER BY created_at DESC LIMIT 1").bind(row.id).first<Command>();}
   async function status(){const value=await db.prepare('SELECT last_seen,status_json FROM voice_relay_status WHERE room_id=?').bind(row.id).first<{last_seen:number;status_json:string}>();return {lastSeen:value?.last_seen??null,online:!!value&&now-value.last_seen<15000,status:value?JSON.parse(value.status_json):{busy:false,hardwareReady:false,canRetry:false,phase:'idle'}};}

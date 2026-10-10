@@ -267,7 +267,7 @@ export async function interpretRelayRecording(bindings:VoiceBindings,ownerId:str
   requireCare(workspace&&allowedEmails(bindings).includes(normalize(workspace.owner_email)),403,'The care-space owner no longer has access.');
   const actor={userId:ownerId,email:workspace.owner_email},context=(await contexts(db,actor,bindings)).find(item=>item.isOwner)!;
   const active=async()=>{
-    const room=await db.prepare("SELECT v.id FROM voice_rooms v JOIN voice_recordings r ON r.room_id = v.id WHERE r.id = ? AND v.owner_id = ? AND v.client_type = 'esp32' AND v.state = 'paired' AND v.expires_at > ?").bind(recordingId,ownerId,Date.now()).first();
+    const room=await db.prepare("SELECT v.id FROM voice_rooms v JOIN voice_recordings r ON r.room_id = v.id WHERE r.id = ? AND v.owner_id = ? AND v.client_type IN ('esp32','esp32_wifi') AND v.state = 'paired' AND v.expires_at > ?").bind(recordingId,ownerId,Date.now()).first();
     requireCare(room,403,'This ESP32 connection is no longer approved.');
   };
   await active();

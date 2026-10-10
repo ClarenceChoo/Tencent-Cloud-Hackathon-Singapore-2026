@@ -18,6 +18,11 @@ esp_err_t careloop_settings_load(careloop_settings_t *s, careloop_ledger_t *ledg
     getstr(h, "ssid", s->wifi_ssid, sizeof(s->wifi_ssid)); getstr(h, "pass", s->wifi_password, sizeof(s->wifi_password));
     getstr(h, "backend", s->backend_url, sizeof(s->backend_url)); getstr(h, "token", s->device_token, sizeof(s->device_token));
     getstr(h, "setup_pw", s->setup_password, sizeof(s->setup_password));
+    getstr(h, "room_id", s->room_id, sizeof(s->room_id)); getstr(h, "pair_token", s->pairing_token, sizeof(s->pairing_token));
+    getstr(h, "relay_cmd", s->relay_command_id, sizeof(s->relay_command_id));
+    getstr(h, "relay_claim", s->relay_claim_id, sizeof(s->relay_claim_id));
+    getstr(h, "relay_kind", s->relay_kind, sizeof(s->relay_kind));
+    getstr(h, "relay_state", s->relay_receipt_state, sizeof(s->relay_receipt_state));
     if (!s->setup_password[0]) { setup_password(s->setup_password); nvs_set_str(h, "setup_pw", s->setup_password); nvs_commit(h); }
     size_t bytes = sizeof(*ledger); if (nvs_get_blob(h, "ledger", ledger, &bytes) != ESP_OK || bytes != sizeof(*ledger)) memset(ledger, 0, sizeof(*ledger));
     nvs_close(h); s->configured = s->wifi_ssid[0] && s->backend_url[0]; return ESP_OK;
@@ -28,6 +33,12 @@ esp_err_t careloop_settings_save(const careloop_settings_t *s) {
     if (e == ESP_OK) e = nvs_set_str(h, "backend", s->backend_url);
     if (e == ESP_OK) e = nvs_set_str(h, "token", s->device_token);
     if (e == ESP_OK) e = nvs_set_str(h, "setup_pw", s->setup_password);
+    if (e == ESP_OK) e = nvs_set_str(h, "room_id", s->room_id);
+    if (e == ESP_OK) e = nvs_set_str(h, "pair_token", s->pairing_token);
+    if (e == ESP_OK) e = nvs_set_str(h, "relay_cmd", s->relay_command_id);
+    if (e == ESP_OK) e = nvs_set_str(h, "relay_claim", s->relay_claim_id);
+    if (e == ESP_OK) e = nvs_set_str(h, "relay_kind", s->relay_kind);
+    if (e == ESP_OK) e = nvs_set_str(h, "relay_state", s->relay_receipt_state);
     if (e == ESP_OK) e = nvs_commit(h);
     nvs_close(h);
     return e;

@@ -11,11 +11,12 @@
 
 static const char *TAG="careloop";
 static careloop_app_t app;
+#if !CONFIG_CARELOOP_DIRECT_WIFI
 static void pulse(unsigned on_ms, unsigned off_ms, unsigned count) { for(unsigned i=0;i<count;i++){careloop_haptic(&app.board,true);vTaskDelay(pdMS_TO_TICKS(on_ms));careloop_haptic(&app.board,false);if(i+1<count)vTaskDelay(pdMS_TO_TICKS(off_ms));} }
 static bool debounced_press(void) { if(!careloop_ptt_pressed(&app.board))return false;vTaskDelay(pdMS_TO_TICKS(40));return careloop_ptt_pressed(&app.board); }
 static void wait_for_release(void) { while(careloop_ptt_pressed(&app.board)) vTaskDelay(pdMS_TO_TICKS(10)); }
 static void wifi_setup_if_requested(void) {
-  if (!app.settings.configured || !careloop_ptt_pressed(&app.board)) return;
+  if (!app.settings.configured || app.settings.room_id[0] || !careloop_ptt_pressed(&app.board)) return;
   const int64_t started = esp_timer_get_time();
   while (careloop_ptt_pressed(&app.board)) {
     if (esp_timer_get_time() - started >= 5000000) {
@@ -57,10 +58,21 @@ static void interaction_task(void *unused) {
     wait_for_release(); xSemaphoreGive(app.audio_lock);
   }
 }
+#endif
 void app_main(void) {
   memset(&app,0,sizeof(app)); ESP_ERROR_CHECK(careloop_settings_load(&app.settings,&app.ledger)); ESP_ERROR_CHECK(careloop_board_init(&app.board));
   app.audio_lock=xSemaphoreCreateMutex(); app.state_lock=xSemaphoreCreateMutex(); app.ledger_lock=xSemaphoreCreateMutex(); if(!app.audio_lock||!app.state_lock||!app.ledger_lock){ESP_LOGE(TAG,"No memory for device locks");return;}
-  if(!careloop_board_audio_ready(&app.board)) ESP_LOGW(TAG,"Audio remains disabled: supplier GPIO map has not been configured");
+  if(!careloop_board_microphone_ready(&app.board)) ESP_LOGW(TAG,"Microphone remains disabled: microphone GPIO map has not been configured");
+#if !CONFIG_CARELOOP_DIRECT_WIFI
   wifi_setup_if_requested();
-  ESP_ERROR_CHECK(careloop_wifi_start(&app)); careloop_network_start(&app); xTaskCreate(interaction_task,"careloop_interaction",6144,NULL,5,NULL);
+#endif
+  ESP_ERROR_CHECK(careloop_wifi_start(&app));
+  xTaskCreate(careloop_wifi_command_task,"parse_wifi_serial",4096,&app,4,NULL);
+#if CONFIG_CARELOOP_DIRECT_WIFI
+  careloop_direct_start(&app);
+  xTaskCreate(careloop_direct_interaction_task,"parse_direct_interaction",6144,&app,5,NULL);
+#else
+  if (app.settings.room_id[0]) { careloop_direct_start(&app); xTaskCreate(careloop_direct_interaction_task,"parse_direct_interaction",6144,&app,5,NULL); }
+  else { careloop_network_start(&app); xTaskCreate(interaction_task,"careloop_interaction",6144,NULL,5,NULL); }
+#endif
 }

@@ -1,20 +1,34 @@
 # CareLoop Smart Cardholder Hardware Handover
 
-**Status date:** 9 October 2026
+**Status date:** 11 October 2026; the assembly results below were recorded on 10 October.
 
-**Purpose:** Record the physical modules, soldering work, verified bench wiring, test firmware, observed results, and remaining amplifier fault so another team member can continue the hardware bring-up.
+**Purpose:** Record the physical modules, soldering work, verified bench wiring, diagnostic firmware, integrated-firmware results, and remaining team integration work so another team member can continue from the working prototype.
 
 > [!IMPORTANT]
 > This is the verified **bench wiring map** for the current ESP32-S3 unit. The repository firmware still leaves supplier-dependent GPIO values unassigned by default. Copy these pins into the firmware configuration only for a board whose printed labels and module type match this handover.
 
-## Current conclusion
+## Latest voice status — 11 October
+
+Hardware testing is paused at the user's request, and the idle laptop relay is stopped. The Bluetooth microphone/speaker diagnostic firmware is restored and silent. See the [11 October voice handover](ESP32-Voice-Handover-2026-10-11.md) for the saved build, code changes, software checks and resume point.
+
+- Tones were audible with this handover's GPIO7/15/16 and SD/EN-to-3V3 configuration.
+- Returned speech passed encrypted Bluetooth delivery, checksum and audio-driver checks, but remained buzzing/distorted at original and quieter levels, with 16-bit and 32-bit output slots, and with Bluetooth disabled in an offline comparison. The original speech was clear on the laptop.
+- The exact cause remains unresolved. The next physical check, when testing resumes, is the ESP32-to-amplifier common ground and breadboard rail continuity. This connection was not rechecked in the 11 October session; the earlier measurements below retain their date.
+- Direct iPhone-hotspot attempts produced brownout resets. The user returned to Bluetooth and deferred Wi-Fi and physical-button testing. Laptop playback remains the default.
+
+The remaining sections preserve the 10 October assembly session, including its repaired speaker terminal and understandable but muffled offline prompt. They describe that session's build and observations; the currently installed build and later speech results are recorded above.
+
+## Assembly conclusion — 10 October
 
 - ESP32-S3 build, flash, reset, and serial monitoring work with ESP-IDF 5.4.2.
 - The INMP441 microphone was tested independently and responds to speech and claps.
 - The GPIO18 push button was tested independently and reports pressed and released states.
 - The nominal 8 ohm speaker produces an audible click during a brief 1.5 V battery test.
 - The MAX98357A test firmware continuously writes I2S audio and reports `TONE` and `SILENCE` without an ESP-IDF error.
-- No audible amplifier output has been heard yet. The remaining work is to verify power, enable, jumper continuity, and solder continuity with a digital multimeter before declaring the MAX98357A defective.
+- The MAX98357A and speaker now produce the repeating diagnostic tone. The fault was an open speaker connection: the thin speaker leads were not clamped onto exposed copper inside the green screw terminal. Re-stripping and securely clamping both leads restored audio.
+- The full CareLoop firmware was built and flashed with the verified bench pin profile. It initialized the ESP32-S3's 8 MB PSRAM, started its setup network, and did not report that audio was disabled.
+- A temporary GPIO18-to-GND jumper contact simulated the not-yet-fitted push button. The integrated device played the audible prompt, “Audio connected, please ask your caretaker to check Wi-Fi.” The message was understandable but sounded slightly muffled.
+- The hardware owner reports that teammates plan to connect the existing backend and investigate/use Bluetooth during the next team session. Bluetooth transport is a team plan, not a hardware result verified in this handover.
 
 ## Hardware inventory
 
@@ -32,7 +46,7 @@ The current bench is USB-powered. The battery, charger, and haptic hardware are 
 
 ## Complete bench wiring map
 
-All grounds must be common. The two ESP32 pins labelled `3V3` are the same regulated 3.3 V rail. The amplifier `VIN` uses `5Vin`; only its `SD`/`EN` enable pin uses 3.3 V during the present diagnostic.
+All grounds must be common. The two ESP32 pins labelled `3V3` are the same regulated 3.3 V rail. In the working bench setup, both amplifier `VIN` and `SD`/`EN` use the 3.3 V rail.
 
 ### INMP441 microphone
 
@@ -58,7 +72,7 @@ The short tactile-button legs did not seat reliably by themselves, so jumper con
 
 | MAX98357A pin | ESP32 or load connection | Function and current configuration |
 | --- | --- | --- |
-| `VIN` | ESP32 `5Vin` | Amplifier power from the USB-powered board |
+| `VIN` | ESP32 `3V3` rail | Working amplifier power connection on the USB-powered bench setup |
 | `GND` | ESP32 `GND` | Common ground |
 | `BCLK` | `GPIO7` | I2S speaker bit clock |
 | `LRC` / `WS` | `GPIO15` | I2S left-right or word-select clock |
@@ -106,7 +120,7 @@ The solderless breadboard is only for bring-up and does not need to fit in the e
 | --- | --- | --- |
 | Microphone test | `mic-test` | 16 kHz I2S receive test with live level and peak output |
 | Button test | `button-test` | GPIO18 active-low input with internal pull-up and `PRESSED` / `RELEASED` logs |
-| Amplifier test | `amplifier-test` | 16 kHz, 16-bit stereo I2S output; 500 Hz square wave; amplitude 8000; approximately one second of tone followed by one second of silence |
+| Amplifier test | `amplifier-test` | Final diagnostic: 16 kHz, 16-bit stereo I2S output; 500 Hz square wave; amplitude 24000; five seconds of tone followed by two seconds of silence |
 
 These small bench projects were run separately from the integrated repository firmware. Their local source directories are under `C:\Users\user\Documents\ChatGPT\Bumblebee` on the original development laptop.
 
@@ -139,7 +153,13 @@ Replace `COM4` with the currently detected port. The board has appeared as both 
 | GPIO18 button test | Pass | The button and active-low input path work. |
 | Speaker battery-click test | Pass | The speaker coil and attached speaker leads respond electrically. |
 | Amplifier firmware loop | Pass at software level | The application repeatedly writes I2S buffers and logs `TONE` and `SILENCE` without an ESP-IDF error. |
-| Acoustic amplifier output | Fail / unresolved | No tone is heard despite wiring checks and solder rework. |
+| Acoustic amplifier output | Pass | Re-stripping and securely clamping the speaker leads in the green terminal produced the repeating tone. |
+| Integrated CareLoop firmware build | Pass | Built with ESP-IDF 5.4.2 using the verified pin values recorded in this handover. |
+| Integrated CareLoop firmware flash and boot | Pass | Flashed through `COM3`; the board detected 16 MB flash and initialized 8 MB Octal PSRAM. |
+| Integrated button-to-speaker path | Pass with temporary jumper | Momentarily connecting GPIO18 to ground triggered the offline audio prompt. A permanent tactile button is not yet fitted. |
+| Prompt intelligibility | Functional, needs tuning | The offline prompt was understandable but slightly muffled. Final enclosure acoustics and playback quality remain to be assessed. |
+| Backend communication | Not tested in this session | Teammates report that a backend URL already exists and plan to test it during the next session. |
+| Bluetooth communication | Planned, not verified | The current checked-in firmware booted its Wi-Fi setup path. The team's intended Bluetooth path must be confirmed against their implementation before the demo. |
 | Laptop mute check | Not relevant | The signal is generated by the ESP32 and amplifier; laptop volume does not control the speaker. |
 
 ## Digital multimeter checks
@@ -153,39 +173,45 @@ Perform resistance and continuity measurements only with USB disconnected. Power
 | Unpowered continuity | Both ends of each removable jumper wire | Steady beep and about 0–2 ohms, including while gently bending the wire | Open or intermittent jumper, or loose Dupont contact |
 | Unpowered continuity | Each amplifier header pin to its own solder pad | Steady beep and about 0–2 ohms | Header solder joint is not electrically connected |
 | Unpowered resistance | Across the two green terminal screws with the speaker connected | About 6–10 ohms for the nominal 8 ohm speaker | `OL` indicates an open clamp, lead, or terminal joint; near 0 ohms indicates a short |
-| Powered DC voltage | Black probe on amplifier `GND`, red probe on amplifier `VIN` | About 4.7–5.2 V | Power jumper, ESP32 `5Vin`, or VIN solder fault |
+| Powered DC voltage | Black probe on amplifier `GND`, red probe on amplifier `VIN` | About 3.3 V in the verified bench wiring | Power rail, VIN jumper, or VIN solder fault |
 | Powered DC voltage | Black probe on amplifier `GND`, red probe on amplifier `SD` / `EN` | About 3.3 V | Enable jumper or SD solder fault |
 
 A basic DMM cannot reliably prove the fast `BCLK`, `LRC`, and `DIN` waveforms. The filterless Class-D output can also confuse an ordinary AC-voltage reading. Use an oscilloscope or logic analyser for waveform proof, or use known-good GPIO pins and jumper wires that pass continuity.
 
-## Amplifier fault decision
+## Resolved amplifier diagnosis
 
-1. If `VIN` is not near 5 V at the amplifier, repair or replace the VIN/GND jumper and inspect the matching solder joint.
-2. If `SD`/`EN` is not near 3.3 V, repair that connection. Keep `GAIN` unconnected.
-3. If the green terminal does not measure approximately the speaker resistance, re-strip and clamp the speaker leads or repair the terminal joint.
-4. If a jumper fails continuity or works only while held at an angle, replace it.
-5. If every electrical check passes, the firmware still reports `TONE` and `SILENCE`, and no output is heard, treat the MAX98357A module as defective or heat-damaged. Replace it instead of applying more soldering heat.
+1. The first measurement across the green terminal showed `OL`, identifying an open speaker circuit.
+2. Measuring the stripped speaker leads directly eventually showed approximately 4–10 ohms, confirming the speaker coil and leads were usable.
+3. The thin stranded wires could be pulled easily from the screw terminal because the clamp was not gripping exposed copper.
+4. Both leads were re-stripped, twisted, inserted fully into the terminal's side openings, and tightened. The wires then passed a gentle tug check.
+5. The repeating 500 Hz diagnostic tone became audible immediately. Do not replace or re-solder the amplifier unless a new, specific electrical fault appears.
 
 ## Integration and enclosure notes
 
+- The tested local build used microphone GPIO4/5/6, amplifier GPIO7/15/16, and active-low PTT GPIO18. Amplifier `SD/EN` is tied to 3.3 V, so its firmware enable GPIO remains `-1`.
+- Until the tactile button is installed, a brief GPIO18-to-GND contact can simulate one button press. Arrange jumper wires only while USB is unplugged, then reconnect USB before testing.
 - Keep the microphone and speaker physically separated and aligned with their respective enclosure openings to reduce feedback.
+- Do not judge final sound quality while the loose speaker is face-down, covered, or pressed against the table. Assess the muffled prompt again with the speaker facing outward in its intended enclosure opening.
 - Retain development access to the COM USB-C connector, reset control, and wiring.
 - Do not freeze the perfboard outline until the actual board, connectors, speaker, button, and cable clearances have been dry-fitted.
 - The current Rev C enclosure reference uses a 20.6 mm speaker seat, 24 mm retaining ring, 2.0 mm microphone port, two USB-C openings, and a 12.5 mm side-button opening. Confirm the actual clone-module dimensions before the final print.
 
-## Fallback if the amplifier cannot be replaced in time
+## Demo-readiness boundary recorded on 10 October
 
-The silent amplifier does not block a software-flow demonstration. The verified button and microphone can still capture and upload a turn, while returned TTS audio plays through a laptop or phone speaker. Record onboard playback as pending hardware integration and preserve the enclosure speaker location for a replacement module.
+- Verified locally: ESP32-S3 flashing and boot, microphone input, GPIO18 active-low input, MAX98357A output, speaker connection, integrated offline-prompt playback, and PSRAM initialization.
+- Not verified locally: the permanent tactile button, final enclosure acoustics, Bluetooth transport, backend authentication, end-to-end microphone upload, server processing, returned TTS playback, or demo reliability over repeated runs.
+- The currently flashed repository firmware started its Wi-Fi setup network. If the team demo requires Bluetooth instead, the team must confirm which firmware branch/build provides that path before overwriting this known-good integrated build.
 
 Never drive the 8 ohm speaker directly from an ESP32 GPIO.
 
-## Recommended next actions
+## Next actions recorded on 10 October
 
-1. Run the five DMM checks and record the measured values below.
-2. Use only jumper wires that pass continuity, then repeat the amplifier tone test once.
-3. If the amplifier remains silent after the electrical checks pass, stop reworking it and replace the MAX98357A when one is available.
-4. Continue the button, microphone, Wi-Fi, backend, and response flow using laptop or phone playback if a replacement cannot arrive in time.
-5. Move to perfboard only after all required modules work reliably on the bench.
+1. Photograph and label every working connection before teammates move any wires.
+2. Fit and verify the permanent tactile button between GPIO18 and ground, or retain the clearly labelled temporary jumper for the demo rehearsal.
+3. Give the team this handover before they flash another build. Confirm that their Bluetooth/backend firmware preserves the verified GPIO map.
+4. Run one complete fictional demo flow: deliberate press, microphone capture, backend receipt, processing, returned audio, and audible speaker playback. Do not use real patient data.
+5. Reassess the muffled prompt with the speaker correctly oriented and mounted. Adjust audio assets or gain only after enclosure placement is ruled out.
+6. Complete several full power-cycle rehearsals before moving the circuit to perfboard or recording the final demo video.
 
 ## Handover measurement record
 
@@ -193,9 +219,9 @@ Never drive the 8 ohm speaker directly from an ESP32 GPIO.
 | --- | --- |
 | ESP32 board assigned to hardware | |
 | ESP32 board assigned to software | |
-| Current Windows COM port | |
-| Amplifier VIN measurement | V |
-| Amplifier SD/EN measurement | V |
-| Speaker resistance through terminal | ohms |
-| Jumper continuity result | Pass / Fail / Replaced |
-| Amplifier decision | Continue testing / Replace / Use laptop fallback |
+| Current Windows COM port | `COM3` during the 10 October integrated flash; re-detect after reconnecting USB |
+| Amplifier VIN measurement | Approximately 3.3 V at the working bench connection |
+| Amplifier SD/EN measurement | Approximately 3.3 V |
+| Speaker resistance through terminal | Approximately 4–10 ohms after re-stripping and clamping |
+| Jumper continuity result | Ground path verified; replace any jumper that becomes intermittent |
+| Amplifier decision | Keep: diagnostic tone and integrated offline prompt both passed |

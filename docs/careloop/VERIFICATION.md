@@ -2,7 +2,15 @@
 
 The software now includes guided hardware pairing and a private per-device setup pack in addition to the local dashboard, backend and device API. `python3 tools/run_demo.py` starts the software demo. Follow the [hardware pairing runbook](Hardware-Pairing-Runbook.md) for the server, supplier and first-unit steps. Live speech remains dependent on configured provider access.
 
-This document separates executable software evidence from target-device acceptance. The complete physical-prototype PRD definition of done has **not** been met. No physical device, live speech account, deployment domain, measured battery/acoustics or intended-user trial has been supplied for these later integration checks.
+This document separates executable software evidence from target-device acceptance. The complete physical-prototype PRD definition of done has **not** been met. The [hardware wiring handover](Hardware-Handover-2026-10-09.md) preserves the 10 October assembly results; the [11 October voice handover](ESP32-Voice-Handover-2026-10-11.md) records audible tones and digitally successful returned playback with unresolved speech distortion. Live-provider acceptance, the self-hosted Tencent deployment, battery/acoustic measurements and intended-user trials need separate evidence. The [hosted Sites prototype](../../sites/README.md) has its own source and verification guide. Older workstation observations retain their original dates and scope.
+
+## Recorded results — 11 October 2026, Singapore time
+
+- **47 host C firmware cases passed**, including direct microphone capture, serial-command framing, speaker sample mapping, peak limiting, partial writes, driver errors and session expiry.
+- **16 Python tests passed**: seven Bluetooth speaker-helper checks, four relay speaker-completion checks and five Parse pairing/remote-control checks. These use mocked transport/provider calls and isolated files. They ran without opening the ESP32 port.
+- The user heard handover-configured tone pairs. Speech remained distorted through Bluetooth and through an offline build with Bluetooth disabled; the original clip sounded clear on the laptop. Driver completion is not an acoustic pass.
+- Hotspot connection attempts produced brownout resets; direct Wi-Fi recording to Parse remains unverified. The physical-button test was deferred.
+- Hardware testing is paused. Bluetooth firmware is restored, the local relay is stopped, and automatic ESP32 speaker replies remain opt-in. The [session handover](ESP32-Voice-Handover-2026-10-11.md) records the exact build and resume point.
 
 ## Recorded results — 2 October 2026, Singapore time
 

@@ -10,6 +10,7 @@
 #define I2S_BITS_PER_SAMPLE_16BIT 16
 #define I2S_CHANNEL_FMT_ONLY_LEFT 1
 #define I2S_CHANNEL_FMT_ONLY_RIGHT 2
+#define I2S_CHANNEL_FMT_RIGHT_LEFT 3
 #define I2S_COMM_FORMAT_STAND_I2S 1
 #define I2S_PIN_NO_CHANGE -1
 typedef struct { int mode,sample_rate,bits_per_sample,channel_format,communication_format,dma_buf_count,dma_buf_len; bool use_apll,tx_desc_auto_clear; } i2s_config_t;

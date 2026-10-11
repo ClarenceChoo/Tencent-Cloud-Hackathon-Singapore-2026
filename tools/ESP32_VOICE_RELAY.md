@@ -36,8 +36,24 @@ Pairing is approved for 24 hours:
 
 The spectrogram appears after the completed clip transfers. Its levels use the
 original PCM; the waveform scales its amplitude for visibility. A prepared care
-proposal still requires explicit confirmation before saving. The amplifier remains
-unverified, so use the laptop's audio player for the spoken reply.
+proposal still requires explicit confirmation before saving.
+
+For the speaker wiring in the 10 October hardware handover, build the microphone
+Bluetooth firmware with `sdkconfig.speaker-handover`, then add
+`--speaker-output esp32` to the relay command. Each new spoken reply goes back over
+Bluetooth and plays through the MAX98357A. The microphone stays idle during
+playback. The browser audio player remains a laptop copy. A speaker failure is
+reported separately and does not resend the recording or repeat a care action.
+This bench playback supports canonical 16 kHz mono PCM16 WAV clips up to 20 seconds;
+longer replies remain available in the dashboard player. Without the flag, replies
+are available through that player as before.
+
+**11 October bench status:** tones were audible, but returned speech was distorted,
+including with Bluetooth disabled. The same source speech was clear on the laptop.
+Keep laptop playback as the default while that fault remains unresolved. A 6.35-second
+reply took about 69 seconds to transfer and play on the ESP32. Testing is paused and
+the local relay has been stopped; see the [session handover](../docs/careloop/ESP32-Voice-Handover-2026-10-11.md)
+for the saved state and the next checks when testing resumes.
 
 ## Connection and retry behavior
 
@@ -64,10 +80,15 @@ close the relay process to take it offline.
 
 INMP441 wiring: SCK=GPIO4, WS=GPIO5, SD=GPIO6, L/R=GND.
 
+MAX98357A handover wiring: BCLK=GPIO7, LRC/WS=GPIO15, DIN=GPIO16,
+SD/EN=3V3, VIN=3V3, with a common ESP32 ground. Speaker leads go to the
+amplifier's two output terminals.
+
 ## Software-only verification
 
 ```sh
 backend/.venv/bin/python -m unittest discover -s tools -p 'test_parse_*py'
+backend/.venv/bin/python -m unittest discover -s tools -p 'test_esp32_*py'
 cd sites/parse-shared-voice
 node scripts/verify-esp32-relay.mjs
 node scripts/verify-microphone-analysis.mjs

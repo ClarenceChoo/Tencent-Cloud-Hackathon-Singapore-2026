@@ -29,6 +29,19 @@ amplifier. Its binary uses a 2 MB flash header and does not initialize PSRAM.
 
 ## Build
 
+The hardware handover updated on **10 October 2026** supersedes the enable
+wiring observed above: BCLK/WS/DIN remain GPIO7/15/16, but SD/EN is tied to
+3V3. It reports audible tones and an integrated spoken prompt after the
+speaker leads were re-stripped and securely clamped in the green terminal.
+See the [current handover](https://github.com/ClarenceChoo/Tencent-Cloud-Hackathon-Singapore-2026/blob/main/docs/careloop/Hardware-Handover-2026-10-09.md).
+
+For that wiring, `sdkconfig.bench-handover` leaves the enable GPIO at `-1`
+and selects a peak tone amplitude of 3000/32767 (about 9% full scale).
+It does not drive GPIO17 or play tones automatically. The default diagnostic
+remains at 1000/32767; `PARSE_BENCH_TONE_AMPLITUDE` controls this value.
+With SD/EN tied high, idle means the I2S clock/output has stopped; software
+cannot physically switch the amplifier into shutdown through an enable GPIO.
+
 Use an ESP-IDF v5.4.2 environment and a full `firmware/` source copy in a path
 without spaces. Generated `sdkconfig` and `build/` files should be absent in
 that copy before its first configuration.

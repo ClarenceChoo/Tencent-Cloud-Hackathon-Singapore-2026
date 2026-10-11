@@ -25,14 +25,37 @@ from parse_online_relay import OnlineParseRelay, RelayError, SITE, private_json
 from parse_remote_control import RemoteControl
 
 
+def play_speaker_reply(serial_python, serial_port, reply):
+    """Run the isolated Bluetooth helper; a transfer alone is not playback."""
+    report_path = reply.with_suffix(".speaker.json")
+    report_path.unlink(missing_ok=True)
+    result = subprocess.run([
+        serial_python, str(ROOT / "tools/esp32_ble_speaker.py"), "--port", serial_port,
+        "--input", str(reply), "--report", str(report_path),
+    ], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=190)
+    reply.with_suffix(".speaker.log").write_text(result.stdout)
+    if result.returncode or not report_path.exists():
+        raise RuntimeError("ESP32 speaker playback did not complete")
+    report = json.loads(report_path.read_text())
+    if (report.get("speaker_driver_completed") is not True
+            or report.get("checksum_verified_on_esp32") is not True
+            or report.get("sha256") != hashlib.sha256(reply.read_bytes()).hexdigest()):
+        raise RuntimeError("ESP32 speaker completion could not be verified")
+    return report
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--serial-port", default="/dev/cu.usbmodem5CE52139521")
     parser.add_argument("--port", type=int, default=8768)
     parser.add_argument("--serial-python", default="/private/tmp/parse-esp32-tools/bin/python")
     parser.add_argument("--transport", choices=["usb", "bluetooth"], default="usb")
+    parser.add_argument("--speaker-output", choices=["laptop", "esp32"], default="laptop",
+                        help="Play replies on the ESP32 with the Bluetooth speaker firmware")
     parser.add_argument("--data-dir", type=Path, default=ROOT / "runtime/esp32-20261009")
     args = parser.parse_args()
+    if args.speaker_output == "esp32" and args.transport != "bluetooth":
+        parser.error("--speaker-output esp32 requires --transport bluetooth")
     folder = args.data_dir.resolve()
     folder.mkdir(parents=True, exist_ok=True)
     relay = OnlineParseRelay(folder)
@@ -41,6 +64,7 @@ def main():
              "transport": "Bluetooth LE" if args.transport == "bluetooth" else "USB", "bluetooth": "Ready for a test" if args.transport == "bluetooth" else "Mac scanner verified; board relay not installed",
              "transcript": "", "reply_text": "", "error": None, "levels": [], "capture": None,
              "speech_ready": (folder / "parse-tts-test.wav").exists(),
+             "speaker_output": args.speaker_output, "speaker_status": "idle",
              "parse_url": SITE, "parse_connection": {"state": "checking"},
              "parse_result": None, "can_retry": False}
     files = {"speech": folder / "parse-tts-test.wav"}
@@ -143,6 +167,7 @@ def main():
             update(busy=False)
 
     def send_to_parse():
+        update(speaker_status="idle")
         try:
             with lock:
                 source = files["microphone"]
@@ -168,6 +193,15 @@ def main():
                     update(speech_ready=True, speech_id=hashlib.sha256(wav).hexdigest())
                 except Exception:
                     update(error="Sent to Parse successfully. The spoken reply is unavailable; read the response below.")
+                else:
+                    if args.speaker_output == "esp32":
+                        update(phase="speech", speaker_status="sending",
+                               message="Saved in Parse. Sending the spoken reply to the ESP32 speaker…")
+                        try:
+                            play_speaker_reply(args.serial_python, args.serial_port, reply)
+                            update(speaker_status="complete")
+                        except Exception:
+                            update(speaker_status="error", error="Saved in Parse. ESP32 playback failed; use the dashboard audio player to hear the reply.")
             update(phase="complete", message="Sent to Parse. Review the prepared update in the shared dashboard." if result.get("proposalId") else "Sent to Parse. Your transcript and response are ready.")
         except RelayError as exc:
             update(phase="error", error=str(exc), message="Your microphone recording is kept. Retry sending the same clip.")

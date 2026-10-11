@@ -10,7 +10,7 @@ endif
 SOURCES = ../components/careloop_core/careloop_protocol.c ../components/careloop_core/careloop_wav.c
 
 .PHONY: test clean
-test: $(BUILD)/board_tests $(BUILD)/board_usb_tests $(BUILD)/network_tests $(BUILD)/direct_receipt_tests
+test: $(BUILD)/board_tests $(BUILD)/board_usb_tests $(BUILD)/network_tests $(BUILD)/direct_receipt_tests $(BUILD)/direct_capture_tests $(BUILD)/serial_line_tests $(BUILD)/bench_speaker_tests
 	python3 run_tests.py $(BUILD)
 
 $(BUILD):
@@ -25,6 +25,15 @@ $(BUILD)/network_tests: test_network_playback.c ../main/device_network.c $(wildc
 
 $(BUILD)/direct_receipt_tests: test_direct_receipt.c ../main/include/careloop_direct_receipt.h | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) test_direct_receipt.c -o $@
+
+$(BUILD)/direct_capture_tests: test_direct_capture.c ../main/board_audio.c $(wildcard stubs/*.h stubs/*/*.h ../main/include/*.h ../components/careloop_core/include/*.h) $(SOURCES) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -ffunction-sections -fdata-sections test_direct_capture.c $(SOURCES) $(GCFLAGS) -o $@
+
+$(BUILD)/serial_line_tests: test_serial_line.c ../main/include/careloop_serial_line.h | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) test_serial_line.c -o $@
+
+$(BUILD)/bench_speaker_tests: test_bench_speaker.c ../diagnostics/microphone/main/speaker_output.c $(wildcard stubs/*.h stubs/*/*.h) $(SOURCES) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) test_bench_speaker.c ../components/careloop_core/careloop_wav.c -o $@
 
 clean:
 	rm -f $(BUILD)/board_tests $(BUILD)/board_usb_tests $(BUILD)/network_tests

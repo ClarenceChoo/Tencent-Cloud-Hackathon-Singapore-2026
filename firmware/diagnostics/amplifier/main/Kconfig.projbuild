@@ -21,4 +21,11 @@ config PARSE_BENCH_ENABLE_GPIO
     int "MAX98357A SD/enable GPIO (-1 if not connected to ESP32)"
     range -1 48
     default -1
+config PARSE_BENCH_TONE_AMPLITUDE
+    int "Peak test-tone amplitude (16-bit PCM)"
+    range 1 8000
+    default 1000
+    help
+        Keep diagnostic tones brief. 32767 is full scale; the default is
+        about 3 percent. This setting changes only an explicitly requested tone.
 endmenu

@@ -21,4 +21,19 @@ config PARSE_MIC_AMP_ENABLE_GPIO
     int "Confirmed amplifier enable GPIO to hold low (-1 if absent)"
     range -1 48
     default -1
+config PARSE_MIC_SPEAKER_ENABLED
+    bool "Enable requested speaker playback with SD/EN tied to 3V3"
+    default n
+config PARSE_MIC_SPK_BCLK_GPIO
+    int "MAX98357A BCLK GPIO"
+    range -1 48
+    default -1
+config PARSE_MIC_SPK_WS_GPIO
+    int "MAX98357A LRC/WS GPIO"
+    range -1 48
+    default -1
+config PARSE_MIC_SPK_DATA_GPIO
+    int "MAX98357A DIN GPIO"
+    range -1 48
+    default -1
 endmenu

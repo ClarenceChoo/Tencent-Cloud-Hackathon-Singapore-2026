@@ -8,6 +8,9 @@ cases = {
     'board_usb_tests': ['usb_19', 'usb_20'],
     'network_tests': ['start_failure', 'checkin_start_failure', 'terminal_failure', 'checkin_terminal_failure', 'uncertain_failure', 'failed_audio_suppresses', 'receipt_failure', 'checkin_receipt_failure', 'interrupted_context', 'null_context', 'expired_context', 'success', 'reboot_suppression', 'checkin_reboot_suppression'],
     'direct_receipt_tests': ['boot_claim_recovered', 'boot_started', 'terminal_retry', 'expired_terminal'],
+    'direct_capture_tests': ['timed', 'release', 'maximum', 'short', 'malformed', 'read_error'],
+    'serial_line_tests': ['idle_and_fragmented', 'oversize_recovery', 'nul_rejected', 'maximum'],
+    'bench_speaker_tests': ['pcm32_mapping', 'peak_limit', 'partial_write', 'driver_error', 'session_expiry', 'invalid_wav'],
 }
 failures = 0
 for executable, names in cases.items():

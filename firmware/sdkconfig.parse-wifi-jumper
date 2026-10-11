@@ -1,0 +1,5 @@
+# Untested alternative proposed on 11 October; physical testing was deferred.
+# The hardware handover uses GPIO18. This overlay instead assumes GPIO8-to-GND.
+# Apply only after confirming that alternate wiring, after the Wi-Fi board profile.
+CONFIG_CARELOOP_PTT_GPIO=8
+CONFIG_CARELOOP_PTT_ACTIVE_LOW=y

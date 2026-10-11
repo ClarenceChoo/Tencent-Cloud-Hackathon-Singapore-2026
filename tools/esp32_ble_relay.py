@@ -34,13 +34,15 @@ async def exercise(args, key):
         raise RuntimeError("Parse Bluetooth advertisement not found")
     aes, counter, last_request = AESGCM(key), 0, None
     async with BleakClient(device, timeout=20) as client:
-        async def rpc(payload):
+        async def rpc(payload, *, read_reply=True):
             nonlocal counter, last_request
             counter += 1
             sequence = struct.pack("<I", counter)
             encrypted = aes.encrypt(b"PARSE-RX" + sequence, payload, None)
             last_request = sequence + encrypted
             await client.write_gatt_char(RPC, last_request, response=True)
+            if not read_reply:
+                return b""
             packet = bytes(await client.read_gatt_char(RPC))
             if packet[:4] != sequence:
                 raise RuntimeError("Bluetooth response sequence mismatch")
@@ -122,17 +124,11 @@ async def exercise(args, key):
             "tampered_request_rejected": True, "replayed_request_rejected": True,
             "file": str(args.output.resolve())}
         if args.reply_wav:
+            from esp32_ble_speaker import send_wav
             reply = args.reply_wav.read_bytes()
-            reply_hash = hashlib.sha256(reply).digest()
-            await rpc(b"\x05" + struct.pack("<I", len(reply)) + reply_hash)
-            for offset in range(0, len(reply), 140):
-                await rpc(b"\x06" + struct.pack("<I", offset) + reply[offset:offset+140])
-            received_hash = await rpc(b"\x07")
-            if received_hash != reply_hash:
-                raise RuntimeError("ESP32 reply verification failed")
-            report["tts_delivered_bytes"] = len(reply)
-            report["tts_sha256_verified_on_esp32"] = True
-            report["speaker_playback"] = "Not attempted; amplifier unresolved"
+            report["speaker_playback"] = await send_wav(
+                rpc, reply, chunk_size=min(200, client.mtu_size - 28),
+                progress=lambda value: print(value, flush=True))
         args.output.with_suffix(".json").write_text(json.dumps(report, indent=2) + "\n")
         print(json.dumps(report, indent=2), flush=True)
 

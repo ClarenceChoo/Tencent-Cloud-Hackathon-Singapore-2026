@@ -67,7 +67,7 @@ void app_main(void) {
   wifi_setup_if_requested();
 #endif
   ESP_ERROR_CHECK(careloop_wifi_start(&app));
-  xTaskCreate(careloop_wifi_command_task,"parse_wifi_serial",4096,&app,4,NULL);
+  xTaskCreate(careloop_wifi_command_task,"parse_wifi_serial",8192,&app,4,NULL);
 #if CONFIG_CARELOOP_DIRECT_WIFI
   careloop_direct_start(&app);
   xTaskCreate(careloop_direct_interaction_task,"parse_direct_interaction",6144,&app,5,NULL);

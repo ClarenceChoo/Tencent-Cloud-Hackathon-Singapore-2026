@@ -100,7 +100,7 @@ static esp_err_t write_signal(unsigned frequency, unsigned milliseconds) {
         unsigned count = frames - start;
         if (count > chunk_frames) count = chunk_frames;
         for (unsigned i = 0; i < count; ++i) {
-            int16_t value = frequency ? (int16_t)(1000 * sinf(6.28318530718f * frequency * ((start + i) % sample_rate) / sample_rate)) : 0;
+            int16_t value = frequency ? (int16_t)(CONFIG_PARSE_BENCH_TONE_AMPLITUDE * sinf(6.28318530718f * frequency * ((start + i) % sample_rate) / sample_rate)) : 0;
             samples[2 * i] = value;
             samples[2 * i + 1] = value;
         }
@@ -120,7 +120,7 @@ static void tone_test(void) {
         err = write_signal(0, 40);
         if (err == ESP_OK) {
             amplifier_enable(true);
-            ESP_LOGI(TAG, "TONE: 400 Hz for 500 ms, then 800 Hz for 500 ms; amplitude 1000/32767");
+            ESP_LOGI(TAG, "TONE: 400 Hz for 500 ms, then 800 Hz for 500 ms; amplitude %d/32767", CONFIG_PARSE_BENCH_TONE_AMPLITUDE);
             err = write_signal(400, 500);
             if (err == ESP_OK) err = write_signal(800, 500);
             if (err == ESP_OK) err = write_signal(0, 120);

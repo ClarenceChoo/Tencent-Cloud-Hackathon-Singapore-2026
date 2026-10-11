@@ -8,6 +8,7 @@
 #include "driver/gpio.h"
 #include "esp_crt_bundle.h"
 #include "esp_http_client.h"
+#include "esp_log.h"
 #include "esp_random.h"
 #include "esp_sntp.h"
 #include "esp_timer.h"
@@ -91,8 +92,10 @@ static esp_err_t cloud_json(const char *path, esp_http_client_method_t method, c
 }
 static void update_phase(const char *next, const char *message) {
   if(status_lock)xSemaphoreTake(status_lock,portMAX_DELAY);
+  bool changed=strcmp(phase,next?next:"idle") || strcmp(phase_message,message?message:"");
   snprintf(phase,sizeof(phase),"%s",next?next:"idle");
   snprintf(phase_message,sizeof(phase_message),"%s",message?message:"");
+  if(changed)ESP_LOGI("parse_voice","%s: %s",phase,phase_message);
   if(status_lock)xSemaphoreGive(status_lock);
 }
 static void set_connection_status(const char *state, const char *code, const char *message) {

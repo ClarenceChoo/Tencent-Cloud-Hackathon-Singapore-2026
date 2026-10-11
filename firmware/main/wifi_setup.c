@@ -1,4 +1,7 @@
 #include "careloop_app.h"
+#include "careloop_serial_line.h"
+#include "driver/uart.h"
+#include "driver/uart_vfs.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,7 +26,7 @@ static careloop_app_t *current;
 #if !CONFIG_CARELOOP_DIRECT_WIFI
 static esp_timer_handle_t ap_timer;
 #endif
-#define WIFI_COMMAND_LINE_MAX 1024
+#define WIFI_COMMAND_LINE_MAX CARELOOP_SERIAL_LINE_MAX
 #define PARSE_BACKEND_URL "https://parse-phone-companion.iians0n.chatgpt.site"
 
 static bool uuid_text(const char *s) {
@@ -50,6 +53,14 @@ static void emit_status(careloop_app_t *app, const char *state, const char *code
   cJSON_AddNumberToObject(root, "protocol", 1);
   cJSON_AddStringToObject(root, "firmware", "parse-wifi-1");
   cJSON_AddStringToObject(root, "state", state ? state : "error");
+  if (app) {
+    cJSON_AddNumberToObject(root, "pttGpio", app->board.ptt);
+    cJSON_AddBoolToObject(root, "talkPressed", careloop_ptt_pressed(&app->board));
+    cJSON_AddBoolToObject(root, "wifiConnected", careloop_wifi_connected());
+    wifi_ap_record_t access_point;
+    if (careloop_wifi_connected() && esp_wifi_sta_get_ap_info(&access_point) == ESP_OK)
+      cJSON_AddNumberToObject(root, "rssi", access_point.rssi);
+  }
   if (app && app->settings.room_id[0]) cJSON_AddStringToObject(root, "roomId", app->settings.room_id);
   if (code && code[0]) cJSON_AddStringToObject(root, "code", code);
   if (message && message[0]) cJSON_AddStringToObject(root, "message", message);
@@ -160,15 +171,20 @@ static void process_wifi_command(char *line) {
 }
 void careloop_wifi_command_task(void *arg) {
   careloop_app_t *app = arg; current = app;
+#if CONFIG_ESP_CONSOLE_UART
+  const uart_port_t console_uart=(uart_port_t)CONFIG_ESP_CONSOLE_UART_NUM;
+  if(!uart_is_driver_installed(console_uart))ESP_ERROR_CHECK(uart_driver_install(console_uart,2048,0,0,NULL,0));
+  uart_vfs_dev_use_driver(console_uart);
+#endif
   snprintf(app->wifi_state, sizeof(app->wifi_state), "%s", app->settings.room_id[0] ? "connecting" : "unconfigured");
   emit_status(app, app->wifi_state, NULL, NULL, NULL, NULL);
-  char line[WIFI_COMMAND_LINE_MAX + 2];
+  careloop_serial_line_t input={0};
   for (;;) {
-    if (!fgets(line, sizeof(line), stdin)) { vTaskDelay(pdMS_TO_TICKS(100)); continue; }
-    size_t n = strlen(line);
-    if (n == sizeof(line) - 1 && line[n-1] != '\n') { int c; while ((c = getchar()) != '\n' && c != EOF) {} setup_error(NULL, "command_too_large", "Setup command was too large."); continue; }
-    while (n && (line[n-1] == '\r' || line[n-1] == '\n')) line[--n] = 0;
-    if (n) process_wifi_command(line);
+    careloop_serial_result_t result=careloop_serial_poll(stdin,&input);
+    if(result==CARELOOP_SERIAL_READY)process_wifi_command(input.line);
+    else if(result==CARELOOP_SERIAL_REJECTED)setup_error(NULL,"invalid_command_line","Setup command was too large or contained an invalid byte.");
+    if(result==CARELOOP_SERIAL_READY||result==CARELOOP_SERIAL_REJECTED)memset(input.line,0,sizeof(input.line));
+    if(result==CARELOOP_SERIAL_IDLE)vTaskDelay(pdMS_TO_TICKS(10));
   }
 }
 

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "careloop_wav.h"
+#include "speaker_output.h"
 #include "esp_heap_caps.h"
 #include "esp_random.h"
 #include "esp_timer.h"
@@ -40,6 +41,9 @@ static uint16_t stream_handle;
 static uint16_t connection = BLE_HS_CONN_HANDLE_NONE;
 static int64_t expiry;
 static bool synced, armed, requested, recording, subscribed, streaming;
+/* Owned under lock: 0 idle, 1 receiving, 2 queued, 3 playing, 4 done, 5 failed. */
+static uint8_t playback_state;
+static esp_err_t playback_error;
 static int gap_event(struct ble_gap_event *event, void *arg);
 
 static void advertise(void) {
@@ -81,7 +85,7 @@ static size_t execute(const uint8_t *in, size_t len, uint8_t *out) {
         memcpy(out + 1, text, strlen(text)); return 1 + strlen(text);
     }
     if (len == 1 && in[0] == 2) {
-        if (recording || requested || streaming) { out[0] = 2; return 1; }
+        if (recording || requested || streaming || (playback_state >= 1 && playback_state <= 3)) { out[0] = 2; return 1; }
         free(mic); mic = NULL; mic_len = 0;
         requested = true; return 1;
     }
@@ -97,33 +101,46 @@ static size_t execute(const uint8_t *in, size_t len, uint8_t *out) {
         memcpy(out + 1, mic + offset, count); return 1 + count;
     }
     if (len == 37 && in[0] == 5) {
+        if (!speaker_output_available()) { out[0] = 1; return 1; }
+        if (recording || requested || streaming || playback_state == 2 || playback_state == 3) { out[0] = 2; return 1; }
         uint32_t size; memcpy(&size, in + 1, 4);
         if (size < 44 || size > 640044) { out[0] = 3; return 1; }
         free(reply); reply = heap_caps_malloc(size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
         reply_len = size; reply_received = 0; memcpy(reply_hash, in + 5, 32);
+        playback_state = reply ? 1 : 5;
+        playback_error = reply ? ESP_OK : ESP_ERR_NO_MEM;
         if (!reply) out[0] = 4;
         return 1;
     }
     if (len > 5 && in[0] == 6) {
         uint32_t offset; memcpy(&offset, in + 1, 4);
-        if (!reply || offset != reply_received || len - 5 > reply_len - reply_received) { out[0] = 3; return 1; }
+        if (playback_state != 1 || !reply || offset != reply_received || len - 5 > reply_len - reply_received) { out[0] = 3; return 1; }
         memcpy(reply + offset, in + 5, len - 5); reply_received += len - 5;
         return 1;
     }
     if (len == 1 && in[0] == 7) {
+        if (playback_state != 1) { out[0] = 2; return 1; }
         uint8_t hash[32]; uint32_t pcm;
         if (!reply || reply_received != reply_len || mbedtls_sha256(reply, reply_len, hash, 0) != 0 ||
             memcmp(hash, reply_hash, 32) != 0 || careloop_wav_validate(reply, reply_len, &pcm) != CARELOOP_WAV_OK) {
+            free(reply); reply = NULL; reply_len = reply_received = 0;
+            playback_state = 5; playback_error = ESP_ERR_INVALID_ARG;
             out[0] = 3; return 1;
         }
         memcpy(out + 1, hash, 32);
-        printf("BLE_TTS_RECEIVED bytes=%u sha256_verified=yes playback=not_attempted\n", (unsigned)reply_len);
-        free(reply); reply = NULL; reply_len = reply_received = 0;
+        playback_state = 2;
+        printf("BLE_TTS_RECEIVED bytes=%u sha256_verified=yes playback=queued\n", (unsigned)reply_len);
         return 33;
     }
     if (len == 1 && in[0] == 8) {
-        if (!mic || !subscribed || streaming) { out[0] = 2; return 1; }
+        if (!mic || !subscribed || streaming || (playback_state >= 1 && playback_state <= 3)) { out[0] = 2; return 1; }
         stream_offset = 0; streaming = true; return 1;
+    }
+    if (len == 1 && in[0] == 9) {
+        out[1] = speaker_output_available() ? 1 : 0;
+        out[2] = playback_state;
+        uint32_t error = playback_error; memcpy(out + 3, &error, 4);
+        return 7;
     }
     out[0] = 1; return 1;
 }
@@ -188,6 +205,11 @@ void ble_bench_init(void) {
 void ble_bench_arm(void) {
     if (!synced || connection != BLE_HS_CONN_HANDLE_NONE) { puts("BLE_ERROR not_ready_or_connected"); return; }
     xSemaphoreTake(lock, portMAX_DELAY);
+    if (playback_state == 2 || playback_state == 3) {
+        xSemaphoreGive(lock); puts("BLE_ERROR playback_busy"); return;
+    }
+    free(reply); reply = NULL; reply_len = reply_received = 0;
+    playback_state = 0; playback_error = ESP_OK;
     esp_fill_random(key, sizeof(key)); sequence = 0; stream_counter = 0; response_len = 0;
     expiry = esp_timer_get_time() + 180000000LL; armed = true;
     printf("BLE_ARM {\"key\":\"");
@@ -203,6 +225,10 @@ void ble_bench_tick(void) {
         armed = false; response_len = 0; mbedtls_platform_zeroize(key, sizeof(key));
         free(mic); mic = NULL; mic_len = 0;
         free(reply); reply = NULL; reply_len = reply_received = 0;
+        requested = false; streaming = false;
+        if (playback_state >= 1 && playback_state <= 3) {
+            playback_state = 5; playback_error = ESP_ERR_INVALID_STATE;
+        }
         xSemaphoreGive(lock);
         ble_gap_adv_stop();
         if (connection != BLE_HS_CONN_HANDLE_NONE) ble_gap_terminate(connection, BLE_ERR_REM_USER_CONN_TERM);
@@ -250,4 +276,31 @@ void ble_bench_capture_result(uint8_t *wav, size_t bytes) {
     free(mic); mic = wav; mic_len = bytes; recording = false;
     if (mic) mbedtls_sha256(mic, mic_len, mic_hash, 0);
     xSemaphoreGive(lock);
+}
+
+uint8_t *ble_bench_take_reply(size_t *bytes) {
+    uint8_t *result = NULL; *bytes = 0;
+    xSemaphoreTake(lock, portMAX_DELAY);
+    if (armed && esp_timer_get_time() < expiry && playback_state == 2 && reply) {
+        result = reply; *bytes = reply_len;
+        reply = NULL; reply_len = reply_received = 0;
+        playback_state = 3;
+    }
+    xSemaphoreGive(lock);
+    return result;
+}
+
+bool ble_bench_playback_allowed(void) {
+    xSemaphoreTake(lock, portMAX_DELAY);
+    bool allowed = armed && esp_timer_get_time() < expiry;
+    xSemaphoreGive(lock);
+    return allowed;
+}
+
+void ble_bench_reply_result(esp_err_t result) {
+    xSemaphoreTake(lock, portMAX_DELAY);
+    playback_state = result == ESP_OK ? 4 : 5;
+    playback_error = result;
+    xSemaphoreGive(lock);
+    printf("BLE_TTS_PLAYBACK result=%s\n", esp_err_to_name(result)); fflush(stdout);
 }

@@ -1,0 +1,9 @@
+# MAX98357A bench wiring from the hardware handover updated 10 October 2026.
+# SD/EN is physically tied to 3V3; GPIO17 must not be used as its enable output.
+# Apply only to that verified unit, after the shared N16R8 UART profile.
+CONFIG_PARSE_BENCH_WIRING_CONFIRMED=y
+CONFIG_PARSE_BENCH_BCLK_GPIO=7
+CONFIG_PARSE_BENCH_WS_GPIO=15
+CONFIG_PARSE_BENCH_DATA_GPIO=16
+CONFIG_PARSE_BENCH_ENABLE_GPIO=-1
+CONFIG_PARSE_BENCH_TONE_AMPLITUDE=3000

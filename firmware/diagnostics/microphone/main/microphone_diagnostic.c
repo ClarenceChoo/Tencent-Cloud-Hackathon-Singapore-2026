@@ -13,6 +13,7 @@
 #include "mbedtls/platform_util.h"
 #include "mbedtls/sha256.h"
 #include "sdkconfig.h"
+#include "speaker_output.h"
 
 static const char *TAG = "microphone_bench";
 static i2s_chan_handle_t rx;
@@ -24,6 +25,9 @@ void ble_bench_arm(void);
 bool ble_bench_take_capture(void);
 void ble_bench_capture_result(uint8_t *wav, size_t bytes);
 void ble_bench_tick(void);
+uint8_t *ble_bench_take_reply(size_t *bytes);
+bool ble_bench_playback_allowed(void);
+void ble_bench_reply_result(esp_err_t result);
 #endif
 
 #ifdef CONFIG_PARSE_MIC_WIRING_CONFIRMED
@@ -132,6 +136,7 @@ static uint8_t *capture(size_t *out_bytes, bool usb_output) {
 
 void app_main(void) {
     init_microphone();
+    speaker_output_init();
 #ifdef CONFIG_PARSE_MIC_BLE
     ble_bench_init();
     puts("PARSE_BENCH_READY commands: record; ble. No automatic capture or advertising.");
@@ -146,6 +151,13 @@ void app_main(void) {
             size_t bytes = 0;
             uint8_t *wav = capture(&bytes, false);
             ble_bench_capture_result(wav, bytes);
+        }
+        size_t reply_bytes = 0;
+        uint8_t *reply_wav = ble_bench_take_reply(&reply_bytes);
+        if (reply_wav) {
+            esp_err_t result = speaker_output_play(reply_wav, reply_bytes, ble_bench_playback_allowed);
+            free(reply_wav);
+            ble_bench_reply_result(result);
         }
 #endif
         int ch = getchar();

@@ -79,11 +79,12 @@ static esp_err_t capture_wav(const careloop_board_t *b, uint32_t duration_ms, bo
   esp_err_t started=i2s_start(I2S_NUM_0); if(started!=ESP_OK){free(out);return started;}
   size_t pcm = 0; int32_t slots[128]; int64_t deadline = esp_timer_get_time() + (int64_t)(duration_ms ? duration_ms : 20000U)*1000LL;
 #if CONFIG_CARELOOP_DIRECT_WIFI
-  if(!wait_for_ptt){
+  {
     const size_t warm_frames=(size_t)16000U*200U/1000U;
     const size_t target_frames=(size_t)duration_ms*16000U/1000U;
     size_t discarded=0,frames=0;
     while(esp_timer_get_time()<deadline+2000000LL && (discarded<warm_frames || frames<target_frames)){
+      if(wait_for_ptt && !careloop_ptt_pressed(b)) break;
       size_t got=0;esp_err_t e=i2s_read(I2S_NUM_0,slots,sizeof(slots),&got,pdMS_TO_TICKS(100));
       if(e!=ESP_OK){i2s_stop(I2S_NUM_0);free(out);return e;}
       if(!got||got%8){i2s_stop(I2S_NUM_0);free(out);return ESP_ERR_INVALID_SIZE;}
@@ -95,7 +96,8 @@ static esp_err_t capture_wav(const careloop_board_t *b, uint32_t duration_ms, bo
       }
     }
     i2s_stop(I2S_NUM_0);
-    if(discarded!=warm_frames||frames!=target_frames){free(out);return ESP_ERR_TIMEOUT;}
+    if(!wait_for_ptt && (discarded!=warm_frames||frames!=target_frames)){free(out);return ESP_ERR_TIMEOUT;}
+    if(pcm<CARELOOP_MIN_PCM_BYTES){free(out);return ESP_ERR_INVALID_SIZE;}
     careloop_wav_write_header(out,(uint32_t)pcm);*wav=out;*wav_len=44+pcm;return ESP_OK;
   }
 #endif

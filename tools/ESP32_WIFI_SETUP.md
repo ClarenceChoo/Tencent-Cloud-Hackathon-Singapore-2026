@@ -1,8 +1,10 @@
 # ESP32 microphone → iPhone hotspot → Parse
 
-Use the existing [Parse dashboard → Phone & voice](https://parse-shared-voice.iians0n.chatgpt.site/?view=voice). The ESP32 connects directly to Parse through a 2.4 GHz hotspot. After the one-time USB setup, the laptop relay can be closed; the dashboard also works in Safari on the iPhone.
+Use the existing [Parse dashboard → Phone & voice](https://parse-shared-voice.iians0n.chatgpt.site/?view=voice). Direct Wi-Fi mode is designed to connect the ESP32 to Parse through a 2.4 GHz hotspot. After successful setup, the laptop relay can be closed; the dashboard also works in Safari on the iPhone.
 
-This release targets the previously confirmed **ESP32-S3 N16R8** board and **INMP441** microphone: SCK → GPIO 4, WS → GPIO 5, SD → GPIO 6, L/R → GND, 3.3 V and common ground. The amplifier's known enable pin, GPIO 17, stays low. Spoken replies play from the dashboard; speaker playback on the ESP32 remains unverified. This Wi-Fi image replaces the earlier Bluetooth diagnostic image. Both source versions remain in the repository.
+**11 October bench status:** the USB setup handshake worked, but hotspot connection attempts repeatedly produced brownout resets. Direct Wi-Fi recording to Parse has not passed a physical end-to-end test. Testing is paused; Bluetooth firmware has been restored and the laptop relay stopped for the day. Continue with the [Bluetooth relay](ESP32_VOICE_RELAY.md) when testing resumes. The [session handover](../docs/careloop/ESP32-Voice-Handover-2026-10-11.md) records the remaining checks.
+
+This release targets the previously confirmed **ESP32-S3 N16R8** board and **INMP441** microphone: SCK → GPIO 4, WS → GPIO 5, SD → GPIO 6, L/R → GND, 3.3 V and common ground. The Wi-Fi profile holds the former amplifier-enable GPIO 17 low; that does not disable an amplifier whose SD/EN is wired directly to 3V3 as in the updated hardware handover. This image does not drive speaker audio. Spoken replies play from the dashboard. The Wi-Fi image replaces the Bluetooth diagnostic image. Both source versions remain in the repository.
 
 ## One-time setup
 
@@ -24,6 +26,31 @@ The cloud can also synthesize Parse's response for the dashboard's audio player.
 
 ## Recovery
 
+### Optional held talk button
+
+The 10 October hardware handover uses **GPIO 18**, and its button check was not
+repeated on 11 October. The GPIO 8 overlay below is an earlier, untested proposal
+for a different jumper arrangement, not the handover wiring. For the handover
+arrangement, configure `CONFIG_CARELOOP_PTT_GPIO=18` instead. Physical button
+testing was deferred; the documented behavior below has software-test coverage.
+
+The dashboard installer image leaves the physical button disabled. For the bench
+build with `firmware/sdkconfig.parse-wifi-jumper` applied after the Wi-Fi profile,
+connect a normally open button between **GPIO 8 (IO8)** and **GND**. Two loose
+jumper ends can simulate it: one wire goes to IO8 and the other to ground. Touch
+only those two free ends together while speaking, then separate them to send.
+Never use 3V3, 5V, or the eighth header position in place of the GPIO 8 label.
+
+The input uses an internal pull-up and a 40 ms press debounce. Keep it held for
+at least one second; recording stops on release or at 20 seconds, then uploads
+through the existing Parse pairing. The first 200 ms of microphone startup is
+discarded, and only the INMP441 left channel is recorded. A retained unsent clip
+must be retried from the dashboard before another capture. Dashboard recording
+continues to work with this build. USB `wifi_status` includes the configured
+`pttGpio`, current `talkPressed`, `wifiConnected`, and connected signal strength.
+
+### Connection and upload recovery
+
 - **Hotspot unavailable:** keep the board powered. It reconnects to the saved network automatically. Keep the iPhone hotspot screen open and Maximise Compatibility enabled during connection.
 - **Name or password changed:** open the Wi-Fi connection settings, reconnect USB and update the hotspot. An existing pairing is preserved when the connected board belongs to that room.
 - **Upload interrupted:** the board retains the same clip in RAM for **Retry sending this clip**. It uses the same recording ID and chunk bytes so a lost acknowledgment does not create another recording. A power loss clears the unsent audio; record again after restarting. Pending command receipts survive restart so an old capture command is not performed twice.
@@ -34,6 +61,9 @@ The cloud can also synthesize Parse's response for the dashboard's audio player.
 ## Development and release
 
 The direct mode is enabled by `firmware/sdkconfig.parse-wifi-esp32s3-n16r8`; the legacy application remains the default without that overlay. Build with ESP-IDF v5.4.2 from a path without spaces. Combine the firmware defaults, `sdkconfig.esp32s3-n16r8-uart`, and the dedicated Wi-Fi overlay. The release uses `partitions.esp32s3-n16r8.csv`: NVS at `0x9000`, PHY at `0xf000`, factory app at `0x10000` with a 2 MiB allocation.
+
+The 11 October serial-command and held-capture fixes are saved as source changes.
+The hosted installer binaries have not been repackaged or republished with those fixes.
 
 Package an already-built image without opening any hardware:
 

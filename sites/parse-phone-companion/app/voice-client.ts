@@ -3,7 +3,7 @@ export type Recording = {id:string;roomId:string;state:"receiving"|"processing"|
 export type VoiceStatus = {transcriptionConfigured:boolean;maxSeconds:number};
 export class ApiError extends Error {constructor(message:string,readonly status:number){super(message);}}
 export async function voiceApi<T>(path:string, data?:unknown, signal?:AbortSignal):Promise<T>{
-  const response=await fetch(`/api/voice/${path}`,{method:data===undefined?"GET":"POST",credentials:"same-origin",cache:"no-store",headers:data===undefined?{}:{"Content-Type":"application/json","X-Parse-Voice":"1"},body:data===undefined?undefined:JSON.stringify(data),signal:signal??AbortSignal.timeout(60_000)});
+  const response=await fetch(`/api/voice/${path}`,{method:data===undefined?"GET":"POST",credentials:"same-origin",cache:"no-store",headers:data===undefined?{}:{"Content-Type":"application/json","X-Parse-Voice":"1"},body:data===undefined?undefined:JSON.stringify(data),signal:signal??AbortSignal.timeout(/^phone\/recordings\/[a-f0-9-]{36}\/finish$/.test(path)?120_000:60_000)});
   const value=await response.json() as {error?:string};if(!response.ok)throw new ApiError(value.error||"The connection is temporarily unavailable.",response.status);return value as T;
 }
 export function errorText(error:unknown){return error instanceof ApiError?error.message:"The connection was interrupted. Keep this page open and try again.";}

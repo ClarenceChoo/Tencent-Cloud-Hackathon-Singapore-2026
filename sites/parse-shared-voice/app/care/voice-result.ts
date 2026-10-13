@@ -3,6 +3,10 @@ import type { Proposal } from './api';
 export type VoiceIntent = 'clarify' | 'chat' | 'proposal' | 'correct' | 'confirm' | 'explain' | 'support_status' | 'followup_status';
 export type ProposalStatus = 'pending' | 'expired' | 'replaced' | 'committed' | string | null;
 
+export type ProposalView = 'timeline' | 'medications' | 'care' | 'support';
+const destinations:Record<string,{view:ProposalView;title:string}>={health_note:{view:'timeline',title:'Timeline'},measurement:{view:'timeline',title:'Timeline'},medication_report:{view:'medications',title:'Medications'},preventive_task:{view:'care',title:'Care'},support_request:{view:'support',title:'Requests & follow-ups'},followup:{view:'support',title:'Requests & follow-ups'}};
+export function proposalDestination(kind:string){return destinations[kind]??destinations.health_note;}
+
 const kindLabels:Record<string,string>={health_note:'Health note',medication_report:'Medicine report',measurement:'Blood pressure',preventive_task:'Care task',support_request:'Support request',followup:'Follow-up'};
 
 export function voiceActionLabel(intent?:VoiceIntent|null,kind?:string|null,status?:ProposalStatus):string {

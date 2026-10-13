@@ -2,9 +2,10 @@ import definitions from "./tool-definitions.json";
 import instructions from "./interpretation-instructions.json";
 import type { VoiceBindings } from "../voice-backend";
 import type { CareContext, CareIdentity } from "./care-backend";
-import { acquireVoiceJob, finishVoiceJob, failVoiceJob } from "./care-voice-jobs";
+import { acquireVoiceJob, finishVoiceJob, failVoiceJob, VOICE_JOB_LEASE_MS } from "./care-voice-jobs";
 import { CareError, object, prepareProposal, requireCare, rows, text, validateSchema, type CareProposal, type Schema } from "./care-state";
 import type { Row } from "./api";
+import type { RecordingInterpretation } from "../voice-client";
 
 export type InterpretationResult={proposal?:CareProposal;spoken_text:string;function_name:string;intent?:string};
 type Result=InterpretationResult;
@@ -32,6 +33,19 @@ export function currentRecordingResult(result:Result,proposals:CareProposal[],re
   if(proposal.status==='replaced')return {...result,proposal,spoken_text:'This recording’s proposal was replaced by a later request. Review the newer recording.'};
   if(proposal.status==='committed')return {...result,proposal,spoken_text:'This update was already confirmed and saved in the dashboard.'};
   return {...result,proposal,spoken_text:proposal.readback};
+}
+
+export function recordingInterpretation(row:{id:string;state:string;transcript:string|null;error_code:string|null;job_state:string|null;result_json:string|null;job_updated_at:number|null},proposals:CareProposal[]):RecordingInterpretation|null{
+  if(!row.transcript)return null;
+  if(row.job_state==='processing')return {state:(row.job_updated_at??0)+VOICE_JOB_LEASE_MS>Date.now()?'processing':'failed'};
+  if(row.job_state==='failed')return {state:'failed'};
+  if(row.job_state!=='ready'||!row.result_json)return {state:row.job_state!=='ready'&&row.error_code==='interpretation_unavailable'?'failed':'waiting'};
+  try{
+    const parsed=JSON.parse(row.result_json) as Result;
+    requireCare(typeof parsed.spoken_text==='string'&&typeof parsed.function_name==='string',503,'Invalid cached interpretation.');
+    const current=currentRecordingResult(parsed,proposals,row.id);
+    return {state:'ready',category:current.proposal?.kind.slice(0,80)??null,intent:current.intent?.slice(0,80)??null,readback:current.spoken_text.slice(0,4000),proposalId:current.proposal?.id??null,proposalStatus:current.proposal?.status??null};
+  }catch{return {state:'failed'};}
 }
 
 async function conversation(db:D1Database,recording:Recording,state:CareContext['state']){
@@ -98,13 +112,16 @@ export async function interpretRecording(db:D1Database,context:CareContext,user:
   const cached=await db.prepare('SELECT state,result_json,updated_at FROM care_voice_jobs WHERE recording_id = ? AND owner_id = ?').bind(recordingId,user.userId).first<{state:string;result_json:string|null;updated_at:number}>();
   if(cached?.state==='ready'&&cached.result_json){
     await beforePersist();
-    return currentRecordingResult(JSON.parse(cached.result_json) as Result,context.state.proposals,recordingId);
+    const result=currentRecordingResult(JSON.parse(cached.result_json) as Result,context.state.proposals,recordingId);
+    await db.prepare("UPDATE voice_recordings SET error_code = NULL WHERE id = ? AND owner_id = ? AND error_code = 'interpretation_unavailable'").bind(recordingId,user.userId).run();
+    return result;
   }
   const recent=await db.prepare('SELECT COUNT(*) AS count FROM care_voice_jobs WHERE owner_id = ? AND updated_at > ?').bind(user.userId,Date.now()-86400000).first<{count:number}>();
   requireCare((recent?.count??0)<100||!!cached,429,'The daily interpretation limit was reached.');
   const leaseAt=await acquireVoiceJob(db,user.userId,recordingId,recording.room_id);
   try{
     const state=context.state,{recent_turns,current_proposal:current}=await conversation(db,recording,state);
+    await beforePersist();
     const call=await provider(bindings,transcript,{
       device:{patient_id:state.patient.id,preferred_name:state.patient.preferred_name,language:state.patient.language,calling_route:state.patient.calling_route,timezone:state.patient.timezone},server_time:new Date().toISOString(),reviewed_vocabulary:state.vocabulary,
       recent_turns,current_proposal:current,supported_capabilities:capabilities,active_medication_plan:state.medication_plans.find(plan=>plan.active===true)??null,doses:state.doses.filter(dose=>dose.plan_version===state.medication_plans.find(plan=>plan.active===true)?.version).slice(0,100),permitted_recipients:state.allowed_recipients,
@@ -140,6 +157,7 @@ export async function interpretRecording(db:D1Database,context:CareContext,user:
     }
     await beforePersist();
     await finishVoiceJob(db,context,user.userId,recordingId,leaseAt,result);
+    await db.prepare("UPDATE voice_recordings SET error_code = NULL WHERE id = ? AND owner_id = ? AND error_code = 'interpretation_unavailable'").bind(recordingId,user.userId).run();
     return result;
   }catch(error){
     await failVoiceJob(db,user.userId,recordingId,leaseAt);

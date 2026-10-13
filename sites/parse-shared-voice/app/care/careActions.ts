@@ -1,4 +1,5 @@
 import { Dashboard, label, localDay, Row } from './api';
+import { proposalDestination, type ProposalView } from './voice-result';
 
 export type CareAction = {
   key: string;
@@ -9,7 +10,7 @@ export type CareAction = {
   dateOnly: string | null;
   group: 'review' | 'assigned' | 'due' | 'undated';
   action: 'review' | 'acknowledge' | 'record_outcome' | 'open';
-  targetView: 'timeline' | 'support' | 'care';
+  targetView: ProposalView;
   overdue: boolean;
   expired: boolean;
 };
@@ -36,7 +37,7 @@ export function buildCareActions(data: Dashboard, viewerUserId: string, nowMs: n
     if (!['pending', 'awaiting_confirmation'].includes(proposal.status)) continue;
     const expired = proposal.expires_at != null && Date.parse(proposal.expires_at) <= nowMs;
     add('proposal', proposal, proposal.readback || `Review ${proposal.kind.replaceAll('_', ' ')}`,
-      instant(proposal.expires_at), null, 'review', !expired && can(permissions, 'write:care') ? 'review' : 'open', 'timeline', false, expired);
+      instant(proposal.expires_at), null, 'review', !expired && can(permissions, 'write:care') ? 'review' : 'open', proposalDestination(proposal.kind).view, false, expired);
   }
   for (const request of data.support_requests || []) {
     if (terminal(request, 'status', ['resolved', 'closed', 'cancelled'])) continue;

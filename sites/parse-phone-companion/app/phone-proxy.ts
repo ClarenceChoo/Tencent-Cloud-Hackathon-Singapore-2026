@@ -54,7 +54,7 @@ export async function forwardPhone(request: Request, bindings: PhoneProxyBinding
     if (value.recording && typeof value.recording === "object") safe.recording = { ...pick(value.recording as Record<string, unknown>, ["id", "roomId", "state", "chunks", "duration", "createdAt", "updatedAt", "errorCode"]), transcript: null, audioUrl: null };
     // The private service returns these fields only for the cookie's approved
     // ESP32 room. Keep the public bridge restricted to that one recording.
-    if (upstream.ok && path.endsWith('/finish') && value.relay && typeof value.relay === 'object') {
+    if (upstream.ok && path.endsWith('/finish') && value.recording && typeof value.recording === 'object' && ['esp32','esp32_wifi'].includes(String((value.recording as Record<string,unknown>).clientType)) && value.relay && typeof value.relay === 'object') {
       const relay=value.relay as Record<string,unknown>;
       safe.relay=Object.fromEntries(['transcript','spokenText','functionName','proposalId','proposalStatus','error'].filter(key=>typeof relay[key]==='string'||relay[key]===null).map(key=>[key,typeof relay[key]==='string'?(relay[key] as string).slice(0,key==='transcript'?10000:1500):null]));
     }

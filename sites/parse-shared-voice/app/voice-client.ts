@@ -1,9 +1,10 @@
 export type Room = {id:string;state:"waiting"|"pending"|"paired";clientType?:"phone"|"esp32"|"esp32_wifi";code:string|null;createdAt:number;expiresAt:number;updatedAt:number};
-export type Recording = {id:string;roomId:string;clientType?:"phone"|"esp32"|"esp32_wifi";state:"receiving"|"processing"|"ready"|"interrupted";chunks:number;duration:number;createdAt:number;updatedAt:number;transcript:string|null;errorCode:string|null;audioUrl:string|null};
+export type RecordingInterpretation = {state:"waiting"|"processing"|"failed"|"ready";category?:string|null;intent?:string|null;readback?:string;proposalId?:string|null;proposalStatus?:string|null};
+export type Recording = {id:string;roomId:string;clientType?:"phone"|"esp32"|"esp32_wifi";state:"receiving"|"processing"|"ready"|"interrupted";chunks:number;duration:number;createdAt:number;updatedAt:number;transcript:string|null;errorCode:string|null;audioUrl:string|null;interpretation?:RecordingInterpretation|null};
 export type VoiceStatus = {transcriptionConfigured:boolean;maxSeconds:number};
 export class ApiError extends Error {constructor(message:string,readonly status:number){super(message);}}
 export async function voiceApi<T>(path:string, data?:unknown, signal?:AbortSignal):Promise<T>{
-  const response=await fetch(`/api/voice/${path}`,{method:data===undefined?"GET":"POST",credentials:"same-origin",cache:"no-store",headers:data===undefined?{}:{"Content-Type":"application/json","X-Parse-Voice":"1"},body:data===undefined?undefined:JSON.stringify(data),signal:signal??AbortSignal.timeout(60_000)});
+  const response=await fetch(`/api/voice/${path}`,{method:data===undefined?"GET":"POST",credentials:"same-origin",cache:"no-store",headers:data===undefined?{}:{"Content-Type":"application/json","X-Parse-Voice":"1"},body:data===undefined?undefined:JSON.stringify(data),signal:signal??AbortSignal.timeout(/^phone\/recordings\/[a-f0-9-]{36}\/finish$/.test(path)?120_000:60_000)});
   const value=await response.json() as {error?:string};if(!response.ok)throw new ApiError(value.error||"The connection is temporarily unavailable.",response.status);return value as T;
 }
 export function errorText(error:unknown){return error instanceof ApiError?error.message:"The connection was interrupted. Keep this page open and try again.";}

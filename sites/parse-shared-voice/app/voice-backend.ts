@@ -1,4 +1,6 @@
 import {relayControl, RelayControlError} from "./relay-control";
+import { recordingInterpretation } from "./care/care-interpretation";
+import type { CareProposal } from "./care/care-state";
 export type VoiceBindings = { DB?: D1Database; BUCKET?: R2Bucket; OPENAI_API_KEY?: string; PUBLIC_SITE_ORIGIN?: string; PUBLIC_PHONE_ORIGIN?: string; DASHBOARD_ALLOWED_EMAILS?: string };
 type Room = { id:string;owner_id:string;client_type:string;invitation_hash:string;phone_hash:string|null;device_hash:string|null;approval_code:string|null;state:string;created_at:number;expires_at:number;updated_at:number };
 type Recording = { id:string;room_id:string;owner_id:string;client_type:string;state:string;next_sequence:number;frames:number;created_at:number;updated_at:number;audio_key:string|null;reply_audio_key:string|null;transcript:string|null;error_code:string|null };
@@ -134,7 +136,12 @@ export async function serveVoice(request:Request,userId:string|null,bindings:Voi
       }
     }
     if(path==="recordings"&&request.method==="GET"){
-      const rows=await db.prepare("SELECT * FROM voice_recordings WHERE owner_id = ? AND created_at > ? ORDER BY created_at DESC LIMIT 20").bind(userId,now-DAY).all<Recording>();return json({recordings:rows.results.map(visibleRecording)});
+      const [rows,workspace]=await Promise.all([
+        db.prepare("SELECT r.*, j.state AS job_state, j.result_json, j.updated_at AS job_updated_at FROM voice_recordings r LEFT JOIN care_voice_jobs j ON j.recording_id = r.id AND j.owner_id = r.owner_id WHERE r.owner_id = ? AND r.created_at > ? ORDER BY r.created_at DESC LIMIT 20").bind(userId,now-DAY).all<Recording&{job_state:string|null;result_json:string|null;job_updated_at:number|null}>(),
+        db.prepare("SELECT state_json FROM care_workspaces WHERE owner_id = ?").bind(userId).first<{state_json:string}>(),
+      ]);
+      const proposals:CareProposal[]=workspace?JSON.parse(workspace.state_json).proposals??[]:[];
+      return json({recordings:rows.results.map(row=>({...visibleRecording(row),interpretation:recordingInterpretation(row,proposals)}))});
     }
     if(path==="recordings"&&request.method==="POST"){
       const data=await body(request),row=await room(data?.roomId||"");if(phoneApi||!deviceApi)await phone(row);if(deviceApi)await device(row);
@@ -202,17 +209,21 @@ export async function serveVoice(request:Request,userId:string|null,bindings:Voi
         const data=await body(request);ensure(Number.isInteger(data?.chunks)&&data.chunks===row.next_sequence,409,"Wait for all audio to arrive before finishing.");
         const finishResponse=async(finished:Recording,reused=false)=>{
           let relay:RelayResult|undefined;
-          if(connection.client_type==="esp32"||connection.client_type==="esp32_wifi"){
+          if(["phone","esp32","esp32_wifi"].includes(connection.client_type)){
             relay={transcript:finished.transcript??"",spokenText:"",functionName:"",proposalId:null,proposalStatus:null};
             try{
               ensure(finished.transcript&&interpretRelay,503,"The recording arrived. Review it on the Parse dashboard to continue.");
               relay=await interpretRelay(connection.owner_id,finished.id);
-            }catch{relay={...relay,error:"The recording arrived. Open Parse to review or retry its care update."};}
+            }catch{
+              if(finished.transcript)await db.prepare("UPDATE voice_recordings SET error_code = 'interpretation_unavailable',updated_at = ? WHERE id = ? AND owner_id = ? AND state = 'ready' AND transcript IS NOT NULL").bind(Date.now(),finished.id,finished.owner_id).run();
+              relay={...relay,error:"The recording arrived. Open Parse to review or retry its care update."};
+            }
+            finished=await recording(finished.id);
             if(connection.client_type==="esp32_wifi"&&!relay.error&&relay.spokenText)await synthesizeDashboardReply(db,bucket,bindings,finished,relay.spokenText);
             // Approval can be revoked while the provider is working.
             if(phoneApi)await phone(await room(connection.id));if(deviceApi)await device(await room(connection.id));
           }
-          return json({recording:recordingView(finished),transcriptionConfigured:!!bindings.OPENAI_API_KEY,reused,...(relay?{relay}:{})});
+          return json({recording:recordingView(finished),transcriptionConfigured:!!bindings.OPENAI_API_KEY,reused,...(relay&&connection.client_type!=="phone"?{relay}:{})});
         };
         if(row.state==="ready")return await finishResponse(row,true);
         ensure(row.state==="receiving"&&row.frames>=4800&&row.frames<=320000,409,"Record between 0.3 and 20 seconds before finishing.");

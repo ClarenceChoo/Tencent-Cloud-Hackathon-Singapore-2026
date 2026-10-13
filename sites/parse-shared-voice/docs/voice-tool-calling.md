@@ -4,12 +4,12 @@ The shared Parse website is the control surface for the microphone, transcript, 
 
 ## What happens after a recording
 
-1. The approved relay uploads a clip under a stable recording ID. Upload retries keep that ID.
+1. An approved browser phone or ESP32 connection uploads a short clip. ESP32 upload retries keep a stable recording ID.
 2. The voice service transcribes the audio with `gpt-4o-mini-transcribe`.
-3. `interpretRecording` sends the transcript, current permitted care records, the profile timezone, and up to eight recent turns from the same recording connection to `gpt-4.1` through the Responses API with temperature zero for consistent extraction.
+3. The finish request automatically calls `interpretRecording`, which sends the transcript, current permitted care records, the profile timezone, and up to eight recent turns from the same recording connection to `gpt-4.1` through the Responses API with temperature zero for consistent extraction.
 4. The model selects exactly one of eleven strict functions. The server validates its name, completion, argument schema, referenced records, permissions, and care-state transitions.
 5. A write function creates a pending proposal. Parse displays the proposed change and reads back its details. A separate **Confirm and save** action applies the change to the dashboard. Read functions return current supplied records; a clarification asks for a missing detail.
-6. The laptop relay converts the returned reply to speech. Speech synthesis is the response stage; speech recognition is the input stage.
+6. The owner's inbox displays the stored category, current proposal status, and read-back or clarification. Pending proposals appear in Timeline for health notes and readings, Medications for dose reports, Care for tasks, and Care's Requests & follow-ups section for requests and follow-ups. Arrivals never switch tabs or open a dialog. Browser phone responses omit transcripts and care results. The ESP32 laptop relay keeps its existing spoken-reply protocol.
 
 ## Available functions
 
@@ -37,6 +37,8 @@ The current proposal comes only from the preceding turn on that connection and m
 
 Multiple distinct actions in one utterance produce a question about which one to handle first. Missing or ambiguous material facts should produce a clarification. For blood-pressure reports, the server also checks that an approximate time and measurement source quote the current utterance or its active clarification conversation; missing time or an unstated source returns a question without a proposal. Negation and hypothetical speech must not become a taken-dose report. Skipped, not-yet, and uncertain reports cannot include a taken time under the tool schema.
 
+The automatic path rechecks the paired room, expiry, and owner's current allowlist before calling the model and before saving the result. A failed interpretation preserves audio and transcript for an explicit **Retry care update**. Older transcripts can still be processed through **Review care update**. Read-only polling never triggers the model. Browser phone finish calls have a two-minute client timeout for the consecutive transcription and interpretation stages.
+
 One processing job per connection prevents overlapping interpretations. Job leases and workspace version checks stop late or conflicting requests from overwriting newer results. A failed recording gets at most three interpretation attempts; the daily limit applies to distinct recording jobs. Completed recordings reuse their cached result without another model call. An expired proposal is reported as expired instead of being silently recreated from old audio.
 
 The model remains probabilistic. Strict schemas and server validation prevent malformed or unauthorized writes; the dashboard review is where the person verifies that the transcript and proposed details reflect what they intended. Chat and clarification wording are model-generated. No hardware availability or clinical accuracy is implied by a passing software evaluation.
@@ -52,8 +54,11 @@ node scripts/verify-care-dashboard.mjs
 node scripts/verify-esp32-relay.mjs
 node scripts/verify-care-activity.mjs
 node scripts/verify-public-phone.mjs
+node scripts/verify-phone-routing.mjs
 node node_modules/typescript/bin/tsc --noEmit --incremental false
 ```
+
+Each check exits with a non-zero status on failure. `verify-phone-routing.mjs` covers automatic browser phone processing, all six category destinations, pending confirmation, fresh cached statuses, explicit retry, revocation, and public response masking.
 
 An optional bounded semantic evaluation sends fictional phrases and fictional care context to OpenAI. Its API key must already be approved for the project; pass an absolute env-file path, never a key value:
 

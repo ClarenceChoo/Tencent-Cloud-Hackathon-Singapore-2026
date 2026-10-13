@@ -11,7 +11,7 @@ A ChatGPT Site with the full Parse care dashboard, a public phone companion and 
 5. Choose **Listen live** on the laptop. Headphones avoid audio feedback.
 6. Tap **Start recording** on the phone. Keep Safari open and visible. Audio is sent while speaking; the laptop polls and plays the received chunks.
 7. Tap **Stop recording**. The microphone turns off and the complete recording appears in the inbox. Clips stop automatically at 20 seconds.
-8. When its transcript arrives, choose **Review care update**. Parse selects the appropriate application function and prepares a proposal. Review or revise the server read-back, then choose **Confirm and save** to add the exact reviewed record to the care dashboard.
+8. After transcription, Parse automatically selects one care function for the clip. The inbox shows its category and read-back or clarification. Proposed health notes and readings appear in **Timeline**, dose reports in **Medications**, tasks in **Care**, and requests and follow-ups in **Care → Requests & follow-ups**. Open the matching tab or choose **Review care update**, review or revise the read-back, then choose **Confirm and save**. No care record is saved before confirmation.
 
 Both devices use the hosted backend; the Mac does not run a public tunnel. Sites itself uses Cloudflare infrastructure. This dashboard Site retains its native private sharing policy. QR links open the separate public phone companion Site. A bounded server bridge forwards phone actions to this private backend using the existing Sites service credential; phone approval and cookie checks still happen here. The application also protects the dashboard and every dashboard API with ChatGPT sign-in and the server-side team allowlist.
 
@@ -23,13 +23,13 @@ Both devices use the hosted backend; the Mac does not run a public tunnel. Sites
 - A QR invitation has a random single-use token, expires after ten minutes, and requires laptop approval. Only its hash is stored. The token travels in the URL fragment and is removed after the phone reads it.
 - The phone credential is a secure HttpOnly, SameSite cookie. Pairings expire after 24 hours or can be disconnected earlier. The public companion forwards only the phone endpoints that allow claiming an invitation, reading that phone's connection status, and sending/finishing/discarding its own audio after approval. The phone cannot approve itself, list an inbox, read audio, or retrieve transcripts.
 - Mono 16 kHz PCM is resampled in an AudioWorklet and uploaded in independent one-second WAV chunks. Exact chunk retries are idempotent. The backend rejects changed duplicates, missing positions and overlapping recording starts.
-- D1 holds metadata. R2 holds private audio. Audio and transcripts are served only through authenticated, allowlisted dashboard APIs. The phone's finish response omits private playback URLs and transcripts. Browser storage is not the source of truth.
+- D1 holds metadata. R2 holds private audio. Audio and transcripts are served only through authenticated, allowlisted dashboard APIs. The browser phone's finish response omits private playback URLs, transcripts, and care read-backs. The owner's signed-in inbox shows interpretation metadata. Browser storage is not the source of truth.
 - The inbox makes recordings accessible for 24 hours. This is an access window, **not automatic physical deletion from R2**. This prototype has no scheduled deletion process.
 - Use fictional, non-sensitive information only. [Sites prohibits protected health information](https://help.openai.com/en/articles/20001340-chatgpt-sites-complying-with-data-protection-laws).
 
 ## Transcription and care functions
 
-Live audio works without an OpenAI key. If an explicitly approved `OPENAI_API_KEY` is configured as a **Sites secret**, the backend transcribes the assembled recording using `gpt-4o-mini-transcribe` after Stop. This is not live transcription. An upstream failure preserves the audio and reports the missing transcript honestly.
+Live audio works without an OpenAI key. If an explicitly approved `OPENAI_API_KEY` is configured as a **Sites secret**, the backend transcribes the assembled recording using `gpt-4o-mini-transcribe` after Stop. This is not live transcription. An upstream failure preserves the audio and reports the missing transcript honestly. After a transcript arrives, the same finish request runs the existing care interpreter for approved browser phones and ESP32 connections. An interpretation failure preserves both the transcript and audio. The owner can choose **Retry care update** explicitly. Polling only reads stored results. Older transcripts remain available through **Review care update**.
 
 With the user's explicit approval, the existing Tencent demo key is configured as a masked Sites secret. Anonymous phones can trigger transcription only after an invited dashboard has approved them, within the existing recording limits. The local key copy remains in its approved private env file. Never put a key in a QR, a phone page, client source, or this repository. API usage is billed separately from Sites hosting.
 
@@ -49,10 +49,11 @@ npm run dev -- --hostname 127.0.0.1 --port 5174
 ./node_modules/.bin/eslint app/care app/voice-workspace.tsx app/v1 app/shared app/page.tsx app/layout.tsx db/schema.ts scripts/verify-care*.mjs
 node --import ./scripts/sites-env.mjs scripts/verify-shared-voice.mjs
 node --import ./scripts/sites-env.mjs scripts/verify-public-phone.mjs
+node --import ./scripts/sites-env.mjs scripts/verify-phone-routing.mjs
 node --import ./scripts/sites-env.mjs scripts/verify-care-dashboard.mjs
 ```
 
-The ordinary verification scripts use isolated local D1/R2 and synthetic sound. They cover transport, all eleven care-function handlers using simulated provider responses, persistence/confirmation, care sharing, summary invalidation and account isolation. They never record a microphone or call the real OpenAI API.
+The ordinary verification scripts use isolated local D1/R2 and synthetic sound. A non-zero exit indicates a failed check. The phone routing check reports `"passed": true` only after automatic processing, all six destinations, cached retries, current proposal states, revocation, and public response masking pass. They cover transport, all eleven care-function handlers using simulated provider responses, persistence/confirmation, care sharing, summary invalidation and account isolation. They never record a microphone or call the real OpenAI API.
 
 An explicitly invoked live verifier makes at most three fictional Responses API calls using the already approved local demo key and isolated test storage. It passed for a note, a blood-pressure reading and an existing-task transition after strict schema fixes. It does not establish a complete eleven-function live acceptance run or physical-phone behaviour:
 

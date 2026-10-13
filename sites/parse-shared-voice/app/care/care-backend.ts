@@ -258,20 +258,19 @@ export async function serveCare(request:Request,user:CareIdentity|null,bindings:
 
 export type { Context as CareContext };
 
-// Called only after the voice API verifies an approved ESP32 room and its cookie.
-// The room is restricted to its owner's existing care space; no confirmation is
-// dispatched here. The ordinary interpretation path persists proposals only.
 export async function interpretRelayRecording(bindings:VoiceBindings,ownerId:string,recordingId:string,fetchImpl:typeof fetch=fetch){
   requireCare(bindings.DB,503,'Care storage is temporarily unavailable.');
   const db=bindings.DB,workspace=await db.prepare('SELECT * FROM care_workspaces WHERE owner_id = ?').bind(ownerId).first<Workspace>();
   requireCare(workspace&&allowedEmails(bindings).includes(normalize(workspace.owner_email)),403,'The care-space owner no longer has access.');
   const actor={userId:ownerId,email:workspace.owner_email},context=(await contexts(db,actor,bindings)).find(item=>item.isOwner)!;
-  const active=async()=>{
-    const room=await db.prepare("SELECT v.id FROM voice_rooms v JOIN voice_recordings r ON r.room_id = v.id WHERE r.id = ? AND v.owner_id = ? AND v.client_type IN ('esp32','esp32_wifi') AND v.state = 'paired' AND v.expires_at > ?").bind(recordingId,ownerId,Date.now()).first();
-    requireCare(room,403,'This ESP32 connection is no longer approved.');
+  const requireApprovedVoiceConnection=async()=>{
+    const currentOwner=await db.prepare('SELECT owner_email FROM care_workspaces WHERE owner_id = ?').bind(ownerId).first<{owner_email:string}>();
+    requireCare(currentOwner&&allowedEmails(bindings).includes(normalize(currentOwner.owner_email)),403,'The care-space owner no longer has access.');
+    const room=await db.prepare("SELECT v.id FROM voice_rooms v JOIN voice_recordings r ON r.room_id = v.id AND r.owner_id = v.owner_id WHERE r.id = ? AND v.owner_id = ? AND v.client_type IN ('phone','esp32','esp32_wifi') AND v.state = 'paired' AND v.expires_at > ?").bind(recordingId,ownerId,Date.now()).first();
+    requireCare(room,403,'This voice connection is no longer approved.');
   };
-  await active();
-  const result=await interpretRecording(db,context,actor,bindings,recordingId,fetchImpl,active);
+  await requireApprovedVoiceConnection();
+  const result=await interpretRecording(db,context,actor,bindings,recordingId,fetchImpl,requireApprovedVoiceConnection);
   const recording=await db.prepare('SELECT transcript FROM voice_recordings WHERE id = ? AND owner_id = ?').bind(recordingId,ownerId).first<{transcript:string}>();
   return {transcript:recording?.transcript??'',spokenText:result.spoken_text,functionName:result.function_name,proposalId:result.proposal?.id??null,proposalStatus:result.proposal?.status??null};
 }

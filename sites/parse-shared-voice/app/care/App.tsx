@@ -17,6 +17,7 @@ import { CareVocabulary } from './CareVocabulary';
 import { SummaryPrint } from './SummaryPrint';
 import { ActivityLog } from './ActivityLog';
 import { ConnectionButton } from './ConnectionButton';
+import { proposalDestination, type ProposalView } from './voice-result';
 
 type View = 'overview' | 'ask' | 'timeline' | 'medications' | 'care' | 'support' | 'summary' | 'settings' | 'connection' | 'log';
 const nav: { id: View; title: string; icon: typeof Heart }[] = [
@@ -54,7 +55,7 @@ function CareApp({phoneOrigin,skipSession,initialLoginError,onAccessLost}:{phone
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [view, setView] = useState<View>('overview');
   const [connectionReturn, setConnectionReturn] = useState<View>('overview');
-  useEffect(() => { const openVoice = () => setView('connection'); if (['voice','connection'].includes(new URLSearchParams(window.location.search).get('view') || '')) openVoice(); window.addEventListener('parse-open-voice',openVoice); return () => window.removeEventListener('parse-open-voice',openVoice); }, []);
+  useEffect(() => { const openVoice = () => setView('connection'); const initialView=new URLSearchParams(window.location.search).get('view') || ''; if (['voice','connection'].includes(initialView)) openVoice(); else if (['timeline','medications','care','support'].includes(initialView)) setView(initialView as ProposalView); window.addEventListener('parse-open-voice',openVoice); return () => window.removeEventListener('parse-open-voice',openVoice); }, []);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -198,7 +199,7 @@ function CareApp({phoneOrigin,skipSession,initialLoginError,onAccessLost}:{phone
   function openCareAction(item: CareAction) {
     if (item.kind === 'proposal' && item.action === 'review') {
       const source = dashboard?.proposals.find(proposal => proposal.id === item.sourceId);
-      if (source) openReview(source);
+      if (source) {setView(item.targetView);openReview(source);}
       return;
     }
     setFocusAction(item.key);
@@ -353,14 +354,15 @@ function CareApp({phoneOrigin,skipSession,initialLoginError,onAccessLost}:{phone
         {loading && !d ? <div className="loading-card"><span className="spinner" /><p>Loading confirmed care information…</p></div> : error && !d ? <div className="empty-card"><CircleHelp size={24} /><h2>This care space isn’t available</h2><p>Check your access or try again. No new information has been saved.</p><button className="button" onClick={() => loadDashboard(patientId)}>Try again</button></div> : d ? <>
           {view === 'overview' && <><CareActionInbox items={actions} onOpen={openCareAction}/><Overview data={d} canWriteCare={canWriteCare} onNavigate={next => next === 'connection' ? openConnection() : setView(next)} canShareNote={canManageSharing} canDeleteNote={canWriteCare} onShareNote={setNoteForSharing} onDeleteNote={deleteNote} onCompose={beginComposer} /></>}
           {view === 'ask' && <AskParse key={patientId} patientId={patientId} timezone={d.patient.timezone} sessionKey={session.csrf_token} evidenceRevision={evidenceRevision} preview={uiPreview} onOpenSource={openQuerySource} onSessionExpired={() => onAccessLost('Your session ended. Sign in again to view current care information.')}/>}
-    {view === 'timeline' && <Timeline key={patientId} data={d} focusSource={focusAction} onNavigate={next => next === 'connection' ? openConnection() : setView(next)} onReviewProposal={openReview} onCorrect={row=>beginComposer('measurement',measurementSeed(row))} canWriteCare={canWriteCare} canShareNote={canManageSharing} canDeleteNote={canWriteCare} onShareNote={setNoteForSharing} onDeleteNote={deleteNote} />}
+    {['timeline','medications','care','support'].includes(view) && <ProposalList proposals={d.proposals.filter(item=>proposalDestination(item.kind).view===view)} canReview={canWriteCare} onReview={openReview}/>}
+    {view === 'timeline' && <Timeline key={patientId} data={d} focusSource={focusAction} onNavigate={next => next === 'connection' ? openConnection() : setView(next)} onCorrect={row=>beginComposer('measurement',measurementSeed(row))} canWriteCare={canWriteCare} canShareNote={canManageSharing} canDeleteNote={canWriteCare} onShareNote={setNoteForSharing} onDeleteNote={deleteNote} />}
           {view === 'medications' && <Medications data={d} canWriteCare={canWriteCare} onCompose={beginComposer} onPlan={payload => mutate('Medication plan saved after review.', () => api.createMedicationPlan(patientId, payload))} busy={busy} />}
           {(view === 'care' || view === 'support') && <nav className="care-sections" aria-label="Care sections"><button className={`filter-button ${view === 'care' ? 'active' : ''}`} aria-current={view === 'care' ? 'page' : undefined} onClick={() => setView('care')}>Tasks</button><button className={`filter-button ${view === 'support' ? 'active' : ''}`} aria-current={view === 'support' ? 'page' : undefined} onClick={() => setView('support')}>Requests &amp; follow-ups{requestCount > 0 ? <span className="nav-count" aria-hidden="true">{requestCount}</span> : null}</button></nav>}
           {view === 'log' && <ActivityLog key={`${session.user.id}:${session.csrf_token}:${patientId}`} patientId={patientId} timezone={d.patient.timezone} accessRevision={logAccessRevision} onAccessLost={onAccessLost}/>}
           {view === 'care' && <CarePlan data={d} canWriteCare={canWriteCare} onCompose={beginComposer} onCreate={(kind,payload) => propose(kind,payload)} />}
           {view === 'support' && <Support data={d} currentUserId={session.user.id} canWriteCare={canWriteCare} onCompose={beginComposer} onCreate={(kind,payload)=>propose(kind,payload)} onAcknowledge={id => mutate('Request acknowledged.', () => api.acknowledge(id))} onResolve={(id,outcome) => mutate('Resolution saved.', () => api.resolve(id,outcome))} />}
           {view === 'summary' && (canManageSharing ? <Summary timezone={patient?.timezone || dashboard?.patient.timezone || 'Asia/Singapore'} patientId={patientId} patientName={displayName(patient)} identityKey={`${session.user.id}:${session.csrf_token}:${patientId}`} summary={summary} summaryText={summaryText} setSummaryText={text=>{summaryEditGeneration.current++;setSummaryText(text);setSummaryReviewed(false);}} purpose={summaryPurpose} setPurpose={value=>{summaryEditGeneration.current++;setSummaryPurpose(value);setSummaryReviewed(false);}} questionsText={summaryQuestions} setQuestionsText={value=>{summaryEditGeneration.current++;setSummaryQuestions(value);setSummaryReviewed(false);}} omittedSourceIds={omittedSourceIds} setOmittedSourceIds={ids=>{summaryEditGeneration.current++;setOmittedSourceIds(ids);setSummaryReviewed(false);}} reviewed={summaryReviewed} makeSummary={makeSummary} saveSummary={saveSummary} shareSummary={shareSummary} revokeShare={revokeSummaryShare} busy={busy} /> : <section className="card empty-card"><Shield size={24}/><h2>Summary sharing is owner managed</h2><p>This account does not have permission to prepare or share appointment summaries.</p></section>)}
-          {view === 'connection' && (canManageDevices ? <PhoneVoice key={patientId} patientId={patientId} displayName={session.user.name} phoneOrigin={phoneOrigin} onReview={openReview}/> : <section className="card empty-card"><Shield size={24}/><h2>Phone pairing is owner managed</h2><p>Select your own care space to pair a phone and review its recordings.</p></section>)}
+          {view === 'connection' && (canManageDevices ? <PhoneVoice key={patientId} patientId={patientId} displayName={session.user.name} phoneOrigin={phoneOrigin} onReview={openReview} onNavigate={setView}/> : <section className="card empty-card"><Shield size={24}/><h2>Phone pairing is owner managed</h2><p>Select your own care space to pair a phone and review its recordings.</p></section>)}
           {view === 'settings' && <><SettingsView data={d} patient={d.patient} onProfile={payload=>mutate('Care preferences saved.',()=>api.updateProfile(patientId,payload))} onGrant={(userId,scopes)=>mutate('Sharing permission added.',()=>api.grant(patientId,userId,scopes))} onRevokeGrant={id=>mutate('Sharing permission removed.',()=>api.revokeGrant(id))} canManageSharing={canManageSharing} canManageProfile={canManageProfile} /><CareVocabulary key={patientId} patientId={patientId} canManage={canManageProfile && !uiPreview} onAccessLost={onAccessLost}/></>}
         </> : <div className="empty-card"><Heart size={25} /><h2>Your care space is ready</h2><p>There are no care records to show yet.</p></div>}
         <footer className="page-footer"><span>Parse · Your everyday care record</span><span><button className="text-link" onClick={()=>setView('timeline')}>Dashboard</button><Shield size={13}/> Shared only with permission</span></footer>
@@ -445,7 +447,7 @@ function timelineMeta(kind: string, row: Row) {
   if (kind === 'Care plan update') return `Care plan · ${prettyState(stateText(row))}`;
   return `Support request · ${prettyState(stateText(row))}`;
 }
-function Timeline({data,focusSource,onNavigate,onReviewProposal,canShareNote,canDeleteNote,canWriteCare,onShareNote,onDeleteNote,onCorrect}: {data:Dashboard;focusSource?:string|null;onNavigate:(view:View)=>void;onCorrect:(measurement:Row)=>void;onReviewProposal:(proposal:Proposal)=>void;canWriteCare:boolean;canShareNote:boolean;canDeleteNote:boolean;onShareNote:(note:Row)=>void;onDeleteNote:(note:Row)=>void}) {
+function Timeline({data,focusSource,onNavigate,canShareNote,canDeleteNote,canWriteCare,onShareNote,onDeleteNote,onCorrect}: {data:Dashboard;focusSource?:string|null;onNavigate:(view:View)=>void;onCorrect:(measurement:Row)=>void;canWriteCare:boolean;canShareNote:boolean;canDeleteNote:boolean;onShareNote:(note:Row)=>void;onDeleteNote:(note:Row)=>void}) {
   const [filter,setFilter] = useState<TimelineFilter>('All entries');
   const [expanded,setExpanded] = useState<string | null>(null);
   const [visibleCount,setVisibleCount] = useState(12);
@@ -496,7 +498,6 @@ function Timeline({data,focusSource,onNavigate,onReviewProposal,canShareNote,can
         </section>) : <Empty title={filter === 'All entries' ? 'Your timeline starts here' : `No ${filter.toLowerCase()} entries yet`} text="Confirmed notes, medication reports and readings will appear here."/>}
       </section>
       {all.length > visibleCount && <button className="button load-entries" onClick={() => setVisibleCount(count => count + 12)}>Show more entries <span>({all.length - visibleCount})</span></button>}
-      <ProposalList proposals={data.proposals} canReview={canWriteCare} onReview={onReviewProposal}/>
     </div>
     <CareAside data={data} onNavigate={onNavigate}/>
   </div>;

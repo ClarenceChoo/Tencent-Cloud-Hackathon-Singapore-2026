@@ -40,7 +40,7 @@ Start with the [project overview](../README.md), then choose the guide for your 
 
 | Guide | Covers |
 | --- | --- |
-| [Hardware handover — 9 October 2026](careloop/Hardware-Handover-2026-10-09.md) | Latest recorded bench wiring, tested modules and unresolved amplifier output. |
+| [Hardware handover — 10 October 2026](careloop/Hardware-Handover-2026-10-09.md) | Verified bench wiring, audible playback, temporary button connection and remaining integration work. |
 | [Firmware setup](../firmware/README.md) | ESP32-S3 build, configuration and flashing. |
 | [Hardware pairing runbook](careloop/Hardware-Pairing-Runbook.md) | Pairing, per-device setup and integration acceptance. |
 | [Hardware/software interface](careloop/Hardware-Software-Integration.md) | Audio, commands and the hardware integration contract. |
@@ -58,10 +58,10 @@ Read evidence with its date and environment. Scripted fixtures establish softwar
 | [Software verification ledger](careloop/VERIFICATION.md) | Recorded backend, frontend, browser and firmware checks, plus remaining acceptance work. |
 | [Workflow evidence — 2 October 2026](careloop/evidence/2026-10-02-workflows/README.md) | Selected browser reports, screenshots and a fictional printed summary. |
 | [Native companion verification](careloop/Phone-Companion-Verification.md) | Native app tests, emulator observations and physical-phone acceptance gaps. |
-| [Hardware handover — 9 October 2026](careloop/Hardware-Handover-2026-10-09.md) | Physical bench results: ESP32 flashing, microphone and button verified; amplifier audio remains unresolved. |
+| [Hardware handover — 10 October 2026](careloop/Hardware-Handover-2026-10-09.md) | Bench flashing, microphone, audible amplifier output and button-to-speaker playback passed. Backend communication and the complete voice journey remain unverified. |
 | [Offline capture decision record](adr/2026-10-02-native-offline-capture.md) | Feasibility study and unpassed physical-device gate; offline capture remains disabled. |
 
-The **9 October hardware handover is the latest recorded hardware status**. Earlier PRD status statements and historical verification entries predate those bench tests. The integrated cardholder voice journey still needs its own end-to-end evidence.
+The **10 October hardware handover is the latest recorded hardware status**. Earlier PRD status statements and historical verification entries predate those bench tests. The integrated cardholder voice journey still needs its own end-to-end evidence.
 
 ## Read the design history
 

@@ -6,7 +6,7 @@
 
 **Turn everyday voice updates into coordinated care.**
 
-**[Open PARSE](https://parse-shared-voice.iians0n.chatgpt.site/) · [Quick guide](https://parse-shared-voice.iians0n.chatgpt.site/guide)**
+**[Open PARSE](https://tencenthackathon.iians0n.dev/) · [Watch the demo](https://youtu.be/Zr4V_rCbU3Q) · [Quick guide](https://tencenthackathon.iians0n.dev/guide)**
 
 No account is needed. Choose **Open Parse** on the welcome page to enter your own workspace with example records; use fictional information only. The quick guide covers entries, phone pairing, voice updates and summaries.
 
@@ -20,9 +20,13 @@ The primary software path is a **browser companion + caregiver dashboard + share
 
 [Product preview](#product-preview) · [Hardware gallery](#from-bench-to-cardholder) · [Architecture and AI harness](docs/architecture/README.md) · [User journey](docs/careloop/User-Workflow.md) · [Run locally](docs/careloop/Local-Demo.md) · [All documentation](docs/README.md)
 
+[WorkBuddy development history](docs/submission/Parse-WorkBuddy-Evidence.pdf) · [Project cover](docs/submission/parse-cover.png)
+
 ## The care journey
 
 Consider an older adult managing hypertension: a medicine is difficult to collect, a home blood-pressure reading needs recording, and a concern may otherwise be forgotten before the next appointment. Parse connects these small updates to a reviewable record and a named person's follow-through. This is the project's target scenario; intended-user and health-outcome validation remain to be completed.
+
+The intended value is fewer forgotten updates, clearer caregiver follow-through and less effort preparing for appointments. The [evaluation plan](docs/careloop/CareLoop-PRD.md#3-goals-and-measurement) defines proposed usability, response-time and caregiver-acknowledgement targets.
 
 <table>
   <tr>
@@ -48,7 +52,7 @@ Consider an older adult managing hypertension: a medicine is difficult to collec
 
 ## Product preview
 
-The cream, teal and navy interface brings care updates, reviews and follow-through into one place. These captures show the hosted dashboard's version 16 interface with fictional preview records; the local React/FastAPI demo has its own setup and verification.
+The cream, teal and navy interface brings care updates, reviews and follow-through into one place. These screenshots show the hosted interface with fictional preview records. The repository's React/FastAPI demo has its own [local setup](docs/careloop/Local-Demo.md).
 
 <p align="center">
   <img src="docs/readme-assets/care-dashboard.jpg" width="1000" alt="Parse dashboard with attention items, a reported medication status and a support request, using fictional preview records.">
@@ -138,11 +142,12 @@ The model returns **one** `{ intent, kind, payload, spoken_text }` object per ut
 
 | I want to… | Open |
 | --- | --- |
-| See the product quickly | [60-second browser walkthrough](docs/careloop/demo/parse-web-companion-demo.mp4) — fictional data, scripted speech |
+| Watch the project demonstration | [Parse demo video](https://youtu.be/Zr4V_rCbU3Q) |
+| See the scripted browser workflow | [60-second browser walkthrough](docs/careloop/demo/parse-web-companion-demo.mp4) — fictional data, scripted speech |
 | Run and test the browser workflow | [Local demo guide](docs/careloop/Local-Demo.md) — dependencies, fixture accounts and checks |
 | Deploy the backend and use live speech | [Deployment](deploy/README.md) and [provider configuration](docs/careloop/PROVIDERS.md) |
 | Upload firmware to the ESP32-S3 | [Setup and upload guide](firmware/README.md), then [hardware pairing](docs/careloop/Hardware-Pairing-Runbook.md) |
-| Continue physical assembly and audio testing | [9 October hardware handover](docs/careloop/Hardware-Handover-2026-10-09.md) |
+| Continue physical assembly and audio testing | [10 October hardware handover](docs/careloop/Hardware-Handover-2026-10-09.md) |
 | Understand setup for a patient and caregiver | [First-use guide](docs/careloop/First-Use-Guide.md) |
 
 For a dashboard-only demo after installing the [dependencies](docs/careloop/Local-Demo.md#browser-and-dashboard-requirements):
@@ -184,9 +189,9 @@ The enclosure views and bench build show separate stages. Complete physical voic
 | --- | --- |
 | Software care workflow | 2 October: 231 backend tests on each of SQLite and PostgreSQL 15; 132 frontend tests; 28 Chrome workflow checks. Speech responses were mocked or scripted. |
 | Native phone app | 2 October: 143 compatibility tests and TypeScript check; physical-device acceptance remains separate. |
-| ESP32-S3 hardware | 9 October: bench build/flash, microphone and button checks passed. Amplifier playback remains unresolved; complete physical voice flow is unverified. |
+| ESP32-S3 hardware | 10 October: build/flash, microphone, audible amplifier output and button-to-speaker playback passed on the bench. Playback used a temporary GPIO18 jumper; the prompt was understandable but muffled. Backend communication and the complete physical voice flow remain unverified. |
 | Live AI and hosting | Provider adapters and deployment configuration are present. Repository evidence does not establish live-provider accuracy or an operational public backend. |
-| Submission evidence | Actual CodeBuddy / WorkBuddy development history and at least three chat screenshots still need to be assembled and verified. |
+| Development-tool history | [WorkBuddy conversation excerpts and four development-chat screenshots](docs/submission/Parse-WorkBuddy-Evidence.pdf). |
 
 These are dated results, not a new test run. [Software verification](docs/careloop/VERIFICATION.md) and the [hardware handover](docs/careloop/Hardware-Handover-2026-10-09.md) contain the scope and remaining acceptance work. Durable offline voice capture is disabled. Clinical effectiveness and intended-user usability have not been established.
 
@@ -202,7 +207,7 @@ The [product films](demos/parse-product-demo/README.md) provide a longer concept
 | [`firmware/`](firmware/README.md) | ESP32-S3 cardholder firmware |
 | [`deploy/`](deploy/README.md) | HTTPS and container deployment |
 | [`tools/`](tools/README.md) | Local fixtures, browser checks and demo tooling |
-| [`docs/`](docs/README.md) | Architecture, product guides, submission preparation and evidence |
+| [`docs/`](docs/README.md) | Architecture, product guides and technical evidence |
 
 <p align="center">
   <img src="docs/readme-assets/parse-close.jpg" width="1200" alt="Parse: Care that stays in view. Original Parse logo on pearl, teal and navy artwork.">

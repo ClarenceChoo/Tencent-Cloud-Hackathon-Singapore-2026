@@ -2,7 +2,7 @@
 
 The software now includes guided hardware pairing and a private per-device setup pack in addition to the local dashboard, backend and device API. `python3 tools/run_demo.py` starts the software demo. Follow the [hardware pairing runbook](Hardware-Pairing-Runbook.md) for the server, supplier and first-unit steps. Live speech remains dependent on configured provider access.
 
-This document separates executable software evidence from target-device acceptance. The complete physical-prototype PRD definition of done has **not** been met. The newer [9 October hardware handover](Hardware-Handover-2026-10-09.md) records successful bench flashing and independent microphone/button checks; amplifier playback remains unresolved. Live-provider acceptance, an operational deployment, battery/acoustic measurements and intended-user trials are still not established by the evidence below. Older workstation observations retain their original dates and scope.
+This document separates executable software evidence from target-device acceptance. The complete physical-prototype PRD definition of done has **not** been met. The newer [10 October hardware handover](Hardware-Handover-2026-10-09.md) records successful bench flashing, microphone checks, audible amplifier output and integrated button-to-speaker playback with a temporary GPIO18 jumper. The offline prompt was understandable but muffled. Backend communication, permanent button assembly and final enclosure acoustics remain unverified. Live-provider acceptance, an operational deployment, battery/acoustic measurements and intended-user trials are still not established by the evidence below. Older workstation observations retain their original dates and scope.
 
 ## Recorded results — 2 October 2026, Singapore time
 
@@ -80,9 +80,9 @@ P1/P2 items (tap mode, additional language/family voices, durable offline queue,
 ## External dependencies and submission evidence
 
 - Supplier handoff: exact board/PSRAM, pin map, power diagram, motor driver, enclosure/card fit, USB access and diagnostics source. Default firmware pins are unassigned; no wiring is guessed.
-- Assembled cardholder: required for flashing, acoustic tests, one-hour power run, 30-turn latency and failure trials, and five-user formative testing. No ESP32 USB serial port was visible during the current workstation check.
+- Assembled cardholder: the 10 October bench session verified flashing and offline audio playback. Permanent button assembly, enclosure acoustics, backend-connected voice, a one-hour power run, 30-turn latency/failure trials and intended-user testing remain outstanding.
 - Cloud account: configured ASR/TTS/LLM access, HTTPS domain and Tencent deployment target. Secrets belong in local/server configuration, not chat or Git.
 - Docker runtime: needed to validate the provided container stack and PostgreSQL deployment path.
-- Competition tool evidence: the PRD requires actual CodeBuddy or WorkBuddy use, development history and at least three reviewed screenshots. Access to the installed WorkBuddy app was not approved in this session. No such evidence has been fabricated; this gate remains outstanding.
+- Competition tool evidence: the [WorkBuddy development-history PDF](../submission/Parse-WorkBuddy-Evidence.pdf) contains visible conversation excerpts and four development-chat screenshots, with account details redacted.
 
 Do not describe this repository as a completed clinical product, a hardware-validated prototype or a completed hackathon submission until the relevant evidence above exists.

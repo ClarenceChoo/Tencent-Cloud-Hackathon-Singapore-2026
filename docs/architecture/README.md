@@ -71,7 +71,7 @@ sequenceDiagram
     App-->>Care: Permitted confirmed update
 ```
 
-Input is limited to 0.3–20 seconds. The cardholder sends 16 kHz mono PCM WAV; phone and browser formats are decoded with FFmpeg/FFprobe before the shared provider path. Turn IDs and idempotency keys support recovery after a lost response. Repeating confirmation returns the existing committed result rather than adding a second record.
+Input is limited to 0.3–20 seconds. The cardholder sends 16 kHz mono PCM WAV; phone and browser formats are decoded with FFmpeg/FFprobe before the shared provider path. Turn IDs and idempotency keys support recovery after a lost response. Retrying confirmation of the same proposal returns its existing committed result rather than adding a second record. Retrying an upload with the same idempotency key returns the original turn; a new voice turn referring to an already committed proposal is rejected as stale.
 
 Proposals expire after 120 seconds. The confirmation step rechecks proposal state and relevant records, plan versions and permissions. Browser and native clients also expose cancellation. An abandoned or expired proposal does not become a confirmed care fact. See [recording receipts](../careloop/Recording-Receipts.md) and [corrections](../careloop/Capture-and-Correction.md).
 
@@ -178,7 +178,7 @@ flowchart TB
 | Proposal → care record | Current unexpired proposal, explicit confirmation, state rechecks and idempotent transaction |
 | Record → caregiver / shared summary | Access grants, record-level sharing, and applicable source validity, share expiry and revocation |
 
-Raw uploaded audio is removed after transcription or terminal processing failure; abandoned input has a configured cleanup bound. Transcripts, proposals and their source relationships support review and provenance. Generated reply audio is short-lived and access-controlled. This is data minimization in the implemented workflow, not a blanket assertion of regulatory compliance or of provider-side retention.
+Raw uploaded audio is removed after transcription or terminal processing failure; abandoned input has a configured cleanup bound. Transcripts, proposals and their source relationships support review and provenance. Generated reply audio has expiring, access-controlled playback; expiry prevents client access but does not delete its stored bytes. There is no generated-audio purge job in the current implementation. This is data minimization in the implemented workflow, not a blanket assertion of regulatory compliance or of provider-side retention.
 
 ## Deployment and design trade-offs
 
@@ -199,4 +199,4 @@ The supplied integration uses Tencent `SentenceRecognition` and `TextToVoice`, p
 
 The maintained architecture is the README component diagram plus the sequence and boundary diagrams on this page. Earlier [system PNG](parse-system-architecture.png), [voice-flow PNG](parse-voice-confirmation-flow.png), SVG counterparts and [draw.io source](parse-architecture.drawio) are retained as historical presentation assets. Their labels are dated 30 September and include layout issues; they are not the current architecture reference.
 
-Software results are dated in [verification](../careloop/VERIFICATION.md). The [9 October handover](../careloop/Hardware-Handover-2026-10-09.md) is the newer physical-hardware record: independent microphone/button checks passed and amplifier output remains unresolved. Neither fixture tests nor those individual bench checks establish the complete live voice journey.
+Software results are dated in [verification](../careloop/VERIFICATION.md). The [10 October handover](../careloop/Hardware-Handover-2026-10-09.md) is the newer physical-hardware record: microphone checks, audible amplifier output and button-to-speaker playback passed. The playback test used a temporary GPIO18 jumper; final acoustics, permanent button assembly and backend communication still need verification. Neither fixture tests nor those individual bench checks establish the complete live voice journey.

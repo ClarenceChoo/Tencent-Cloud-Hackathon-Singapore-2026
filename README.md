@@ -6,6 +6,10 @@
 
 **Turn everyday voice updates into coordinated care.**
 
+**[Open PARSE](https://parse-shared-voice.iians0n.chatgpt.site/) · [Quick guide](https://parse-shared-voice.iians0n.chatgpt.site/guide)**
+
+No account is needed. Choose **Open Parse** on the welcome page to enter your own workspace with example records; use fictional information only. The quick guide covers entries, phone pairing, voice updates and summaries.
+
 Tencent Cloud Hackathon Singapore 2026 · Healthcare Track — NTU LKC Medicine
 
 **Challenge 2: AI Healthier Every Day — Intelligent Support for Long-Term Self-Care**

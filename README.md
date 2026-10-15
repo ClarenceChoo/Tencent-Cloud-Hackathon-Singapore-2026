@@ -1,5 +1,9 @@
 # Parse
 
+<p align="center">
+  <img src="docs/readme-assets/parse-cover.jpg" width="1200" alt="Parse: Everyday care, in view. The Parse logo beside a real filmed demonstration of the cardholder.">
+</p>
+
 **Turn everyday voice updates into coordinated care.**
 
 Tencent Cloud Hackathon Singapore 2026 · Healthcare Track — NTU LKC Medicine
@@ -10,11 +14,24 @@ Parse helps older adults record concerns, report medication status and blood pre
 
 The primary software path is a **browser companion + caregiver dashboard + shared backend**. A native phone app and an ESP32-S3 cardholder use the same care system. The cardholder is an alternative voice interface for people who prefer a physical talk button.
 
-[Architecture and AI harness](docs/architecture/README.md) · [User journey](docs/careloop/User-Workflow.md) · [Run locally](docs/careloop/Local-Demo.md) · [All documentation](docs/README.md)
+[Product preview](#product-preview) · [Hardware gallery](#from-bench-to-cardholder) · [Architecture and AI harness](docs/architecture/README.md) · [User journey](docs/careloop/User-Workflow.md) · [Run locally](docs/careloop/Local-Demo.md) · [All documentation](docs/README.md)
 
 ## The care journey
 
 Consider an older adult managing hypertension: a medicine is difficult to collect, a home blood-pressure reading needs recording, and a concern may otherwise be forgotten before the next appointment. Parse connects these small updates to a reviewable record and a named person's follow-through. This is the project's target scenario; intended-user and health-outcome validation remain to be completed.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/readme-assets/care-at-home.jpg" width="560" alt="Illustrated care scenario: an older woman beside a notebook in a Singapore home."></td>
+    <td width="50%"><img src="docs/readme-assets/chosen-caregiver.jpg" width="560" alt="Illustrated care scenario: an older adult and chosen caregiver reviewing a notebook together."></td>
+  </tr>
+  <tr>
+    <td><strong>Care between visits</strong><br>Keep the small updates that might otherwise be forgotten.</td>
+    <td><strong>A care circle chosen by the person</strong><br>Share reviewed updates with people permitted to help.</td>
+  </tr>
+</table>
+
+*Editorial illustrations of fictional care scenarios.*
 
 | The person needs to… | Parse supports… |
 | --- | --- |
@@ -24,6 +41,35 @@ Consider an older adult managing hypertension: a medicine is difficult to collec
 | Remember symptoms and readings | Confirmed health notes and externally measured blood pressure with time and source |
 | Follow an existing preventive-care plan | Confirmed task updates and linked follow-ups |
 | Prepare for a care conversation | Source-linked doctor-visit, family-handoff and weekly summaries with review before sharing |
+
+## Product preview
+
+The cream, teal and navy interface brings care updates, reviews and follow-through into one place. These captures show the hosted dashboard's version 16 interface with fictional preview records; the local React/FastAPI demo has its own setup and verification.
+
+<p align="center">
+  <img src="docs/readme-assets/care-dashboard.jpg" width="1000" alt="Parse dashboard with attention items, a reported medication status and a support request, using fictional preview records.">
+</p>
+
+<table>
+  <tr>
+    <td width="50%" valign="top"><img src="docs/readme-assets/review-proposal.png" width="520" alt="Review a proposed note, edit its wording, then choose the separate Confirm and save action. Fictional preview data."></td>
+    <td width="50%" valign="top"><img src="docs/readme-assets/sharing-choice.png" width="520" alt="Choose who can see a care note, or leave everyone unselected to keep it private. Fictional preview data."></td>
+  </tr>
+  <tr>
+    <td><strong>Review before saving</strong><br>Check what Parse understood and correct the proposed wording.</td>
+    <td><strong>Choose who can see it</strong><br>Keep a note private or share it with a permitted caregiver.</td>
+  </tr>
+</table>
+
+### Prepare for the next care conversation
+
+Reviewed summaries link statements back to care records, so the person can check the sources before sharing a copy.
+
+<p align="center">
+  <img src="docs/readme-assets/summary-sources.png" width="1000" alt="Visit summary review with statements linked to their care-note and reading sources. Fictional preview records.">
+</p>
+
+[Image sources and capture details](docs/readme-assets/README.md)
 
 ## System architecture
 
@@ -103,6 +149,31 @@ python3 tools/run_demo.py
 
 The launcher starts services at `http://127.0.0.1:5173` with fictional records and live speech unconfigured. The separate [browser fixture](docs/careloop/Local-Demo.md#try-the-browser-flow-locally) exercises recording and confirmation with explicitly scripted interpretations.
 
+## From bench to cardholder
+
+The physical direction is a familiar cardholder with a deliberate talk button. The photographs show the filmed object and bench electronics; the CAD frames show the enclosure design.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/readme-assets/real-cardholder.jpg" width="560" alt="Real Parse cardholder held during the filmed introduction."></td>
+    <td width="50%"><img src="docs/readme-assets/bench-prototype.jpg" width="560" alt="Real ESP32-S3 bench prototype with audio peripherals and breadboard wiring."></td>
+  </tr>
+  <tr>
+    <td><strong>The cardholder in hand</strong><br>A frame from the product introduction.</td>
+    <td><strong>The bench build</strong><br>ESP32-S3, audio peripherals and prototype wiring.</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/readme-assets/enclosure-render.jpg" width="560" alt="CAD render of the Parse cardholder enclosure with side button and speaker openings."></td>
+    <td width="50%"><img src="docs/readme-assets/enclosure-assembly.jpg" width="560" alt="Exploded CAD view of the cardholder enclosure and side-button assembly."></td>
+  </tr>
+  <tr>
+    <td><strong>Enclosure design</strong><br>A frame from the cardholder rotation render.</td>
+    <td><strong>Side-button assembly</strong><br>An exploded view of the enclosure.</td>
+  </tr>
+</table>
+
+The enclosure views and bench build show separate stages. Complete physical voice acceptance remains outstanding; see the [hardware handover](docs/careloop/Hardware-Handover-2026-10-09.md) for the recorded checks and remaining work.
+
 ## Implementation and evidence
 
 | Area | Recorded status |
@@ -128,3 +199,7 @@ The [product films](demos/parse-product-demo/README.md) provide a longer concept
 | [`deploy/`](deploy/README.md) | HTTPS and container deployment |
 | [`tools/`](tools/README.md) | Local fixtures, browser checks and demo tooling |
 | [`docs/`](docs/README.md) | Architecture, product guides, submission preparation and evidence |
+
+<p align="center">
+  <img src="docs/readme-assets/parse-close.jpg" width="1200" alt="Parse: Care that stays in view. Original Parse logo on pearl, teal and navy artwork.">
+</p>

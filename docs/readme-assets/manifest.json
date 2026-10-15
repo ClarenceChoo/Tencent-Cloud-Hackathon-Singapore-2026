@@ -1,0 +1,74 @@
+[
+  {
+    "asset": "parse-cover.jpg",
+    "source": "output/parse-illustrated-deck/slides/01.png",
+    "description": "Film frame and original Parse brand",
+    "sha256": "f3bf8a70e7ccb16c1c89b54daa8452ca0dbb1510423cb2d3b978e2fd09377c2e"
+  },
+  {
+    "asset": "care-at-home.jpg",
+    "source": "output/parse-illustrated-deck/assets/care-at-home.png",
+    "description": "Care-at-home editorial illustration",
+    "sha256": "a6b10286767b1d3a4e19afa06bd5fbde87e8cb6ce04fe53561f78b6eb05f0264"
+  },
+  {
+    "asset": "chosen-caregiver.jpg",
+    "source": "output/parse-illustrated-deck/assets/chosen-caregiver.png",
+    "description": "Chosen-caregiver editorial illustration",
+    "sha256": "c5b06dcc4786cfa8e37fe015659893f4ed261a580b650b86605c553c7502de3d"
+  },
+  {
+    "asset": "care-dashboard.jpg",
+    "source": "tmp/parse-current-ui-20261013/current-ui-first.png",
+    "description": "Published version 16 components compiled locally with fictional preview records",
+    "sha256": "a2e6296ab41939dd542464d955cee44bb8fd0f32433819bce11791659d34ac3a"
+  },
+  {
+    "asset": "review-proposal.png",
+    "source": "output/parse-illustrated-deck/assets/current-review.png",
+    "description": "Published interface with fictional preview records",
+    "sha256": "ff0077c21c59b1168ea54f656e477bd433e0ec9b86d2747e0260086577799058"
+  },
+  {
+    "asset": "sharing-choice.png",
+    "source": "output/parse-illustrated-deck/assets/current-sharing.png",
+    "description": "Published interface with fictional preview records",
+    "sha256": "8e79deda5b2829c61af70043040229e4cc93ae8970ae55f95833605e0bead561"
+  },
+  {
+    "asset": "summary-sources.png",
+    "source": "output/parse-illustrated-deck/assets/current-summary-sources.png",
+    "description": "Published interface with fictional preview records",
+    "sha256": "93afdee46d6d26987be57a59d17fb89d3edfd372271ad2d639b7cf177cf82749"
+  },
+  {
+    "asset": "real-cardholder.jpg",
+    "source": "output/parse-illustrated-deck/assets/real-cardholder.jpg",
+    "description": "Real cardholder filmed in hand",
+    "sha256": "79dd1d8dba60b9eaaf2c8dd13b378e973e96b736b27e1206e8bc4f5fadada7f7"
+  },
+  {
+    "asset": "bench-prototype.jpg",
+    "source": "output/parse-illustrated-deck/assets/bench-prototype.jpg",
+    "description": "Real bench prototype filmed in IMG_6614.MOV",
+    "sha256": "594a5c78e9088ff50b759cca2c3f0289a982e65c43d315d69183c6b93827763b"
+  },
+  {
+    "asset": "enclosure-render.jpg",
+    "source": "output/parse-illustrated-deck/assets/cardholder-rotation.jpg",
+    "description": "Enclosure CAD rotation frame",
+    "sha256": "9f4735e2e3e97d70de98eb9509cebf836284fba6afb835eff8697da133ce2f63"
+  },
+  {
+    "asset": "enclosure-assembly.jpg",
+    "source": "output/parse-illustrated-deck/assets/enclosure-exploded.jpg",
+    "description": "Exploded side-button CAD frame",
+    "sha256": "6015863154b6b0cc73e48d9ccb0d4395d8741dd2dcfa04b89f930592a695c8a1"
+  },
+  {
+    "asset": "parse-close.jpg",
+    "source": "output/parse-illustrated-deck/slides/31.png",
+    "description": "Original Parse closing artwork and logo",
+    "sha256": "fe828d84490ad9291e15df5ab64ebdd036ec5f4ead850433af52fce28fba1c9d"
+  }
+]
